@@ -8,7 +8,7 @@ use Illuminate\Support\Facades\DB;
 
 final class AiCatalogRepository
 {
-   
+
     public function findLocationId(string $table, string $code): ?int
     {
         $id = DB::table($table)->where('code', $code)->value('id');
