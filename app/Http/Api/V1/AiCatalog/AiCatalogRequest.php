@@ -10,7 +10,7 @@ use Illuminate\Http\Exceptions\HttpResponseException;
 
 final class AiCatalogRequest extends FormRequest
 {
-    
+
     public function authorize(): bool
     {
         return true;

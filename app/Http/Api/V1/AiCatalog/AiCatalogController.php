@@ -44,7 +44,7 @@ final class AiCatalogController extends Controller
         return $this->logAndRespond($request, $response);
     }
 
-   
+
     public function validateToken(AiCatalogRequest $request): JsonResponse
     {
         $token = $request->bearerToken();
@@ -61,7 +61,7 @@ final class AiCatalogController extends Controller
 
         return $this->logAndRespond($request, $response);
     }
-  
+
     private function failureResponse(string $code): JsonResponse
     {
         return response()->json([
@@ -70,7 +70,7 @@ final class AiCatalogController extends Controller
             ], AiCatalogStatus::httpStatusFor($code));
     }
 
- 
+
     private function logAndRespond(Request $request, JsonResponse $response): JsonResponse
     {
         $this->service->logApiRequest($request, $response);

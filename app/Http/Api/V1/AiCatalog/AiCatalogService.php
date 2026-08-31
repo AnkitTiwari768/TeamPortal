@@ -76,7 +76,7 @@ final class AiCatalogService
         }
     }
 
-    
+
     public function login(string $mobileNumber, string $udyamNumber): array
     {
         try {
@@ -111,7 +111,7 @@ final class AiCatalogService
         }
     }
 
-   
+
     public function validateToken(string $token): array
     {
         try {
@@ -336,7 +336,7 @@ final class AiCatalogService
         return $value !== '' ? $value : null;
     }
 
- 
+
     private function xmlToJson(mixed $node): string
     {
         if ($node === null) {
