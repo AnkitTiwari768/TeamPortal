@@ -1,0 +1,54 @@
+/*
+ * allocation.css
+ * Minimal overrides for the Allocation Module.
+ * The project's existing CSS (Bootstrap, styles.css, responsive.css) handles
+ * 99% of the styling — this file only adds the small bits that aren't
+ * already covered.
+ */
+
+/* ── Total amount read-only input ─────────────────────────── */
+#alloc-total-hidden[readonly] {
+    background-color: #f8f9fa;
+    font-weight: 600;
+}
+
+/* ── Allocation rows table — tighter cell padding ─────────── */
+#alloc-rows-body td {
+    vertical-align: middle;
+    padding: .4rem .5rem;
+}
+
+/* ── Edit-mode amount cell (greyed) ───────────────────────── */
+#alloc-rows-body input[readonly],
+#alloc-rows-body input[disabled] {
+    background-color: #f1f5f9;
+    cursor: not-allowed;
+    opacity: .85;
+}
+
+/* ── Add / Remove row icon buttons ───────────────────────── */
+.alloc-add-row-trigger img,
+.alloc-remove-row-trigger img {
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+    transition: opacity .15s ease;
+}
+.alloc-add-row-trigger img:hover,
+.alloc-remove-row-trigger img:hover {
+    opacity: .75;
+}
+
+/* ── Inline form errors inside table cells ─────────────────── */
+#alloc-rows-body .form-error {
+    font-size: .78rem;
+    color: #dc3545;
+    min-height: .9rem;
+    display: block;
+}
+
+/* ── View page: detail label/value pairs ───────────────────── */
+.snp_details label strong {
+    color: #444;
+    font-size: .9rem;
+}

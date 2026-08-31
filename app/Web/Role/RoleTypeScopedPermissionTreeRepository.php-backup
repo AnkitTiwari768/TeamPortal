@@ -1,0 +1,39 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Web\Role;
+
+use DB;
+use App\Http\Api\V1\ModulePermissionTree\ModulePermissionTreeRepository;
+
+/**
+ * Builds the Add/Edit Role permission tree from the permissions granted to the selected
+ * Role Type, instead of the permission_role_mapping subset the standalone Role Permission
+ * screen uses.
+ *
+ * Overriding only the leaf lookup lets ModulePermissionTreeService's recursive module
+ * walker be reused untouched -- the tree renders through the same markup and the same
+ * tree.js as every other permission screen.
+ */
+class RoleTypeScopedPermissionTreeRepository extends ModulePermissionTreeRepository
+{
+    public function __construct(private string $roleTypeId) {}
+
+    /**
+     * $roleId is part of the inherited contract and unused here: the available permissions
+     * are decided by the Role Type, not by the role being edited.
+     */
+    public function getPermissionsByModuleId(string $roleId, string $moduleId): array
+    {
+        return DB::table('permissions AS p')
+            ->select('p.id', 'p.name')
+            ->join('role_type_permissions AS rtp', 'rtp.permission_id', '=', 'p.id')
+            ->where('rtp.role_type_id', $this->roleTypeId)
+            ->where('p.status', (int) config('constant.ACTIVE'))
+            ->where('p.module_id', $moduleId)
+            ->orderBy('p.name')
+            ->get()
+            ->toArray();
+    }
+}

@@ -1,0 +1,416 @@
+FILE CHANGES — FOCUSED AREAS (last 30 days)
+Project: c:\xampp\htdocs\team47
+Window: 2026-07-26 to 2026-08-25 (generated 2026-08-25)
+Areas covered: Workshop, Fund Flow (fund_flow), Component Utilization (Mapping), Fund Allocation, AI Cataloguing Claim, Fund Distribution
+
+METHODOLOGY / CAVEATS
+- No version control (no .git/.svn) exists in this project, so there is no commit history for authorship or diffs.
+- "Change" = file modification time (mtime) in the last 30 days; "newly developed" = file creation/birth time (NTFS birth time) in the last 30 days.
+- Every file on this filesystem is owned by the single Windows account "ankit.tiwari" (confirmed project-wide), so that is the only "user" value available anywhere on disk — it cannot distinguish between individual developers.
+- Folders/files ending in "-old" (ComponentUtilizationMapping-old, FundAllocation-old, FundDistribution-old, FundFlow-old, fund_flow-old, routes/web-old, component-utilization-mapping-old) are manual backup copies of these modules made on 2026-08-03, not separate active features — included below since they fall in these areas and this window, but flagged as backups.
+- Excluded from scanning: vendor/, node_modules/, .git/, storage/logs/, storage/framework/, bootstrap/cache/.
+
+===============================================================================
+SECTION A — CHANGED FILES IN SCOPE (Folder | Full Path | User)
+===============================================================================
+Total: 244 files
+
+AICataloguingClaim                     | C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/AICataloguingClaimController.php           | ankit.tiwari
+AICataloguingClaim                     | C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/AICataloguingClaimDTO.php                  | ankit.tiwari
+AICataloguingClaim                     | C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/AICataloguingClaimListResource.php         | ankit.tiwari
+AICataloguingClaim                     | C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/AICataloguingClaimService.php              | ankit.tiwari
+AICataloguingClaim                     | C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/AICataloguingClaimTemplateExport.php       | ankit.tiwari
+AICataloguingClaim                     | C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/AICataloguingImport.php                    | ankit.tiwari
+AICataloguingClaim                     | C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/CreateAICataloguingClaimAction.php         | ankit.tiwari
+AICataloguingClaim                     | C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/ListAICataloguingClaimAction.php           | ankit.tiwari
+ComponentUtilizationMapping-old        | C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping-old/ComponentUtilizationMapping.php | ankit.tiwari
+ComponentUtilizationMapping-old        | C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping-old/ComponentUtilizationMappingController.php | ankit.tiwari
+ComponentUtilizationMapping-old        | C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping-old/ComponentUtilizationMappingDetail.php | ankit.tiwari
+ComponentUtilizationMapping-old        | C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping-old/ComponentUtilizationMappingRequest.php | ankit.tiwari
+ComponentUtilizationMapping-old        | C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping-old/ComponentUtilizationMappingService.php | ankit.tiwari
+ComponentUtilizationMapping            | C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping/ComponentUtilizationMapping.php   | ankit.tiwari
+ComponentUtilizationMapping            | C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping/ComponentUtilizationMappingController.php | ankit.tiwari
+ComponentUtilizationMapping            | C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping/ComponentUtilizationMappingDetail.php | ankit.tiwari
+ComponentUtilizationMapping            | C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping/ComponentUtilizationMappingRequest.php | ankit.tiwari
+ComponentUtilizationMapping            | C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping/ComponentUtilizationMappingService.php | ankit.tiwari
+FundAllocation-old                     | C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocation.php                         | ankit.tiwari
+FundAllocation-old                     | C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationComponentMapping.php         | ankit.tiwari
+FundAllocation-old                     | C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationController.php               | ankit.tiwari
+FundAllocation-old                     | C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationDTO.php                      | ankit.tiwari
+FundAllocation-old                     | C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationRequest.php                  | ankit.tiwari
+FundAllocation-old                     | C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationResource.php                 | ankit.tiwari
+FundAllocation-old                     | C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationService.php                  | ankit.tiwari
+FundAllocation-old                     | C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationService.php-old1             | ankit.tiwari
+FundAllocation-old                     | C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationService.php29                | ankit.tiwari
+FundAllocation-old                     | C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/ListFundAllocationAction.php               | ankit.tiwari
+FundAllocation-old                     | C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/StoreFundAllocationAction.php              | ankit.tiwari
+FundAllocation                         | C:/xampp/htdocs/team47/app/Domain/FundAllocation/DeleteFundAllocationAction.php                 | ankit.tiwari
+FundAllocation                         | C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocation.php                             | ankit.tiwari
+FundAllocation                         | C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocationComponentMapping.php             | ankit.tiwari
+FundAllocation                         | C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocationController.php                   | ankit.tiwari
+FundAllocation                         | C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocationDTO.php                          | ankit.tiwari
+FundAllocation                         | C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocationHistory.php                      | ankit.tiwari
+FundAllocation                         | C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocationRequest.php                      | ankit.tiwari
+FundAllocation                         | C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocationResource.php                     | ankit.tiwari
+FundAllocation                         | C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocationService.php                      | ankit.tiwari
+FundAllocation                         | C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocationService.php-old1                 | ankit.tiwari
+FundAllocation                         | C:/xampp/htdocs/team47/app/Domain/FundAllocation/ListFundAllocationAction.php                   | ankit.tiwari
+FundAllocation                         | C:/xampp/htdocs/team47/app/Domain/FundAllocation/StoreFundAllocationAction.php                  | ankit.tiwari
+FundAllocation                         | C:/xampp/htdocs/team47/app/Domain/FundAllocation/StoreFundAllocationAction.php-04               | ankit.tiwari
+FundDistribution-old                   | C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/DeleteFundDistributionAction.php         | ankit.tiwari
+FundDistribution-old                   | C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/FundDistribution.php                     | ankit.tiwari
+FundDistribution-old                   | C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/FundDistributionController.php           | ankit.tiwari
+FundDistribution-old                   | C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/FundDistributionDTO.php                  | ankit.tiwari
+FundDistribution-old                   | C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/FundDistributionRequest.php              | ankit.tiwari
+FundDistribution-old                   | C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/FundDistributionResource.php             | ankit.tiwari
+FundDistribution-old                   | C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/FundDistributionService.php              | ankit.tiwari
+FundDistribution-old                   | C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/ListFundDistributionAction.php           | ankit.tiwari
+FundDistribution-old                   | C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/ListFundDistributionTransactionsAction.php | ankit.tiwari
+FundDistribution-old                   | C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/StoreFundDistributionAction.php          | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Domain/FundDistribution/DeleteFundDistributionAction.php             | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Domain/FundDistribution/FundDistribution.php                         | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Domain/FundDistribution/FundDistributionController.php               | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Domain/FundDistribution/FundDistributionDTO.php                      | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Domain/FundDistribution/FundDistributionRequest.php                  | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Domain/FundDistribution/FundDistributionResource.php                 | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Domain/FundDistribution/FundDistributionService.php                  | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Domain/FundDistribution/ListFundDistributionAction.php               | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Domain/FundDistribution/ListFundDistributionTransactionsAction.php   | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Domain/FundDistribution/StoreFundDistributionAction.php              | ankit.tiwari
+FundFlow-old                           | C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilizationMapping.php                  | ankit.tiwari
+FundFlow-old                           | C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilizationMappingDTO.php               | ankit.tiwari
+FundFlow-old                           | C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilizationMappingDetail.php            | ankit.tiwari
+FundFlow-old                           | C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilizationMappingRequest.php           | ankit.tiwari
+FundFlow-old                           | C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilizationMappingResource.php          | ankit.tiwari
+FundFlow-old                           | C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilizationMappingService.php           | ankit.tiwari
+FundFlow-old                           | C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilzationMappingController.php         | ankit.tiwari
+FundFlow-old                           | C:/xampp/htdocs/team47/app/Domain/FundFlow-old/FundFlowHelper.php                               | ankit.tiwari
+FundFlow-old                           | C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ListComponentUtilizationMappingAction.php        | ankit.tiwari
+FundFlow-old                           | C:/xampp/htdocs/team47/app/Domain/FundFlow-old/StoreComponentUtilizationMappingAction.php       | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Domain/FundFlow/ComponentUtilizationMapping.php                      | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Domain/FundFlow/ComponentUtilizationMappingDTO.php                   | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Domain/FundFlow/ComponentUtilizationMappingDetail.php                | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Domain/FundFlow/ComponentUtilizationMappingRequest.php               | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Domain/FundFlow/ComponentUtilizationMappingResource.php              | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Domain/FundFlow/ComponentUtilizationMappingService.php               | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Domain/FundFlow/ComponentUtilzationMappingController.php             | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Domain/FundFlow/FundFlowHelper.php                                   | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Domain/FundFlow/ListComponentUtilizationMappingAction.php            | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Domain/FundFlow/StoreComponentUtilizationMappingAction.php           | ankit.tiwari
+AdminWorkshop                          | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop/AdminWorkshopController.php                | ankit.tiwari
+AdminWorkshop                          | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop/AdminWorkshopDTO.php                       | ankit.tiwari
+AdminWorkshop                          | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop/AdminWorkshopExpenseDTO.php                | ankit.tiwari
+AdminWorkshop                          | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop/AdminWorkshopExpenseRequest.php            | ankit.tiwari
+AdminWorkshop                          | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop/AdminWorkshopRequest.php                   | ankit.tiwari
+AdminWorkshop                          | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop/AdminWorkshopResource.php                  | ankit.tiwari
+AdminWorkshop                          | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop/AdminWorkshopService.php                   | ankit.tiwari
+AdminWorkshop                          | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop/UploadDocumentAction.php                   | ankit.tiwari
+AdminWorkshop                          | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop/UploadDocumentDto.php                      | ankit.tiwari
+AdminWorkshop                          | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop/UploadDocumentRequest.php                  | ankit.tiwari
+AdminWorkshop_bkup                     | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop_bkup/AdminWorkshopController.php           | ankit.tiwari
+AdminWorkshop_bkup                     | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop_bkup/AdminWorkshopDTO.php                  | ankit.tiwari
+AdminWorkshop_bkup                     | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop_bkup/AdminWorkshopExpenseDTO.php           | ankit.tiwari
+AdminWorkshop_bkup                     | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop_bkup/AdminWorkshopExpenseRequest.php       | ankit.tiwari
+AdminWorkshop_bkup                     | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop_bkup/AdminWorkshopRequest.php              | ankit.tiwari
+AdminWorkshop_bkup                     | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop_bkup/AdminWorkshopResource.php             | ankit.tiwari
+AdminWorkshop_bkup                     | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop_bkup/AdminWorkshopService.php              | ankit.tiwari
+AdminWorkshop_bkup                     | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop_bkup/UploadDocumentAction.php              | ankit.tiwari
+AdminWorkshop_bkup                     | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop_bkup/UploadDocumentDto.php                 | ankit.tiwari
+AdminWorkshop_bkup                     | C:/xampp/htdocs/team47/app/Http/Api/V1/AdminWorkshop_bkup/UploadDocumentRequest.php             | ankit.tiwari
+Workshop_Integeration                  | C:/xampp/htdocs/team47/app/Http/Api/V1/Workshop_Integeration/Workshop.php                       | ankit.tiwari
+Workshop_Integeration                  | C:/xampp/htdocs/team47/app/Http/Api/V1/Workshop_Integeration/WorkshopController.php             | ankit.tiwari
+Workshop_Integeration                  | C:/xampp/htdocs/team47/app/Http/Api/V1/Workshop_Integeration/WorkshopRequest.php                | ankit.tiwari
+Workshop_Integeration                  | C:/xampp/htdocs/team47/app/Http/Api/V1/Workshop_Integeration/WorkshopResource.php               | ankit.tiwari
+Workshop_Integeration                  | C:/xampp/htdocs/team47/app/Http/Api/V1/Workshop_Integeration/WorkshopService.php                | ankit.tiwari
+Rules                                  | C:/xampp/htdocs/team47/app/Rules/UniqueFundFlow.php                                             | ankit.tiwari
+AdminWorkshopManagement                | C:/xampp/htdocs/team47/app/Web/AdminWorkshopManagement/AdminWorkshopManagementController.php    | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Web/FundDistribution/ClaimDistributionProcessor.php                  | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Web/FundDistribution/ClaimDistributionService.php                    | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Web/FundDistribution/ClaimPoolResolver.php                           | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Web/FundDistribution/ClaimTypeMappingService.php                     | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Web/FundDistribution/DistributionController.php                      | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Web/FundDistribution/DistributionRequest.php                         | ankit.tiwari
+FundDistribution                       | C:/xampp/htdocs/team47/app/Web/FundDistribution/DistributionService.php                         | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Web/FundFlow/AllocationResource.php                                  | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Web/FundFlow/FundDistributionController.php                          | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Web/FundFlow/FundDistributionRequest.php                             | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Web/FundFlow/FundDistributionService.php                             | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Web/FundFlow/FundFlowController.php                                  | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Web/FundFlow/FundFlowRequest.php                                     | ankit.tiwari
+FundFlow                               | C:/xampp/htdocs/team47/app/Web/FundFlow/FundFlowService.php                                     | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/CreateWorkshopAction.php                                | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/CreateWorkshopDTO.php                                   | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/DeleteWorkshopAction.php                                | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/ExecutedWorkshopController.php                          | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/ListExecutedWorkshopAction.php                          | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/ListWorkshopAction.php                                  | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/ProposedWorkshopController.php                          | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/UpdateExecutedWorkshopAction.php                        | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/UpdateExecutedWorkshopDTO.php                           | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/UpdateExecutedWorkshopRequest.php                       | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/UploadSupportingDocumentRequest.php                     | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/UploadWorkshopEventImageAction.php                      | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/UploadWorkshopEventImageDto.php                         | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/UploadWorkshopEventImageRequest.php                     | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/Workshop.php                                            | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/WorkshopController.php                                  | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/WorkshopRequest.php                                     | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/WorkshopResource.php                                    | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/WorkshopService.php                                     | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/WorkshopStatus.php                                      | ankit.tiwari
+Workshop                               | C:/xampp/htdocs/team47/app/Web/Workshop/app.css                                                 | ankit.tiwari
+en                                     | C:/xampp/htdocs/team47/resources/lang/en/fund_flow.php                                          | ankit.tiwari
+en                                     | C:/xampp/htdocs/team47/resources/lang/en/workshop.php                                           | ankit.tiwari
+admin_workshops--22-06                 | C:/xampp/htdocs/team47/resources/views/admin_workshops--22-06/create.blade.php                  | ankit.tiwari
+admin_workshops--22-06                 | C:/xampp/htdocs/team47/resources/views/admin_workshops--22-06/edit.blade.php                    | ankit.tiwari
+admin_workshops--22-06                 | C:/xampp/htdocs/team47/resources/views/admin_workshops--22-06/index.blade.php                   | ankit.tiwari
+admin_workshops--22-06                 | C:/xampp/htdocs/team47/resources/views/admin_workshops--22-06/view.blade.php                    | ankit.tiwari
+component-utilization-mapping-old      | C:/xampp/htdocs/team47/resources/views/component-utilization-mapping-old/index.blade.php        | ankit.tiwari
+component-utilization-mapping          | C:/xampp/htdocs/team47/resources/views/component-utilization-mapping/index.blade.php            | ankit.tiwari
+executed-workshops                     | C:/xampp/htdocs/team47/resources/views/executed-workshops/create.blade.php                      | ankit.tiwari
+executed-workshops                     | C:/xampp/htdocs/team47/resources/views/executed-workshops/edit.blade.php                        | ankit.tiwari
+executed-workshops                     | C:/xampp/htdocs/team47/resources/views/executed-workshops/index.blade.php                       | ankit.tiwari
+executed-workshops                     | C:/xampp/htdocs/team47/resources/views/executed-workshops/show.blade.php                        | ankit.tiwari
+executed-workshops                     | C:/xampp/htdocs/team47/resources/views/executed-workshops/view.blade.php                        | ankit.tiwari
+components                             | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/components/filters.blade.php    | ankit.tiwari
+components                             | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/components/form.blade.php       | ankit.tiwari
+components                             | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/components/header.blade.php     | ankit.tiwari
+components                             | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/components/table.blade.php      | ankit.tiwari
+allocation                             | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/create.blade.php                | ankit.tiwari
+css                                    | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/css/allocation.css              | ankit.tiwari
+allocation                             | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/edit.blade.php                  | ankit.tiwari
+allocation                             | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/index.blade.php                 | ankit.tiwari
+js                                     | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/js/allocation.js                | ankit.tiwari
+js                                     | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/js/api.js                       | ankit.tiwari
+js                                     | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/js/distribution.js              | ankit.tiwari
+partials                               | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/partials/allocation-row.blade.php | ankit.tiwari
+allocation                             | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/view.blade.php                  | ankit.tiwari
+fund_flow-old                          | C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation_form.blade.php                  | ankit.tiwari
+carry_forward                          | C:/xampp/htdocs/team47/resources/views/fund_flow-old/carry_forward/create.blade.php             | ankit.tiwari
+carry_forward                          | C:/xampp/htdocs/team47/resources/views/fund_flow-old/carry_forward/index.blade.php              | ankit.tiwari
+carry_forward                          | C:/xampp/htdocs/team47/resources/views/fund_flow-old/carry_forward/view.blade.php               | ankit.tiwari
+component_utilization_mapping          | C:/xampp/htdocs/team47/resources/views/fund_flow-old/component_utilization_mapping/create.blade.php | ankit.tiwari
+component_utilization_mapping          | C:/xampp/htdocs/team47/resources/views/fund_flow-old/component_utilization_mapping/index.blade.php | ankit.tiwari
+component_utilization_mapping          | C:/xampp/htdocs/team47/resources/views/fund_flow-old/component_utilization_mapping/view.blade.php | ankit.tiwari
+fund_flow-old                          | C:/xampp/htdocs/team47/resources/views/fund_flow-old/configuration_home.blade.php               | ankit.tiwari
+fund_flow-old                          | C:/xampp/htdocs/team47/resources/views/fund_flow-old/details.blade.php                          | ankit.tiwari
+fund_flow-old                          | C:/xampp/htdocs/team47/resources/views/fund_flow-old/distribution_form.blade.php                | ankit.tiwari
+fund_flow-old                          | C:/xampp/htdocs/team47/resources/views/fund_flow-old/distributiondetails.blade.php              | ankit.tiwari
+fund_flow-old                          | C:/xampp/htdocs/team47/resources/views/fund_flow-old/distributionlist.blade.php                 | ankit.tiwari
+fund_allocation                        | C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_allocation/form.blade.php             | ankit.tiwari
+fund_allocation                        | C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_allocation/index.blade.php            | ankit.tiwari
+fund_allocation                        | C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_allocation/view.blade.php             | ankit.tiwari
+fund_distribution                      | C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_distribution/form.blade.php           | ankit.tiwari
+fund_distribution                      | C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_distribution/index.blade.php          | ankit.tiwari
+fund_distribution                      | C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_distribution/show.blade.php           | ankit.tiwari
+fund_distribution                      | C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_distribution/view.blade.php           | ankit.tiwari
+fund_flow-old                          | C:/xampp/htdocs/team47/resources/views/fund_flow-old/index.blade.php                            | ankit.tiwari
+components                             | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation/components/filters.blade.php        | ankit.tiwari
+components                             | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation/components/form.blade.php           | ankit.tiwari
+components                             | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation/components/header.blade.php         | ankit.tiwari
+components                             | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation/components/table.blade.php          | ankit.tiwari
+allocation                             | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation/create.blade.php                    | ankit.tiwari
+css                                    | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation/css/allocation.css                  | ankit.tiwari
+allocation                             | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation/edit.blade.php                      | ankit.tiwari
+allocation                             | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation/index.blade.php                     | ankit.tiwari
+js                                     | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation/js/allocation.js                    | ankit.tiwari
+js                                     | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation/js/api.js                           | ankit.tiwari
+js                                     | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation/js/distribution.js                  | ankit.tiwari
+partials                               | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation/partials/allocation-row.blade.php   | ankit.tiwari
+allocation                             | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation/view.blade.php                      | ankit.tiwari
+fund_flow                              | C:/xampp/htdocs/team47/resources/views/fund_flow/allocation_form.blade.php                      | ankit.tiwari
+carry_forward                          | C:/xampp/htdocs/team47/resources/views/fund_flow/carry_forward/create.blade.php                 | ankit.tiwari
+carry_forward                          | C:/xampp/htdocs/team47/resources/views/fund_flow/carry_forward/index.blade.php                  | ankit.tiwari
+carry_forward                          | C:/xampp/htdocs/team47/resources/views/fund_flow/carry_forward/view.blade.php                   | ankit.tiwari
+component_utilization_mapping          | C:/xampp/htdocs/team47/resources/views/fund_flow/component_utilization_mapping/create.blade.php | ankit.tiwari
+component_utilization_mapping          | C:/xampp/htdocs/team47/resources/views/fund_flow/component_utilization_mapping/index.blade.php  | ankit.tiwari
+component_utilization_mapping          | C:/xampp/htdocs/team47/resources/views/fund_flow/component_utilization_mapping/view.blade.php   | ankit.tiwari
+fund_flow                              | C:/xampp/htdocs/team47/resources/views/fund_flow/configuration_home.blade.php                   | ankit.tiwari
+fund_flow                              | C:/xampp/htdocs/team47/resources/views/fund_flow/details.blade.php                              | ankit.tiwari
+fund_flow                              | C:/xampp/htdocs/team47/resources/views/fund_flow/distribution_form.blade.php                    | ankit.tiwari
+fund_flow                              | C:/xampp/htdocs/team47/resources/views/fund_flow/distributiondetails.blade.php                  | ankit.tiwari
+fund_flow                              | C:/xampp/htdocs/team47/resources/views/fund_flow/distributionlist.blade.php                     | ankit.tiwari
+fund_allocation                        | C:/xampp/htdocs/team47/resources/views/fund_flow/fund_allocation/form.blade.php                 | ankit.tiwari
+fund_allocation                        | C:/xampp/htdocs/team47/resources/views/fund_flow/fund_allocation/index.blade.php                | ankit.tiwari
+fund_allocation                        | C:/xampp/htdocs/team47/resources/views/fund_flow/fund_allocation/view.blade.php                 | ankit.tiwari
+fund_distribution                      | C:/xampp/htdocs/team47/resources/views/fund_flow/fund_distribution/form.blade.php               | ankit.tiwari
+fund_distribution                      | C:/xampp/htdocs/team47/resources/views/fund_flow/fund_distribution/index.blade.php              | ankit.tiwari
+fund_distribution                      | C:/xampp/htdocs/team47/resources/views/fund_flow/fund_distribution/show.blade.php               | ankit.tiwari
+fund_distribution                      | C:/xampp/htdocs/team47/resources/views/fund_flow/fund_distribution/view.blade.php               | ankit.tiwari
+fund_flow                              | C:/xampp/htdocs/team47/resources/views/fund_flow/index.blade.php                                | ankit.tiwari
+mis_report                             | C:/xampp/htdocs/team47/resources/views/mis_report/fund_distribution_report.blade.php            | ankit.tiwari
+mis_report                             | C:/xampp/htdocs/team47/resources/views/mis_report/workshop_report.blade.php                     | ankit.tiwari
+workshop                               | C:/xampp/htdocs/team47/resources/views/workshop/cardDetails.blade.php                           | ankit.tiwari
+workshop                               | C:/xampp/htdocs/team47/resources/views/workshop/card_detail_view.blade.php                      | ankit.tiwari
+workshop                               | C:/xampp/htdocs/team47/resources/views/workshop/dummy.blade.php                                 | ankit.tiwari
+workshop                               | C:/xampp/htdocs/team47/resources/views/workshop/form.blade.php                                  | ankit.tiwari
+workshop                               | C:/xampp/htdocs/team47/resources/views/workshop/index.blade.php                                 | ankit.tiwari
+workshop                               | C:/xampp/htdocs/team47/resources/views/workshop/show.blade.php                                  | ankit.tiwari
+workshop                               | C:/xampp/htdocs/team47/resources/views/workshop/styles.css                                      | ankit.tiwari
+workshop                               | C:/xampp/htdocs/team47/resources/views/workshop/view.blade.php                                  | ankit.tiwari
+api                                    | C:/xampp/htdocs/team47/routes/api/workshop_integeration.php                                     | ankit.tiwari
+web-old                                | C:/xampp/htdocs/team47/routes/web-old/admin_workshop.php                                        | ankit.tiwari
+web-old                                | C:/xampp/htdocs/team47/routes/web-old/component-utilization.php                                 | ankit.tiwari
+web-old                                | C:/xampp/htdocs/team47/routes/web-old/fund-flow.php                                             | ankit.tiwari
+web-old                                | C:/xampp/htdocs/team47/routes/web-old/fund_distribution.php                                     | ankit.tiwari
+web-old                                | C:/xampp/htdocs/team47/routes/web-old/workshop.php                                              | ankit.tiwari
+web                                    | C:/xampp/htdocs/team47/routes/web/admin_workshop.php                                            | ankit.tiwari
+web                                    | C:/xampp/htdocs/team47/routes/web/component-utilization.php                                     | ankit.tiwari
+web                                    | C:/xampp/htdocs/team47/routes/web/fund-flow.php                                                 | ankit.tiwari
+web                                    | C:/xampp/htdocs/team47/routes/web/fund_distribution.php                                         | ankit.tiwari
+web                                    | C:/xampp/htdocs/team47/routes/web/workshop.php                                                  | ankit.tiwari
+
+===============================================================================
+SECTION B — NEWLY DEVELOPED FILES IN SCOPE (created in the last 30 days), grouped by module, with comments
+===============================================================================
+Total: 125 files
+
+  Component Utilization Mapping (active module)
+  Current, active feature: model, request, controller, service and route mapping components to utilization records.
+C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping/ComponentUtilizationMapping.php | created 2026-07-27
+C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping/ComponentUtilizationMappingController.php | created 2026-07-27
+C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping/ComponentUtilizationMappingDetail.php | created 2026-07-27
+C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping/ComponentUtilizationMappingRequest.php | created 2026-07-27
+C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping/ComponentUtilizationMappingService.php | created 2026-07-29
+C:/xampp/htdocs/team47/routes/web/component-utilization.php | created 2026-07-27
+C:/xampp/htdocs/team47/resources/views/component-utilization-mapping/index.blade.php | created 2026-08-03
+
+  Fund Allocation (active module)
+  Current, active feature: allocate funds to a pool, with history tracking, list/store/delete actions and views.
+C:/xampp/htdocs/team47/app/Domain/FundAllocation/DeleteFundAllocationAction.php | created 2026-07-30
+C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocation.php | created 2026-07-30
+C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocationController.php | created 2026-07-30
+C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocationDTO.php | created 2026-07-29
+C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocationHistory.php | created 2026-07-30
+C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocationRequest.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation/FundAllocationService.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation/ListFundAllocationAction.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation/StoreFundAllocationAction.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow/fund_allocation/form.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow/fund_allocation/index.blade.php | created 2026-07-29
+C:/xampp/htdocs/team47/resources/views/fund_flow/fund_allocation/view.blade.php | created 2026-08-03
+
+  Fund Distribution (active module)
+  Current, active feature: distribute allocated funds; controller/service/request/actions plus a claim-pool resolver and views.
+C:/xampp/htdocs/team47/app/Domain/FundDistribution/FundDistributionController.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution/FundDistributionRequest.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution/FundDistributionService.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution/ListFundDistributionAction.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution/StoreFundDistributionAction.php | created 2026-07-29
+C:/xampp/htdocs/team47/app/Web/FundDistribution/ClaimPoolResolver.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow/fund_distribution/form.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow/fund_distribution/index.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow/fund_distribution/view.blade.php | created 2026-07-30
+
+  Fund Flow shared module (active)
+  Shared/parent Fund Flow area: carry-forward views, configuration home view, and language strings tying allocation+distribution together.
+C:/xampp/htdocs/team47/resources/views/fund_flow/carry_forward/index.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow/carry_forward/view.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow/configuration_home.blade.php | created 2026-07-29
+C:/xampp/htdocs/team47/resources/lang/en/fund_flow.php | created 2026-07-29
+C:/xampp/htdocs/team47/routes/web/fund-flow.php | created 2026-07-29
+
+  AI Cataloguing Claim (active module)
+  New claim type for AI-assisted cataloguing: create/list actions, import/export, DTO/resource/service/controller.
+C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/AICataloguingClaimController.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/AICataloguingClaimDTO.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/AICataloguingClaimListResource.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/AICataloguingClaimService.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/AICataloguingClaimTemplateExport.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/AICataloguingImport.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/CreateAICataloguingClaimAction.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/AICataloguingClaim/ListAICataloguingClaimAction.php | created 2026-08-03
+
+  Workshop (active module)
+  New "executed workshop" feature: request/service/controller plus list/show/card views.
+C:/xampp/htdocs/team47/app/Web/Workshop/UpdateExecutedWorkshopRequest.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Web/Workshop/WorkshopController.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Web/Workshop/WorkshopRequest.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Web/Workshop/WorkshopService.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/executed-workshops/index.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/workshop/card_detail_view.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/workshop/form.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/workshop/show.blade.php | created 2026-08-03
+
+  --- Backup / superseded copies (not active features -- manual safety copies made 2026-08-03, before a refactor) ---
+  These sit in *-old sibling folders/files and duplicate the modules above as they existed before the routes/views were reorganized. Listed because they fall within the requested areas and time window; not part of the live app.
+C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping-old/ComponentUtilizationMapping.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping-old/ComponentUtilizationMappingController.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping-old/ComponentUtilizationMappingDetail.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping-old/ComponentUtilizationMappingRequest.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/ComponentUtilizationMapping-old/ComponentUtilizationMappingService.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocation.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationComponentMapping.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationController.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationDTO.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationRequest.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationResource.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationService.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationService.php-old1 | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/FundAllocationService.php29 | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/ListFundAllocationAction.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundAllocation-old/StoreFundAllocationAction.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/DeleteFundDistributionAction.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/FundDistribution.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/FundDistributionController.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/FundDistributionDTO.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/FundDistributionRequest.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/FundDistributionResource.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/FundDistributionService.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/ListFundDistributionAction.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/ListFundDistributionTransactionsAction.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundDistribution-old/StoreFundDistributionAction.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilizationMapping.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilizationMappingDTO.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilizationMappingDetail.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilizationMappingRequest.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilizationMappingResource.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilizationMappingService.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ComponentUtilzationMappingController.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundFlow-old/FundFlowHelper.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundFlow-old/ListComponentUtilizationMappingAction.php | created 2026-08-03
+C:/xampp/htdocs/team47/app/Domain/FundFlow-old/StoreComponentUtilizationMappingAction.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/component-utilization-mapping-old/index.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/components/filters.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/components/form.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/components/header.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/components/table.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/create.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/css/allocation.css | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/edit.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/index.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/js/allocation.js | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/js/api.js | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/js/distribution.js | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/partials/allocation-row.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation/view.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/allocation_form.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/carry_forward/create.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/carry_forward/index.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/carry_forward/view.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/component_utilization_mapping/create.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/component_utilization_mapping/index.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/component_utilization_mapping/view.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/configuration_home.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/details.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/distribution_form.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/distributiondetails.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/distributionlist.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_allocation/form.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_allocation/index.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_allocation/view.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_distribution/form.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_distribution/index.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_distribution/show.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/fund_distribution/view.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/resources/views/fund_flow-old/index.blade.php | created 2026-08-03
+C:/xampp/htdocs/team47/routes/web-old/admin_workshop.php | created 2026-08-03
+C:/xampp/htdocs/team47/routes/web-old/component-utilization.php | created 2026-08-03
+C:/xampp/htdocs/team47/routes/web-old/fund-flow.php | created 2026-08-03
+C:/xampp/htdocs/team47/routes/web-old/fund_distribution.php | created 2026-08-03
+C:/xampp/htdocs/team47/routes/web-old/workshop.php | created 2026-08-03
+
+  --- Stray file (in-scope by name pattern) ---
+  A duplicate/backup fund-allocation action created during the same 2026-08-12 batch as other dated backups.
+C:/xampp/htdocs/team47/app/Domain/FundAllocation/StoreFundAllocationAction.php-04 | created 2026-08-12
+

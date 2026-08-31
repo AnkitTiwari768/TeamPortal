@@ -1,0 +1,330 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Api\V1\User;
+
+use App\Contracts\GrantType;
+
+use App\Core\CoreRepository;
+
+use App\Http\Api\V1\User\Contracts\UserRepositoryInterface;
+
+use App\Traits\DataTable;
+use Illuminate\Support\Facades\Hash;
+use DB;
+
+class UserRepository extends CoreRepository implements UserRepositoryInterface
+{
+    use DataTable;
+
+    protected $columns = [
+        1 => 'full_name',
+        2 => 'u.email',
+        3 => 'u.mobile',
+        5 => 'roles',
+        6 => 'u.status',
+    ];
+
+    public function getUsers()
+    {
+        $authId = AuthId();
+        // $highestLevel = getUserHighestCategoryLevel($authId);
+        [$limit, $order, $dir, $search, $page, $filters] = $this->getDataTableParams();
+
+        $query = DB::table('users as u')
+            //->join('addresses as a', 'u.address_id', '=', 'a.id')
+            //->join('countries as c', 'a.country_id', '=', 'c.id')
+            ->leftJoin('user_roles as ur', 'ur.user_id', '=', 'u.id')
+            ->leftJoin('roles as r', 'ur.role_id', '=', 'r.id')
+
+            //for not taking snp in list
+            // ->whereNotExists(function ($sub) {
+            //     $sub->select(DB::raw(1))
+            //         ->from('user_roles as ur2')
+            //         ->join('roles as r2', 'ur2.role_id', '=', 'r2.id')
+            //         ->whereColumn('ur2.user_id', 'u.id')
+            //         ->whereIn('r2.slug', ['snp', 'administrator']);
+            // })
+            ->select([
+                'u.id',
+                DB::raw('CONCAT_WS(" ", u.first_name, u.middle_name, u.last_name) as full_name'),
+                'u.email',
+                'u.mobile',
+                'u.username',
+                'u.status',
+                'r.name as roles'
+            ]);
+
+        // ->join('states AS s', 's.id', '=', 'a.state_id')
+
+
+
+        // Apply search filter
+        if (isset($search) && !empty($search) && $this->escape_special_characters($search)) {
+            $query->where(function ($query) use ($search) {
+                $query
+                    // Search in full name (concatenated)
+                    ->whereRaw('CONCAT_WS(" ", u.first_name, u.middle_name, u.last_name) LIKE ?', ["%{$search}%"])
+                    ->orWhere('u.first_name', 'LIKE', "%{$search}%")
+                    ->orWhere('u.middle_name', 'LIKE', "%{$search}%")
+                    ->orWhere('u.last_name', 'LIKE', "%{$search}%")
+                    ->orWhere('u.email', 'LIKE', "%{$search}%")
+                    ->orWhere('u.mobile', 'LIKE', "%{$search}%")
+                    ->orWhere('u.username', 'LIKE', "%{$search}%")
+                    ->orWhere('r.name', 'LIKE', "%{$search}%")
+                    // Search by status text
+                    ->orWhere(function ($query) use ($search) {
+                        $query->where('u.status', 1)
+                            ->where(DB::raw('"Active"'), 'LIKE', "%{$search}%");
+                    })
+                    ->orWhere(function ($query) use ($search) {
+                        $query->where('u.status', 0)
+                            ->where(DB::raw('"In-active"'), 'LIKE', "%{$search}%");
+                    });
+            });
+        }
+
+        if (isset($filters['state_id'])  && !empty($filters['state_id'])) {
+            $query->where('s.id', $filters['state_id']);
+        }
+
+        if (isset($filters['role_id']) && !empty($filters['role_id'])) {
+            $query->where('r.id', $filters['role_id']);
+        }
+
+        if (isset($filters['status']) && $filters['status'] === '0') {
+            $query->where('u.status', $filters['status']);
+        }
+        $query->where('u.is_msme', NULL);
+        $query->orderBy('u.id', 'desc');
+
+        if (! hasRole('administrator')) {
+            $query->where('u.created_by', authId());
+        }
+
+        // dd($query->toSql()); die;
+
+        if (isset($page) && !empty($page)) {
+            return $this->getDataTableResult(
+                UserResource::collection($query->paginate($limit))
+            );
+        }
+
+        return UserResource::collection($query->get());
+    }
+
+    public function save(UserDTO $userDTO, ?string $id = null): bool
+    {
+        dd($userDto->toArray());
+        return \DB::transaction(function () use ($userDTO, $id) {
+
+            $user = ($id) ? User::findOrFail($id) : new User();
+            $user->id = $userDTO->id;
+            $user->first_name = $userDTO->firstName;
+            $user->middle_name = $userDTO->middleName;
+            $user->last_name = $userDTO->lastName;
+            $user->username = $userDTO->email;
+            $user->email = $userDTO->email;
+            $user->mobile = $userDTO->mobile;
+            $user->department_id = $userDTO->departmentId;
+            $user->state_id = $userDTO->stateId;
+            $user->status = $userDTO->status;
+            $user->is_role_mapped = $userDTO->isRoleMapped;
+
+
+            if (! $id) {
+
+                $user->password = $userDTO->password;
+
+                //$user->password = Hash::make($userDTO->password);
+                $user->created_at = currentDateTime();
+                $user->created_by = AuthId();
+            } else {
+
+
+                $user->updated_at = currentDateTime();
+                $user->updated_by = AuthId();
+            }
+
+            $user->save();
+
+            if ($userDTO->isRoleMapped && $userDTO->userRoles) {
+
+                $updatedUserRoles = [];
+                $updatedUserRoles = [
+                    'user_id' => $userDTO->id,
+                    'role_id' => $userDTO->userRoles,
+                    'type' => GrantType::THROUGH_ROLE
+                ];
+
+                \DB::table('user_roles')
+                    ->where('user_id', $id)
+                    ->delete();
+
+                \DB::table('user_roles')
+                    ->insert($updatedUserRoles);
+
+                $rolePermissions = DB::table('role_permissions')
+                    ->select('permission_id')
+                    ->where('role_id', $userDTO->userRoles)
+                    ->get()
+                    ->toArray();
+
+                $userPermissions = DB::table('user_permissions')
+                    ->select('permission_id')
+                    ->where('user_id', $userDTO->id)
+                    ->get()
+                    ->toArray();
+
+                $rolePermissions = $rolePermissions ? array_column($rolePermissions, 'permission_id') : [];
+                $userPermissions = $userPermissions ? array_column($userPermissions, 'permission_id') : [];
+
+                $mergedUserPermissions = array_unique(array_merge($rolePermissions, $userPermissions));
+
+                $updatedUserPermissions = array_map(
+                    fn($permissionId) => ([
+                        'user_id' => $userDTO->id,
+                        'permission_id' => $permissionId,
+                        'type' =>  GrantType::THROUGH_ROLE
+                    ]),
+                    $mergedUserPermissions
+                );
+
+                \DB::table('user_permissions')
+                    ->where('user_id', $userDTO->id)
+                    //->where('type', GrantType::THROUGH_ROLE)
+                    ->delete();
+
+                \DB::table('user_permissions')
+                    ->insert($updatedUserPermissions);
+            }
+            if (! $id) {
+                //$templateData['name'] = $userDTO->firstName;
+                //$templateData['email'] = $userDTO->email;
+                //$templateData['password'] = $userDTO->password;
+                //dd($templateData);
+                // Mail::send('emails.user_creation_mail', $templateData, function($message) use ($userDTO,$templateData) {
+                //     $message->to($userDTO->email)
+                //         ->subject('Account Created Successfully')
+                //         ->from('no-reply@msme.gov.in', 'MSME');
+                // }); 
+            }
+
+            return true;
+        });
+    }
+
+    public function getVerificationDetails(string $key)
+    {
+        return \DB::table('verifications')
+            ->select('verified_at', 'is_verified')
+            ->where('verification_key', $key)
+            ->first();
+    }
+
+    public function getUser(string $id)
+    {
+        return  \DB::table('users AS u')
+            ->selectRaw('
+                u.id,
+                u.first_name,
+                u.middle_name,
+                u.last_name,
+                u.username,
+                u.email, 
+                u.mobile,
+                u.status,
+                u.department_id,
+                u.photo_file_upload_id,
+                u.profile_picture,
+                u.state_id,
+                d.name AS department_name,
+                s.name AS state_name,
+                (
+                    SELECT r.id
+                    FROM roles AS r
+                    INNER JOIN user_roles AS ur ON ur.role_id = r.id
+                    WHERE ur.user_id = u.id 
+                ) AS role_id
+            ')
+            ->leftJoin('departments AS d', 'd.id', '=', 'u.department_id')
+            ->leftJoin('states AS s', 's.id', '=', 'u.state_id')
+            ->where('u.id', $id)
+            ->first();
+        //var_export($query->toSql()); die;	
+
+    }
+
+    public function getSnpDetail($id)
+    {
+        $detail = DB::table('team_snp_scheme as snp')
+            ->join('users as u', 'u.id', '=', 'snp.user_id')
+            ->leftjoin('file_uploads as f1', 'f1.file_system_name', '=', 'snp.authorized_certificate_document')
+            ->leftjoin('file_uploads as f2', 'f2.file_system_name', '=', 'snp.cancelled_cheque_document')
+            ->leftjoin('file_uploads as f3', 'f3.file_system_name', '=', 'snp.commercial_model_document')
+            ->leftjoin('file_uploads as f4', 'f4.file_system_name', '=', 'snp.description_document')
+            ->select('snp.*', 'u.email', 'u.alternate_email', 'u.mobile', 'u.alternate_mobile', 'f1.file_path as authorizedcertificate', 'f2.file_path as cancelled_cheque', 'f3.file_path as commercial_model_path', 'f4.file_path as description')
+            ->where('snp.user_id', $id)
+            ->first();
+
+        // Step 2: Decode JSON values
+        $domainIds = json_decode($detail->domain ?? '[]', true);
+        $subdomainIds = json_decode($detail->sub_domain ?? '[]', true);
+        $transactionTypeIds = json_decode($detail->transaction_type ?? '[]', true);
+        $statesIds = json_decode($detail->state_id ?? '[]', true);
+
+        // Step 3: Fetch json in comma seperated value
+        $domain = DB::table('attribute_values as av')
+            ->whereIn('av.id', $domainIds)
+            ->pluck('av.attribute_value')
+            ->implode(', ');
+        $subDomains = DB::table('sub_domains as sd')
+            ->whereIn('sd.id', $subdomainIds)
+            ->pluck('sd.name')
+            ->implode(', ');
+        $transactionTypes = DB::table('attribute_values as av')
+            ->whereIn('av.id', $transactionTypeIds)
+            ->pluck('av.attribute_value')
+            ->implode(', ');
+        $states = DB::table('states as s')
+            ->whereIn('s.id', $statesIds)
+            ->pluck('s.name')
+            ->implode(', ');
+
+        $detail->domains = $domain ?? [];
+        $detail->subdomains = $subDomains ?? [];
+        $detail->transactionTypes = $transactionTypes ?? [];
+        $detail->state = $states ?? [];
+        return $detail;
+    }
+
+    public function getBnpDetail($id)
+    {
+        $detail = DB::table('team_bnp_scheme as bnp')
+            ->join('users as u', 'u.id', '=', 'bnp.user_id')
+
+            ->select('bnp.*', 'u.email', 'u.mobile')
+            ->where('bnp.user_id', $id)
+            ->first();
+        return $detail;
+    }
+
+    public function getUserRoles(string $userId)
+    {
+        return \DB::table('user_roles AS ur')
+            ->select('r.id', 'r.name')
+            ->join('roles AS r', 'r.id', '=', 'ur.role_id')
+            ->where('ur.user_id', $userId)
+            ->get()
+            ->toArray();
+    }
+
+
+    public function getUserById(string $id)
+    {
+        return User::select('email', 'mobile')
+            ->where('id', $id)
+            ->first();
+    }
+}

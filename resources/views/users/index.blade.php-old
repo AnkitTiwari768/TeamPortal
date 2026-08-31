@@ -1,0 +1,168 @@
+@extends('components.admin.content-layout')
+
+@section('action-header')
+
+	@php 
+				$addUserUrl = url('users/create');
+
+	@endphp
+
+	@if (acl(config('permissions.user-create')))
+		<div class="btn-group drop-btn">
+				<button 
+					type="button" 
+					class="btn btn-danger" 
+					autocomplete="off"
+				  onclick="window.location = '{{$addUserUrl}}'"> 
+				  	<img src="{{asset('assets/ffo-admin/img/add.svg')}}" /> 
+				  	{{ __('message.add_user') }}
+				</button> 
+		</div> 
+	@endif
+
+@endsection
+
+@section('card-content')
+
+<div class="card-body">   
+			<form id="search_form" autocomplete="off">
+			    <div class="filter-bar d-flex px-3 py-2 gap-3 align-items-center">
+					
+					<div class="select-box">
+						<label>{{ __('message.role_module') }}</label>
+						{{ Form::select('role_id', dynamic_common_list($details?->role_list), '', ['class' => 'form-select filter_btn', 'id' => 'role_id']) }}       
+					</div>
+			  
+					<div class="select-box">
+						<label>{{ __('message.status') }}</label>
+						{{ Form::select('status', array(""=>__('message.select'))+status_list(), $row['status'] ?? null, ['class' => 'form-select filter_btn', 'id' => 'status']) }}    
+					</div> 
+					
+				   <a href="javascript:void(0)" class="clear-action" id="reset_btn" style="display: none;"> <img src="{{ asset('assets/ffo-admin/img/close-blue.svg') }}">Clear all</a>
+			  </div>
+			</form> 
+	</div> 
+		<div class="card-body">
+			<div class="table-responsive">
+				<table class="table table-bordered table-striped" id="dataTable" width="100%" cellspacing="0">
+					<thead>
+						<tr>
+							<th>{{ __('message.sn') }}</th>
+							<th>{{ __('message.full_name') }}</th>
+							<!-- <th>{{ __('message.username') }}</th> -->
+							<th>{{ __('message.email') }}</th>
+							<th>{{ __('message.mobile') }}</th>
+							<th>{{ __('message.role_name') }}</th>
+							<th>{{ __('message.status') }}</th>
+							@if (acl(config('permissions.user-update')) || acl(config('permissions.user-view')) || acl(config('permissions.permission-button-view')))
+								<th class="actions">{{ __('message.action') }}</th>
+							@endif
+						</tr>
+					</thead>
+				</table>
+			</div>
+		</div> 
+
+@section('js');
+<script>
+$(document).ready(function() {
+  dataTableInit({
+    id: "#dataTable",
+	showExcelExport: true,
+    order: {
+      column: 1,
+      direction: "desc"
+    },
+    url: "{{ url('users/datalist') }}",
+    columns: [
+      {
+        "orderable": false,
+        "render": function(data, type, full, meta) {
+          return serialNumber("#dataTable", meta.row);
+        }
+      },
+      {
+        "orderable": true,
+        "render": function(data, type, row) {
+            return row.full_name;
+        }
+      },
+	//   {
+    //     "orderable": true,
+    //     "render": function(data, type, row) {
+    //         return row.username;
+    //     }
+    //   },
+	  {
+        "orderable": true,
+        "render": function(data, type, row) {
+            return row.email;
+        }
+      },
+	  {
+        "orderable": true,
+        "render": function(data, type, row) {
+            return row.mobile;
+        }
+      },
+	  {
+        "orderable": true,
+        "render": function(data, type, row) {
+            return row.roles;
+        }
+      },
+	  
+	  /* {
+        "orderable": false,
+        "render": function(data, type, row) {
+			var roles = JSON.parse(row.roles);
+			    var badge='';
+				badge+='<span class="badge bg-primary">';
+				badge+= roles ? roles.join(' / ') : null;
+				badge+='</span>';
+				return badge;
+        }
+      }, */
+      {
+        "orderable": true,
+        "render": function(data, type, row) {
+            return createActivationLabel(row.status);
+        }
+      },
+	  @if (acl(config('permissions.user-update')) || acl(config('permissions.user-view')) || acl(config('permissions.permission-button-view')))
+			{ 
+			"orderable": false,
+			"render": function (data, type, row) {
+			  var pedit='';
+			  @if (acl(config('permissions.user-update'))) 
+				pedit=buttonEdit("{{ url('users') }}", row.id); 
+			  @endif
+			  
+			  var pview='';
+			  @if (acl(config('permissions.user-view'))) 
+				pview= buttonView("{{ url('users') }}", row.id); 
+			  @endif
+			
+			var ppermission='';
+			 @if (acl(config('permissions.permission-button-view'))) 
+				var ppermission= buttonUserPermission("{{ url('user-permissions') }}", row.id); 
+		    @endif
+
+							
+			  
+			 var actions=createActionButtons([pedit,pview,ppermission]);
+			
+			  return actions;
+			}
+      	}
+      @endif
+	  
+    ],
+	filters: ["country_id","state_id","district_id","category_id","role_id","status"] 
+  });
+ 
+});
+</script>
+@endsection
+@endsection
+

@@ -1,0 +1,59 @@
+<?php declare(strict_types=1);
+
+namespace App\Http\Api\V1\ModulePermissionTree;
+
+use DB;
+use App\Core\CoreRepository as Repository;
+
+class ModulePermissionTreeRepository extends Repository
+{
+    public function getModulesByParentId(string | null $parentId): array 
+    {
+        return DB::table('modules')
+            ->select('id', 'name')
+            ->where('parent_id', $parentId)
+			->where('status', config('constant.ACTIVE'))
+            ->get()
+            ->toArray();
+    }
+
+    public function getPermissionsByModuleId(string $roleId, string $moduleId): array
+    {
+        return DB::table('permissions AS p')
+            ->select('p.id', 'p.name')
+            ->join('permission_role_mapping AS prm', 'p.id', '=', 'prm.permission_id')
+            ->where('p.status', (int) config('constant.ACTIVE'))
+            ->where('p.module_id', $moduleId)
+            ->where('prm.role_id', $roleId)
+            ->get()
+            ->toArray();
+    }
+
+    /**
+     * Available permissions to offer as checkboxes on the User Permission screen for the
+     * given module: the permission pool granted to the user's role(s) via `role_permissions`
+     * (the real role->permission table -- see RoleService::getAssignedPermissions()), not the
+     * stale/disconnected `permission_role_mapping` table. Which of these are already checked
+     * for the user is decided separately by UserPermissionRepository::getPermissionsByUserId()
+     * from `user_permissions`.
+     */
+    public function getPermissionsByUserId(string $userId, ?string $moduleId = null) : array
+    {
+        return DB::table('permissions AS p')
+            ->select('p.id', 'p.name')
+            ->join('role_permissions AS rp', 'rp.permission_id', '=', 'p.id')
+            ->where('p.status', (int) config('constant.ACTIVE'))
+            ->where('p.module_id', $moduleId)
+            ->whereIn('rp.role_id', function ($query) use ($userId) {
+                $query->select('role_id')
+                    ->from('user_roles')
+                    ->where('user_id', $userId);
+            })
+            ->groupBy('p.id', 'p.name')
+            ->orderBy('p.name')
+            ->get()
+            ->toArray();
+    }
+
+    
+}

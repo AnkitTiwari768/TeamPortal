@@ -1,0 +1,12 @@
+{
+    "i18n-ally.localesPaths": [
+        "resources/lang",
+        "resources/views/language",
+        "assets/js/highchart/code/i18n",
+        "assets/js/highchart/examples/i18n",
+        "assets/js/highchart/code/es5/i18n",
+        "assets/js/highchart/code/esm/i18n",
+        "assets/js/highchart/code/es-modules/masters/i18n",
+        "assets/js/highchart/code/es5/es-modules/masters/i18n"
+    ]
+}

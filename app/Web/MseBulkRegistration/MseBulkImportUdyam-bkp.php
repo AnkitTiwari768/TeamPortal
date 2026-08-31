@@ -1,0 +1,474 @@
+<?php
+
+namespace App\Web\MseBulkRegistration;
+
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Http;
+use DateTime;
+use App\Contracts\GrantType;
+use Maatwebsite\Excel\Concerns\{
+    ToCollection,
+    WithHeadingRow,
+    WithValidation,
+    SkipsEmptyRows,
+    SkipsOnFailure
+};
+use Maatwebsite\Excel\Validators\Failure;
+use Maatwebsite\Excel\Concerns\SkipsFailures;
+
+class MseBulkImportUdyam implements
+    ToCollection,
+    WithHeadingRow,
+    WithValidation,
+    SkipsEmptyRows,
+    SkipsOnFailure
+{
+    use SkipsFailures;
+
+    private array $mobiles = [];
+    private array $udyams  = [];
+
+   
+    public function collection(Collection $rows)
+    {
+        DB::transaction(function () use ($rows) {
+
+            foreach ($rows as $payload) {
+
+                /* 🔐 HARD GUARD — MOST IMPORTANT FIX */
+                if (
+                    empty($payload) ||
+                    !$payload->has('mobile') ||
+                    !$payload->has('udyam_no') ||
+                    empty($payload->get('mobile')) ||
+                    empty($payload->get('udyam_no'))
+                ){
+                    continue;
+                }
+
+                $mobile   = (string) $payload->get('mobile');
+                $udyam_no  = $payload->get('udyam_no');
+				
+				  /* Extra Safety Skip (structure same, only continue added) */
+                if (
+                    DB::table('users')->where('mobile', $mobile)->exists() ||
+                    DB::table('team_msme_schemes')->where('udyam_no', $udyam_no)->exists()
+                ) {
+                    continue;
+                }
+				if (!config('settings.udyam_api_by_pass')) {
+					$udetails=$this->getUdyamDetails($udyam_no, $mobile);
+				}else{
+					$udetails='<UdyamDetail>
+					<BasicDetail>
+					<UdyamNo>UDYAM-HR-01-0008623</UdyamNo>
+					<EnterpriseName>M/S AGN ENTERPRISES</EnterpriseName>
+					<EntrepreneurName>M/S AGN ENTERPRISES</EntrepreneurName>
+					<OrganisationType>Partnership</OrganisationType>
+					<EmailId>agnenterprises4@gmail.com</EmailId>
+					<SocialCategory>OBC</SocialCategory>
+					<Gender>Male</Gender>
+					<PH>No</PH>
+					<CommunicationAddress>FIRST FLOOR, 2556/2, AMBALA, FIRST FLOOR, AMBALA, AMBALA</CommunicationAddress>
+					<LG_ST_Code>6</LG_ST_Code>
+					<State>HARYANA</State>
+					<LG_DT_Code>58</LG_DT_Code>
+					<District>AMBALA</District>
+					<PINCode>133001</PINCode>
+					<IncorporationDate>21/08/2021</IncorporationDate>
+					<MajorActivity>Manufacturing</MajorActivity>
+					<EnterpriseType>Micro</EnterpriseType>
+					<EnterpriseDetail>
+					<EType CL_Year="2025-26" CL_Date="01/04/2025" EnterpriseType="A" EnterpriseTypee="Micro"/>
+					<EType CL_Year="2024-25" CL_Date="19/09/2024" EnterpriseType="A" EnterpriseTypee="Micro"/>
+					<EType CL_Year="2023-24" CL_Date="18/09/2024" EnterpriseType="A" EnterpriseTypee="Micro"/>
+					<EType CL_Year="2022-23" CL_Date="26/06/2022" EnterpriseType="A" EnterpriseTypee="Micro"/>
+					<EType CL_Year="2021-22" CL_Date="22/10/2021" EnterpriseType="A" EnterpriseTypee="Micro"/>
+					</EnterpriseDetail>
+					<TotalEmp>4</TotalEmp>
+					<AppliedDate>22/10/2021</AppliedDate>
+					</BasicDetail>
+					<ActivityDetail>
+					<Activities>
+					<Two_DigitActivity>26 - Manufacture of computer, electronic and optical products</Two_DigitActivity>
+					<Four_DigitActivity>2670 - Manufacture of optical instruments and equipment</Four_DigitActivity>
+					<Five_DigitActivity>26700 - Manufacture of optical instruments and equipment</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>25 - Manufacture of fabricated metal products, except machinery and equipment</Two_DigitActivity>
+					<Four_DigitActivity>2593 - Manufacture of cutlery, hand tools and general hardware</Four_DigitActivity>
+					<Five_DigitActivity>25932 - Manufacture of hand tools (non-power-driven) for agricultural/horticulture/forestry</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>22 - Manufacture of rubber and plastics products</Two_DigitActivity>
+					<Four_DigitActivity>2220 - Manufacture of plastics products</Four_DigitActivity>
+					<Five_DigitActivity>22209 - Manufacture of other plastics products n.e.c</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>23 - Manufacture of other non-metallic mineral products</Two_DigitActivity>
+					<Four_DigitActivity>2310 - Manufacture of glass and glass products</Four_DigitActivity>
+					<Five_DigitActivity>23104 - Manufacture of laboratory or pharmaceutical glassware</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>27 - Manufacture of electrical equipment</Two_DigitActivity>
+					<Four_DigitActivity>2720 - Manufacture of batteries and accumulators</Four_DigitActivity>
+					<Five_DigitActivity>27201 - Manufacture of primary cells and primary batteries nd rechargable batteries, cells containing manganese oxide, mercuric oxide silver oxide or other material</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>27 - Manufacture of electrical equipment</Two_DigitActivity>
+					<Four_DigitActivity>2790 - Manufacture of other electrical equipment</Four_DigitActivity>
+					<Five_DigitActivity>27900 - Manufacture of other electrical equipment</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>28 - Manufacture of machinery and equipment n.e.c.</Two_DigitActivity>
+					<Four_DigitActivity>2815 - Manufacture of ovens, furnaces and furnace burners</Four_DigitActivity>
+					<Five_DigitActivity>28150 - Manufacture of ovens, furnaces and furnace burners</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>31 - Manufacture of furniture</Two_DigitActivity>
+					<Four_DigitActivity>3100 - Manufacture of furniture</Four_DigitActivity>
+					<Five_DigitActivity>31009 - Manufacture of other furniture n.e.c.</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>32 - Other manufacturing</Two_DigitActivity>
+					<Four_DigitActivity>3250 - Manufacture of medical and dental instruments and supplies</Four_DigitActivity>
+					<Five_DigitActivity>32502 - Manufacture of laboratory apparatus (laboratory ultrasonic cleaning machinery, laboratory sterilizers, laboratory type distilling apparatus, laboratory centrifuges etc.)</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>32 - Other manufacturing</Two_DigitActivity>
+					<Four_DigitActivity>3250 - Manufacture of medical and dental instruments and supplies</Four_DigitActivity>
+					<Five_DigitActivity>32505 - Manufacture of measuring instruments suc as thermometers etc.</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>32 - Other manufacturing</Two_DigitActivity>
+					<Four_DigitActivity>3250 - Manufacture of medical and dental instruments and supplies</Four_DigitActivity>
+					<Five_DigitActivity>32509 - Manufacture of other medical and dental instruments n.e.c.</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>32 - Other manufacturing</Two_DigitActivity>
+					<Four_DigitActivity>3290 - Other manufacturing n.e.c.</Four_DigitActivity>
+					<Five_DigitActivity>32909 - Manufacture of other articles n.e.c.</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>85 - Education</Two_DigitActivity>
+					<Four_DigitActivity>8510 - Primary education</Four_DigitActivity>
+					<Five_DigitActivity>85109 - Other primary education activities n.e.c.</Five_DigitActivity>
+					<Activity>Services</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>85 - Education</Two_DigitActivity>
+					<Four_DigitActivity>8521 - General secondary education</Four_DigitActivity>
+					<Five_DigitActivity>85211 - General school education in the first stage of the secondary level (up to X th standard) without any special subject pre-requisite</Five_DigitActivity>
+					<Activity>Services</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>85 - Education</Two_DigitActivity>
+					<Four_DigitActivity>8521 - General secondary education</Four_DigitActivity>
+					<Five_DigitActivity>85212 - General school education in the second stage of the secondary level (Senior/ Higher secondary) giving, in principle, access to higher education</Five_DigitActivity>
+					<Activity>Services</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>85 - Education</Two_DigitActivity>
+					<Four_DigitActivity>8522 - Technical and vocational secondary education</Four_DigitActivity>
+					<Five_DigitActivity>85222 - Technical and vocational education for handicapped students below the level of higher education</Five_DigitActivity>
+					<Activity>Services</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>85 - Education</Two_DigitActivity>
+					<Four_DigitActivity>8530 - Higher education</Four_DigitActivity>
+					<Five_DigitActivity>85301 - Higher education in science, commerce, humanity and fine arts leading to a university degree or equivalent</Five_DigitActivity>
+					<Activity>Services</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>85 - Education</Two_DigitActivity>
+					<Four_DigitActivity>8542 - Cultural education</Four_DigitActivity>
+					<Five_DigitActivity>85420 - Cultural education</Five_DigitActivity>
+					<Activity>Services</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>85 - Education</Two_DigitActivity>
+					<Four_DigitActivity>8549 - Other education n.e.c.</Four_DigitActivity>
+					<Five_DigitActivity>85499 - Other educational services n.e.c.</Five_DigitActivity>
+					<Activity>Services</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>85 - Education</Two_DigitActivity>
+					<Four_DigitActivity>8550 - Educational support services</Four_DigitActivity>
+					<Five_DigitActivity>85500 - Educational support services</Five_DigitActivity>
+					<Activity>Services</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>26 - Manufacture of computer, electronic and optical products</Two_DigitActivity>
+					<Four_DigitActivity>2651 - Manufacture of measuring, testing, navigating and control equipment</Four_DigitActivity>
+					<Five_DigitActivity>26516 - Manufacture of laboratory analytical instruments and miscellaneous laboratory apparatus for measuring and testing such as scales, balances, incubators etc.</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					<Activities>
+					<Two_DigitActivity>28 - Manufacture of machinery and equipment n.e.c.</Two_DigitActivity>
+					<Four_DigitActivity>2829 - Manufacture of other special-purpose machinery</Four_DigitActivity>
+					<Five_DigitActivity>28292 - Manufacture of machinery for working soft rubber or plastics or for the manufacture of products of these materials</Five_DigitActivity>
+					<Activity>Manufacturing</Activity>
+					</Activities>
+					</ActivityDetail>
+					</UdyamDetail>';
+					$xml = simplexml_load_string($udetails);
+					$udetails = json_decode(json_encode($xml), true);
+					$udetails = json_decode(json_encode($xml), true);
+				
+				}
+				
+				
+				if (!empty($udetails['BasicDetail']['Error'])) {
+                    throw new \Exception('Udyam api is not working.Please try after some times');
+                }
+				/* else{
+
+					$majorActivity  = strtolower(trim($udetails['BasicDetail']['MajorActivity'] ?? ''));
+					$enterpriseType = strtolower(trim($udetails['BasicDetail']['EnterpriseType'] ?? ''));
+
+					if ($majorActivity === 'trading') {
+						throw new \Exception(
+							'Registration on the TEAMS Portal is currently restricted for MSMEs engaged in Trading activities.'
+						);
+					}
+
+					if ($enterpriseType === 'medium') {
+						throw new \Exception(
+							'Medium-scale MSMEs are not eligible for registration on the TEAMS Portal.'
+						);
+					}
+				} */
+
+                $uuid   = uuid();
+                $userId = uuid();
+
+                $incDate = DateTime::createFromFormat('d/m/Y',$udetails['BasicDetail']['IncorporationDate']);
+
+                /* ---------- MSME DATA ---------- */
+                $msmeData = [
+                    'id'              => $uuid,
+                    'user_id'         => $userId,
+                    'team_id'         => 'TEAM' . rand(10000, 99999),
+                    'udyam_no'        => $udetails['BasicDetail']['UdyamNo'],
+                    'mobile'          => $mobile,
+                    'email'           => $udetails['BasicDetail']['EmailId'],
+                    'enterprise_name' => $udetails['BasicDetail']['EnterpriseName'],
+                    'entrepreneur_name' => $udetails['BasicDetail']['EntrepreneurName'],
+                    'organisation_type' => $udetails['BasicDetail']['OrganisationType'],
+                    'address'         => $udetails['BasicDetail']['CommunicationAddress'],
+                    'pincode'         => $udetails['BasicDetail']['PINCode'],
+                    'ph'              => $udetails['BasicDetail']['PH'],
+                    'major_activity'  => $udetails['BasicDetail']['MajorActivity'],
+                    'msme_classification' => $udetails['BasicDetail']['EnterpriseType'],
+                    'gender'          => $udetails['BasicDetail']['Gender'],
+                    'social_category' => $udetails['BasicDetail']['SocialCategory'],
+                    'incorporation_date' => $incDate?->format('Y-m-d'),
+                    'total_emp'       => $udetails['BasicDetail']['TotalEmp'],
+                    'state_id'        => $this->getStateId('states', $udetails['BasicDetail']['LG_ST_Code']),
+                    'district_id'     => $this->getStateId('locations', $udetails['BasicDetail']['LG_DT_Code']),
+                    'enterprise_details' => json_encode($udetails['BasicDetail']['EnterpriseDetail']),
+                    'activity_details'   => json_encode($udetails['ActivityDetail']),
+                    'gstin_no'        => $payload->get('gstin_no')??null,
+                    'pan_no'          => $payload->get('pan_no'),
+                    'turnover'        => $payload->get('turnover'),
+                   'current_state_business_id' => $this->getCurrentBuisinessTypes('attribute_values',slugify($payload->get('current_state_business_id'))),
+					//'current_state_business_id' => '36c32a31-5339-11f0-81dc-00155d022d06',
+					'ondc_transaction_type_id' => $this->getTransactionTypes('attribute_values',slugify($payload->get('ondc_transaction_type_id'))),
+					//'ondc_transaction_type_id' => '9e7e1e8b-5578-11f0-81dc-00155d022d06',
+					'product_category_id' => $this->getSubdomainTypes('sub_domains',slugify($payload->get('product_category_id'))),
+					//'product_category_id' => json_encode(['0491ca86-5d83-11f0-81dc-00155d022d06','666116f4-5d83-11f0-81dc-00155d022d06','9f4d1d16-f82e-4699-bdb6-c48136c6e360']),
+                    'select_snp'      => hasRole('snp') ? 1 : 0,
+                    'attending_ondc_awareness_workshop' =>strtolower($payload->get('attending_ondc_awareness_workshop')) === 'yes' ? 1 : 0,
+                    'status'          => 1,
+                    'created_at'      => currentDateTime(),
+                    'updated_at'      => currentDateTime(),
+                    'created_by'      => AuthId(),
+                ];
+
+                DB::table('team_msme_schemes')->insert($msmeData);
+
+                /* ---------- USER ---------- */
+                DB::table('users')->insert([
+                    'id'        => $userId,
+                    'username'  => $udetails['BasicDetail']['EmailId'],
+					'first_name' => $udetails['BasicDetail']['EnterpriseName'],
+                    'mobile'    => $mobile,
+                    'email'     => $udetails['BasicDetail']['EmailId'],
+                    'status'    => 1,
+                    'is_msme'   => 1,
+                    'created_at' => currentDateTime()
+                ]);
+
+                $roleId = DB::table('roles')->where('slug', 'msme')->value('id');
+                DB::table('user_roles')->insert([
+                    'user_id' => $userId,
+                    'role_id' => $roleId,
+                    'type'    => GrantType::THROUGH_ROLE
+                ]);
+
+                if (hasRole('snp')) {
+                    DB::table('team_snpmsme_mapping')->insert([
+                        'id'        => uuid(),
+                        'snp_id'    => $this->getSnpId(AuthId()),
+                        'msme_id'   => $uuid,
+                        'created_at' => currentDateTime()
+                    ]);
+                }
+            }
+        });
+    }
+
+    /* ---------------------------------------------------------
+     | VALIDATION RULES
+     |----------------------------------------------------------*/
+    public function rules(): array
+    {
+        return [
+            '*.mobile' => [
+                'nullable',
+                'digits:10',
+                function ($attr, $value, $fail) {
+                    if (!$value) return;
+
+                    if (DB::table('users')->where('mobile', $value)->exists()) {
+                        $fail('This mobile already exists.');
+                    }
+
+                    if (in_array($value, $this->mobiles)) {
+                        $fail("Duplicate mobile in Excel: $value");
+                    }
+
+                    $this->mobiles[] = $value;
+                }
+            ],
+
+            '*.udyam_no' => [
+                'nullable',
+                function ($attr, $value, $fail) {
+                    if (!$value) return;
+
+                    if (DB::table('team_msme_schemes')->where('udyam_no', $value)->exists()) {
+                        $fail('This Udyam number already exists.');
+                    }
+
+                    if (in_array($value, $this->udyams)) {
+                        $fail("Duplicate Udyam no in Excel: $value");
+                    }
+
+                    $this->udyams[] = $value;
+                }
+            ],
+        ];
+    }
+
+
+    public function customValidationMessages()
+    {
+        return [
+            '*.mobile.digits' => 'Mobile must be 10 digits.',
+        ];
+    }
+
+    /* ---------------------------------------------------------
+     | PREPARE FOR VALIDATION (BLANK ROW FIX)
+     |----------------------------------------------------------*/
+    public function prepareForValidation($row, $index)
+    {
+        $row = array_map(fn ($v) => is_string($v) ? trim($v) : $v, $row);
+
+        if (
+            empty($row['mobile'] ?? null) &&
+            empty($row['udyam_no'] ?? null)
+        ) {
+            return [];
+        }
+
+        return $row;
+    }
+	 public function onFailure(Failure ...$failures)
+    {
+        // Do nothing
+        // Failed rows automatically skipped
+    }
+
+    /* ---------------------------------------------------------
+     | FAILURE HANDLER
+     |----------------------------------------------------------*/
+    // public function onFailure(Failure ...$failures)
+	// {
+	// 	$messages = [];
+
+	// 	foreach ($failures as $failure) {
+	// 		foreach ($failure->errors() as $error) {
+	// 			$messages[] = $failure->attribute() . ': ' . $error;
+	// 		}
+	// 	}
+
+	// 	throw new \Exception(implode('<br>', $messages));
+	// }
+
+
+	public function getCurrentBuisinessTypes($table,$state_code){
+		// /dd($table,$state_code);
+		return DB::table($table)->where('code',$state_code)->first()->id;
+	}
+	
+	public function getTransactionTypes($table,$code){
+		return DB::table($table)->where('code',$code)->first()->id;
+	}
+	
+	
+	
+	public function getSubdomainTypes($table,$code){
+		$sub = explode(",", $code);
+		$ids = DB::table($table)->whereIn('code', $sub)->pluck('id'); 
+
+		return json_encode($ids);
+	}
+	
+	
+	public function getSnpId($authId){
+		return DB::table('team_snp_scheme')->where('user_id', $authId)->value('id');
+	}
+	
+	
+	public function getMsmeId($mobile){
+		return DB::table('team_msme_schemes')->where('mobile', $mobile)->value('id');	
+	}
+
+
+    public function getStateId($table,$state_code){
+		return DB::table($table)->where('code',$state_code)->first()->id;
+	}
+	
+	
+	 public function getUdyamDetails($udyam_no, $mobile)
+    {
+        //$response = Http::timeout(60)->retry(3, 100)->get("https://udyogaadhaar.gov.in/sv/Udyam_NsicB2BService.svc/GetUdyam/$udyam_no,$mobile,b2bmrt-VGVzdEBoeXc2MA==");
+		
+		$udyam_token=config('constant.UDYAM_TOKEN');		
+		$response = Http::get("https://udyogaadhaar.gov.in/sv/Udyam_NsicB2BService.svc/GetUdyam/$udyam_no,$mobile,$udyam_token");
+
+        if ($response->successful()) {
+            $xml = simplexml_load_string($response->body());
+            return json_decode(json_encode($xml), true);
+        }
+
+        return ['error' => true];
+    }
+
+
+}

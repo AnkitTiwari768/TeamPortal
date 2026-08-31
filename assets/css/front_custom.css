@@ -1,0 +1,397 @@
+.toast-success{background-color:#51A351}
+.toast-error{background-color:#BD362F}
+b, strong {
+    font-weight: 500;
+}
+.form-group label.required:after {
+    content: '*';
+    color: red;
+}
+.password-container {
+      position: relative;
+    }
+
+    .toggle-password {
+     /*position: absolute;
+      right: 10px;
+      top: 50%;
+      transform: translateY(-50%);*/
+      cursor: pointer;
+    }
+/*login css start*/
+	.form-signin {
+	  width: 100%;
+	  max-width: 712px;
+	  padding: 15px;
+	  margin: auto;
+	}
+	
+/*login css end*/
+.search-button {
+    margin-top: 2.5rem!important;
+}
+
+.top_header {
+    padding: 2.0rem!important;
+}
+.top_header_bg {
+    background-color: #F6F7FF!important;
+}
+table.dataTable thead tr {
+    background: linear-gradient(45deg, #106045, #23926c);
+}
+table.dataTable tr th {
+    color: #fff;
+	font-size: 14px;
+}
+
+#wrapper {
+    display: flex;
+}
+#wrapper #content-wrapper {
+    background-color: #ffffff;
+    width: 100%;
+}
+.flex-column {
+    flex-direction: column!important;
+}
+.d-flex {
+    display: flex!important;
+}
+
+#wrapper #content-wrapper {
+    background-color: #ffffff;
+    width: 100%;
+    overflow-x: hidden;
+}
+#wrapper #content-wrapper #content {
+    flex: 1 0 auto;
+}
+
+
+/*.progresses{
+        display: flex;
+        align-items: center;
+    }
+   .line{
+        width: 60%;
+        height: 6px;
+        background: #63d19e; 
+   }    
+   .steps{
+    display: flex;
+    background-color: #63d19e;
+    color: #fff;
+    font-size: 14px;
+    width: 40px;
+    height: 40px;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+   }*/
+   
+.link_active {
+  color: #555 !important
+}
+
+.linking-step {
+  padding: 0;
+  margin: 0;
+  width: auto;
+  float: left;
+}
+
+.linking-step>li {
+  display: inline-block;
+  list-style: none;
+}
+
+.linking-step>li>a {
+  font-size: 1em;
+  padding: 5px 261px;
+  display: inline-block;
+}
+
+.linking-step>li>a:hover {
+  text-decoration: none;
+  background: #0072bc;
+  color: #fff !important;
+}
+
+.linking-step>li>a.active {
+  background: #0072bc;
+  color: #fff !important;
+  font-weight: bold;
+}
+
+
+
+/* login form page  */
+
+    .login-form-page .left-img{
+        background: url(../img/form-background.png) no-repeat;
+        background-size: cover;
+        background-repeat: no-repeat;
+        min-height: 100vh;
+        width: 100%;
+    }
+    .login-right-wrapper{
+        width: 100%;
+        height: 100%;
+        position: relative;
+        padding: 0px 112px;
+        background: url(../img/login-bg.png) no-repeat;
+        background-size: cover;
+    }
+    .login-right-wrapper .login-card{
+        width: 100%;
+        top: 10px;
+        background: transparent;
+        border: 0;
+    }
+    .login-right-wrapper .login-card .card-header{
+        background: transparent;
+        border: 0;
+        padding-bottom: 0!important;
+    }
+    .login-right-wrapper .login-card .card-header h6{
+        font-size: 18px;
+        font-weight: 700;
+        margin-bottom: 4px;
+    }
+    .login-right-wrapper .login-card .card-header p{
+        font-size: 14px;
+    }
+    .login-right-wrapper .login-card .card-body{
+        padding-top: 0px!important;
+    }
+    .login-right-wrapper .login-card .card-body .form-group label{ 
+        display: none;
+    }
+    .login-right-wrapper .login-card .card-body .form-group input{
+        background: transparent;
+        border: 1px solid #696969;
+    }
+    .login-right-wrapper .login-card .card-body .form-group input#email, .login-right-wrapper .login-card .card-body .form-group input#username{
+        border: 0;
+        border-bottom: 1px solid #000;
+        border-radius: 0px;
+        background: url(../img/user.svg) no-repeat;
+        background-position-y: 50%;
+        padding-left: 29px;
+        font-size: 15px;
+    }
+    .login-right-wrapper .login-card .card-body .form-group input#password{
+        border: 0;
+        border-bottom: 1px solid #000;
+        border-radius: 0px;
+        background: url(../img/password.svg) no-repeat;
+        background-position-y: 50%;
+        padding-left: 29px;
+        font-size: 15px;
+    }
+    .login-right-wrapper .login-card .card-body .form-group select{
+        border: 0;
+        border-bottom: 1px solid #000;
+        border-radius: 0px;
+        background: transparent;
+        background-position-y: 50%;
+        padding-left: 15px;
+        font-size: 15px;
+    }
+    .login-right-wrapper .login-card .card-body #login-button,
+    .login-right-wrapper .login-card .card-body #forgot-password-button{
+        background: #833210;
+        color: #fff;
+        display: block;
+        width: 100%;
+        border: 0;
+        padding: 10px 0;
+        border-radius: 4px;
+        box-shadow: 0 7px 14px #00000014;
+    }
+    .login-right-wrapper .login-card .card-body .links a{
+        color: #000;
+        text-decoration: underline;
+        font-weight: 500;
+        font-size: 14px;
+        text-underline-offset: 7px;
+    }
+
+    .login-right-wrapper .login-card .card-body .back-btn{
+        background: transparent;
+        color: #000;
+        border: 0;
+        margin-top: 11px;
+        font-weight: 500;
+    }
+    /*.captcha img{max-width: 100%;}*/
+    .signup-tab li a{
+        background-color: #f1f1f1;
+        padding: 7px 20px;
+        color: #343434 !important;
+        text-decoration: none;
+        margin-right: 0;
+        font-size: 14px;
+        font-weight: 600;
+        border-radius: 0;
+    }
+    .signup-tab li a.link_active{
+        background-color: #0d6efd;
+        color: #fff !important;
+    }
+
+
+
+    /*
+    Mobile Tablat View
+    */
+
+@media (width > 375px) and (width < 540px) {
+    .login-right-wrapper {
+        padding: 0 25px;
+    }
+
+    .left-img {
+        display: none;
+    }
+    .login-right-wrapper .login-card{top:30px;}
+
+}
+
+@media (width > 540px) and (width < 767px) {
+    .left-img {
+        display: none;
+    }
+    
+}
+
+
+@media (width > 768px) and (width < 1280px) {
+    .login-right-wrapper {
+        padding: 0 25px;
+    }
+
+
+}
+
+
+
+/* registration css  */
+
+.signup-tab {
+    margin-bottom: 0px;
+    border-bottom: 0;
+}
+.signup-tab li{
+
+}
+.signup-tab li a{
+    display: block;
+}
+.signup-tab li a.link_active{
+    background: #833210;
+    color: #fff;
+}
+.card .card-header{
+    padding: 12px 15px !important;
+    background: #81331614;
+    border-bottom: 1px solid #83321063;
+}
+.card{
+    border-radius: 10px;
+    overflow: hidden;
+    border-top-left-radius: 0px;
+    box-shadow: 0 4px 8px #37140621;
+    border: 1px solid #83321063;
+}
+.card .card-header h6{
+    color: #813316!important;
+    font-size: 16px;
+    font-weight: 700;
+}
+.card .card-body .form-group label{
+    font-size: 14px;
+    font-weight: 500;
+    margin-bottom: 2px;
+}
+.card .card-body .form-group input,
+.card .card-body .form-group select,
+.card .card-body .form-group textarea{
+    border: 1px solid #c3c3c3;
+    border-radius: 8px;
+    padding: 8px;
+}
+
+    .btn-primary{
+        color: #fff;
+        background-color: #4088cd;
+        border-color: #4088cd;
+    }
+    .btn-sucess{
+        color: #fff;
+        background-color: #10c469;
+        border-color: #10c469;
+    }
+    .btn-info{
+        color: #fff;
+        background-color: #35b8e0;
+        border-color: #35b8e0;
+    }
+    .btn-warning{
+        color: #343a40;
+        background-color: #f9c851;
+        border-color: #f9c851;
+    }
+    .btn-danger{
+        color: #fff;
+        background-color: #ff5b5b;
+        border-color: #ff5b5b;
+    }
+    .btn-dark{
+        color: #fff;
+        background-color: #323a46;
+        border-color: #323a46;
+    }
+    .btn-pink{
+        color: #fff;
+        background-color: #ff8acc;
+        border-color: #ff8acc;
+    }
+    .btn-secondary{
+        color: #fff;
+        background-color: #6c757d;
+        border-color: #6c757d;
+    }
+    .btn-light{
+        color: #343a40;
+        background-color: #f8f9fa;
+        border-color: #f8f9fa;
+    }
+    .btn{
+        overflow: hidden;
+        margin-bottom: 0;
+        margin-right: 8px;
+        padding: 6.5px 10px;
+        border-radius: 6px;
+    }
+    .btn-label {
+        margin: -0.55rem 0.9rem -0.55rem -0.9rem;
+        padding: 9px 8px 9px 15px;
+        background-color: rgba(50,58,70,.1);
+    }
+footer{
+    position: fixed;
+    bottom: 0;
+    width: 100%;
+    padding: 13px 0;
+    text-align: center!important;
+}
+footer a{}
+
+
+
+@media (max-width:768px){
+    .login-right-wrapper{height: 100vh;}
+    .login-form-page .ps-0{padding-left: 10px!important;}
+}

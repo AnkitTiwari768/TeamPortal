@@ -1,0 +1,22 @@
+<?php 
+
+declare (strict_types = 1);
+
+namespace App\Http\Api\V1\UserPermission;
+
+readonly class UserPermissionDTO
+{
+    public function __construct(
+        public readonly string $userId, 
+        public readonly array $userPermissions
+    )
+    {}
+
+    public static function create(array $payload) : UserPermissionDTO
+    {
+        return new self(
+            userId: $payload['user_id'],
+            userPermissions: $payload['permissions']
+        );
+    }
+}

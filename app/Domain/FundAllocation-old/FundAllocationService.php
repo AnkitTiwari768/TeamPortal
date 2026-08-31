@@ -1,0 +1,420 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\FundAllocation;
+
+use Illuminate\Support\Facades\DB;
+
+class FundAllocationService
+{
+    public function getAttributeValues(string $codeOrId, ?string $parentId = null)
+    {
+        $byCode = DB::table('attributes')->where('code', $codeOrId)->first();
+
+        if (!$byCode && in_array($codeOrId, ['sub-components', 'sub_component', 'PLACEHOLDER_SUB_COMPONENT'], true)) {
+            $byCode = DB::table('attributes')->where('code', 'major-components')->first();
+        }
+
+        $query = DB::table('attribute_values as av')
+            ->where('av.status', 1)
+            ->select(
+                'av.id',
+                'av.attribute_value as name',
+                'av.code',
+                'av.parent_id'
+            );
+
+        if ($byCode) {
+            $query->where('av.attribute_id', $byCode->id);
+        } else {
+            // Treat as attribute_id (UUID or numeric id)
+            $query->where('av.attribute_id', $codeOrId);
+        }
+
+        if ($parentId !== null) {
+            $query->where('av.parent_id', $parentId);
+        } else {
+            $query->whereNull('av.parent_id');
+        }
+
+        return $query->orderBy('av.sort_order')->get();
+    }
+
+
+    public function getFundAllocationEditDetails(string $id): array
+    {
+        $fundAllocation = $this->getFundAllocation($id);
+
+        return [
+            'fundAllocation' => $fundAllocation->toArray(),
+            'componentMappings' => $this->formatComponentMappings($fundAllocation),
+            'documentUrl' => $this->getDocumentUrl($fundAllocation->document_path),
+        ];
+    }
+
+    public function getFundAllocationViewDetails(string $id): array
+    {
+        $fundAllocation = $this->getFundAllocation($id);
+
+        // Collect all Attribute IDs
+        $attributeIds = collect([
+            $fundAllocation->duration_id,
+            $fundAllocation->sub_duration_id,
+        ])
+            ->merge($fundAllocation->componentMappings->pluck('major_component_id'))
+            ->merge($fundAllocation->componentMappings->pluck('sub_component_id'))
+            ->filter()
+            ->unique();
+
+        // Fetch all names in one query
+        $attributeValues = DB::table('attribute_values')
+            ->whereIn('id', $attributeIds)
+            ->pluck('attribute_value', 'id');
+
+        $componentMappings = $fundAllocation->componentMappings->map(function ($mapping) use ($attributeValues) {
+            return [
+                'id' => $mapping->id,
+                'major_component_id' => $mapping->major_component_id,
+                'major_component_name' => $attributeValues[$mapping->major_component_id] ?? '-',
+                'sub_component_id' => $mapping->sub_component_id,
+                'sub_component_name' => $attributeValues[$mapping->sub_component_id] ?? '-',
+                'amount' => $mapping->amount,
+            ];
+        });
+
+        return [
+            'fundAllocation' => array_merge(
+                $fundAllocation->toArray(),
+                [
+                    'duration_name' => $attributeValues[$fundAllocation->duration_id] ?? '-',
+                    'sub_duration_name' => $attributeValues[$fundAllocation->sub_duration_id] ?? '-',
+                ]
+            ),
+            'componentMappings' => $componentMappings,
+            'documentUrl' => $this->getDocumentUrl($fundAllocation->document_path),
+        ];
+    }
+
+    /**
+     * Fetch Fund Allocation with relationships.
+     */
+    private function getFundAllocation(string $id): FundAllocation
+    {
+        return FundAllocation::with('componentMappings')->findOrFail($id);
+    }
+
+    /**
+     * Format mappings for Edit screen.
+     */
+    private function formatComponentMappings(FundAllocation $fundAllocation)
+    {
+        return $fundAllocation->componentMappings->map(function ($mapping) {
+            return [
+                'id' => $mapping->id,
+                'major_component_id' => $mapping->major_component_id,
+                'sub_component_id' => $mapping->sub_component_id,
+                'amount' => $mapping->amount,
+            ];
+        })->values();
+    }
+
+    /**
+     * Resolve uploaded document URL.
+     */
+    private function getDocumentUrl(?string $documentPath): ?string
+    {
+        if (empty($documentPath)) {
+            return null;
+        }
+
+        $file = DB::table('file_uploads')
+            ->where('id', $documentPath)
+            ->orWhere('file_system_name', $documentPath)
+            ->first();
+
+        return $file
+            ? asset($file->file_path)
+            : asset('storage/' . $documentPath);
+    }
+
+    /**
+     * Get document details for viewing or downloading.
+     */
+    public function getDocumentDetails(string $id): ?array
+    {
+        try {
+            $fundAllocation = $this->getFundAllocation($id);
+            if (!$fundAllocation || empty($fundAllocation->document_path)) {
+                return null;
+            }
+
+            $file = DB::table('file_uploads')
+                ->where('id', $fundAllocation->document_path)
+                ->orWhere('file_system_name', $fundAllocation->document_path)
+                ->first();
+
+            if (!$file) {
+                return null;
+            }
+
+            return [
+                'file_path' => $file->file_path,
+                'file_name' => $file->file_name,
+                'file_type' => $file->file_type,
+            ];
+        } catch (\Exception $e) {
+            return null;
+        }
+    }
+
+    /**
+     * Get period summary (Opening Balance, Existing Fresh Allocations, Total Available Funds).
+     */
+    public function getPeriodSummary(string $financialYear, string $durationId, ?string $subDurationId = null, ?string $allocationId = null): array
+    {
+        if (empty($financialYear) || empty($durationId)) {
+            return [
+                'opening_balance' => 0.00,
+                'existing_fresh_allocations' => 0.00,
+                'total_available_funds' => 0.00,
+            ];
+        }
+
+        // Dynamic schema update if the column doesn't exist
+        if (!\Illuminate\Support\Facades\Schema::hasColumn('fund_allocations', 'total_available_amount')) {
+            \Illuminate\Support\Facades\Schema::table('fund_allocations', function(\Illuminate\Database\Schema\Blueprint $table) {
+                $table->decimal('total_available_amount', 15, 2)->default(0)->nullable()->after('total_amount_allocated');
+            });
+            // Migrate existing data based on the old calculation logic
+            DB::statement("
+                UPDATE fund_allocations fa
+                LEFT JOIN (
+                    SELECT allocation_id, COALESCE(SUM(amount), 0) as allocated
+                    FROM fund_allocations_map
+                    GROUP BY allocation_id
+                ) fam ON fam.allocation_id = fa.id
+                SET fa.total_available_amount = GREATEST(0, COALESCE(fa.total_amount_allocated, 0) - COALESCE(fam.allocated, 0))
+            ");
+        }
+
+        // Use the dynamically calculated balance that accounts for any distributions made after the allocation
+        $openingBalance = $this->getDynamicAvailableBalance($financialYear, $durationId, $subDurationId);
+
+        // Fresh allocations starts at 0 for a reopened period, as the remaining amount is in Opening Balance
+        $existingFreshAllocations = 0.00;
+
+        return [
+            'opening_balance' => $openingBalance,
+            'existing_fresh_allocations' => $existingFreshAllocations,
+            'total_available_funds' => $openingBalance + $existingFreshAllocations,
+        ];
+    }
+
+    public function getComponentBalance(
+        string $financialYear, 
+        string $durationId, 
+        ?string $subDurationId, 
+        string $majorComponentId, 
+        ?string $subComponentId
+    ): array {
+        if (empty($financialYear) || empty($durationId) || empty($majorComponentId)) {
+            return ['remaining_balance' => 0.00, 'is_existing' => false];
+        }
+
+        // 1. Calculate Total Fund Allocation Amount
+        $allocationQuery = DB::table('fund_allocation_component_mappings as facm')
+            ->join('fund_allocations as fa', 'fa.id', '=', 'facm.fund_allocation_id')
+            ->where('fa.financial_year', $financialYear)
+            ->where('fa.duration_id', $durationId)
+            ->where('facm.major_component_id', $majorComponentId);
+
+        if (!empty($subDurationId)) {
+            $allocationQuery->where('fa.sub_duration_id', $subDurationId);
+        } else {
+            $allocationQuery->whereNull('fa.sub_duration_id');
+        }
+
+        if (!empty($subComponentId)) {
+            $allocationQuery->where('facm.sub_component_id', $subComponentId);
+        } else {
+            $allocationQuery->whereNull('facm.sub_component_id');
+        }
+
+        $exists = $allocationQuery->exists();
+        $totalAllocated = (float) $allocationQuery->sum('facm.amount');
+
+        // 2. Get base mapping IDs
+        $mappingQuery = DB::table('component_utilization_mappings')
+            ->where('financial_year', $financialYear)
+            ->where('duration', $durationId);
+
+        if (!empty($subDurationId)) {
+            $mappingQuery->where('sub_duration', $subDurationId);
+        } else {
+            $mappingQuery->whereNull('sub_duration');
+        }
+
+        $mappingIds = $mappingQuery->pluck('id');
+
+        // 3. Check for matching source record to fetch Remaining Balance
+        $sourceQuery = DB::table('component_utilization_mapping_details')
+            ->whereIn('mapping_id', $mappingIds)
+            ->where('source_major_component', $majorComponentId);
+
+        if (!empty($subComponentId)) {
+            $sourceQuery->where('source_sub_component', $subComponentId);
+        } else {
+            $sourceQuery->whereNull('source_sub_component');
+        }
+
+        $sourceRecord = $sourceQuery->latest('created_at')->first();
+        $hasSourceMatch = false;
+        $mappedRemainingBalance = 0.00;
+
+        if ($sourceRecord) {
+            $hasSourceMatch = true;
+            $mappedRemainingBalance = (float) $sourceRecord->remaining_balance;
+        }
+
+        // 4. Calculate Already Allocated Amount from utilization mappings (avoid JOIN to prevent collation mismatch)
+        $utilizationQuery = DB::table('component_utilization_mapping_details')
+            ->whereIn('mapping_id', $mappingIds)
+            ->where('target_category', $majorComponentId);
+
+        if (!empty($subComponentId)) {
+            $utilizationQuery->where('target_sub_component', $subComponentId);
+        } else {
+            $utilizationQuery->whereNull('target_sub_component');
+        }
+
+        $alreadyAllocated = (float) $utilizationQuery->sum('amount_to_be_allocated');
+
+        $balance = $totalAllocated - $alreadyAllocated;
+
+        return [
+            'remaining_balance' => $balance, 
+            'total_allocated' => $totalAllocated,
+            'already_allocated' => $alreadyAllocated,
+            'is_existing' => $exists,
+            'has_source_match' => $hasSourceMatch,
+            'mapped_remaining_balance' => $mappedRemainingBalance
+        ];
+    }
+
+    public function getDynamicAvailableBalance(string $financialYear, ?string $durationId = null, ?string $subDurationId = null): float
+    {
+        $allocQuery = DB::table('fund_allocations')
+            ->where('financial_year', $financialYear);
+            
+        if ($durationId) {
+            $allocQuery->where('duration_id', $durationId);
+        }
+        if ($subDurationId) {
+            $allocQuery->where('sub_duration_id', $subDurationId);
+        } elseif ($durationId) {
+            $allocQuery->whereNull('sub_duration_id');
+        }
+
+        $allocations = $allocQuery->get();
+        $totalUnallocated = 0.0;
+        
+        foreach ($allocations as $alloc) {
+            $mapped = (float) DB::table('fund_allocation_component_mappings')
+                ->where('fund_allocation_id', $alloc->id)
+                ->sum('amount');
+            $unallocated = (float) $alloc->total_amount_allocated - $mapped;
+            $totalUnallocated += $unallocated;
+        }
+
+        $poolQuery = DB::table('fund_pools')
+            ->where('financial_year', $financialYear);
+            
+        if ($durationId) {
+            $poolQuery->where('duration_id', $durationId);
+        }
+        if ($subDurationId) {
+            $poolQuery->where('sub_duration_id', $subDurationId);
+        } elseif ($durationId) {
+            $poolQuery->whereNull('sub_duration_id');
+        }
+        
+        $totalPoolRemaining = (float) $poolQuery->sum('remaining_balance');
+
+        $mappingQuery = DB::table('component_utilization_mappings')
+            ->where('financial_year', $financialYear);
+            
+        if ($durationId) {
+            $mappingQuery->where('duration', $durationId);
+        }
+        if ($subDurationId) {
+            $mappingQuery->where('sub_duration', $subDurationId);
+        } elseif ($durationId) {
+            $mappingQuery->whereNull('sub_duration');
+        }
+
+        $mappingIds = $mappingQuery->pluck('id');
+        $totalUtilizationMapped = 0.0;
+        if ($mappingIds->isNotEmpty()) {
+            $totalUtilizationMapped = (float) DB::table('component_utilization_mapping_details')
+                ->whereIn('mapping_id', $mappingIds)
+                ->sum('amount_to_be_allocated');
+        }
+
+        return $totalUnallocated + $totalPoolRemaining - $totalUtilizationMapped;
+    }
+
+    public function checkPreviousRemainingBalance(string $financialYear, string $durationId, ?string $subDurationId = null): array
+    {
+        if (empty($financialYear) || empty($durationId)) {
+            return [
+                'has_previous_balance' => false,
+                'amount' => 0.00,
+                'source_sub_duration_name' => '',
+            ];
+        }
+
+        $duration = DB::table('attribute_values')->where('id', $durationId)->first();
+        $durationName = strtolower($duration->attribute_value ?? '');
+
+        // Do not show the carry-forward note for Yearly duration (it uses a separate yearly note) 
+        // or if the sub-duration hasn't been selected yet.
+        if ($durationName === 'yearly' || empty($subDurationId)) {
+            return [
+                'has_previous_balance' => false,
+                'amount' => 0.00,
+                'source_sub_duration_name' => '',
+                'duration_type' => $durationName,
+            ];
+        }
+
+        // Use the dynamically calculated carry-forward balance for the entire financial year
+        $dynamicAmount = $this->getDynamicAvailableBalance($financialYear);
+
+        if ($dynamicAmount > 0) {
+            return [
+                'has_previous_balance' => true,
+                'amount' => $dynamicAmount,
+                'source_sub_duration_name' => 'previous period',
+                'duration_type' => $durationName,
+            ];
+        }
+
+        return [
+            'has_previous_balance' => false,
+            'amount' => 0.00,
+            'source_sub_duration_name' => '',
+            'duration_type' => $durationName,
+        ];
+    }
+
+    public function getYearlyNoteBalance(string $financialYear)
+    {
+        // Use the dynamically calculated carry-forward balance for the entire financial year
+        $dynamicAmount = $this->getDynamicAvailableBalance($financialYear);
+
+        return [
+            'total_balance' => $dynamicAmount
+        ];
+    }
+}

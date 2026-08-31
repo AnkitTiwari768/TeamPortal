@@ -1,0 +1,35 @@
+<?php
+ return [
+    'menu_title' => 'Menu Title',     
+    'slider_list' => 'Sliders',
+    'add_slider' => 'New Slider',
+    'edit_slider' => 'Edit Slider',
+    'sort_order' => 'Sort Order',
+    'url'=>'Url',
+    'url_mr'=>'(यूआरएल)',
+    'upload_image' => 'Uplaod Image',
+    'upload_image_mr' => '(तस्विर अपलोड करें)',
+    'slider'=>'Top Slider',
+    'banner'=>'Bootom Slider',
+    'type'=>'Type',
+    'type_mr'=>'(टाइप)',
+    'image'=>'Image',
+    'title_mr_mr' => '(मराठीत शीर्षक)',
+    'sort_order_mr' => '(क्रम लावा)',
+    'status_mr' => '(स्थिती)',
+    'select_mr' => '(निवडा)',
+    'select' => 'Select',
+    'status' => 'Status',
+    'dynamic_page' => 'Dynamic Page',
+    'dynamic_page_mr' => '(डायनॅमिक पृष्ठ)',
+    'is_active' => 'Is Active?',
+    'sno' => 'Sr. No.',
+    'action' => 'Action',
+    'title_en' => 'Title In English',
+    'title_mr' => 'Title In Marathi',
+    'title_en_mr' => '(इंग्रजीमध्ये शीर्षक)',
+    'title_mr_mr' => '(मराठीत शीर्षक)',
+
+
+];
+

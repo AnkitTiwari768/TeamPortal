@@ -1,0 +1,451 @@
+@extends('components.admin.content-layout')
+
+@section('card-content')
+    <div class="align-items-end border-bottom card-body d-flex justify-content-between">
+        @if (hasRole('lsp'))
+            <div class="card-header d-flex w-100 p-0">
+                <div class="row w-100">
+                    <div class="col-md-6">
+                        <button id="downloadSelected" class="btn btn-success block-btn-custom">
+                            <img src="{{ asset('assets/img-new/download-file.svg') }}"> Download Predefined File
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-danger block-btn-custom" data-bs-toggle="modal"
+                            data-bs-target="#myCSVModal">
+                            <img src="{{ asset('assets/img-new/add-claim.svg') }}">
+                            Add Bulk Claim
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+    </div>
+
+
+    <!-- Modal CSV -->
+    <div class="modal fade" id="myCSVModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="modal-title mb-0">Add Bulk Claim</h5>
+                    </div>
+                    <div class="flex-grow-1 text-end">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+
+                <form id="bulk-upload">
+                    @csrf
+                    <div class="modal-body">
+                        <!-- Claim Type Dropdown -->
+                        <p>
+                            <select class="form-select" name="claim_type_id" id="claim_type_id">
+                                <option value="">Select Claim Type</option>
+                                @foreach ($claim_types ?? [] as $claim_type_id => $claim_type_name)
+                                    <option value="{{ $claim_type_id }}" @if (($claimTypeIdValue ?? null) == $claim_type_id || (!isset($claimTypeIdValue) && $loop->first)) selected @endif>
+                                        {{ $claim_type_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </p>
+
+                        <!-- GST Type Dropdown commented out and hidden -->
+                        <!--
+                            <p>
+                                <select class="form-select" name="gst_type" id="gst_type">
+                                    <option value="">-- Select GST Type --</option>
+                                    <option value="1">GST</option>
+                                    <option value="2">CGST/SGST</option>
+                                </select>
+                            </p>
+
+                            <p id="gst_single_container" style="display: none;">
+                                <input type="number" min="0" max="100" step="any" class="form-control" name="gst_percentage" id="gst_percentage" placeholder="Enter GST Percentage (%)" autocomplete="off">
+                            </p>
+
+                            <div id="gst_split_container" style="display: none;">
+                                <p>
+                                    <input type="number" name="cgst_percentage" id="cgst_percentage" class="form-control" placeholder="Enter CGST Percentage" min="0" max="100" step="any" autocomplete="off">
+                                </p>
+                                <p>
+                                    <input type="number" name="sgst_percentage" id="sgst_percentage" class="form-control" placeholder="Enter SGST Percentage" min="0" max="100" step="any" autocomplete="off">
+                                </p>
+                            </div>
+                            -->
+                        <input type="hidden" name="gst_type" id="gst_type" value="1" />
+                        <input type="hidden" name="gst_percentage" id="gst_percentage" value="0" />
+                        <input type="hidden" name="cgst_percentage" id="cgst_percentage" value="0" />
+                        <input type="hidden" name="sgst_percentage" id="sgst_percentage" value="0" />
+
+                        <p>Select File : <input type="file" name="file" id="file" accept=".xlsx"></p>
+                        <span class="text-primary">Please ensure the file is in the correct format by downloading the
+                            predefined format.</span>
+
+                        <div id="csv-errors" style="color: red; font-family: Arial; padding: 10px;"></div>
+
+                        <!-- Declaration -->
+                        <div class="form-group col-md-12 form-check mt-2">
+                            <input class="form-check-input" type="checkbox" name="declaration" id="declaration"
+                                value="1" required />
+                            <strong>Declaration:</strong>
+                            <label class="form-check-label" for="declaration">
+                                <div class="declaration-container">
+                                    <div class="declaration-preview">
+                                        <em>
+                                            <strong>No Dual-Incentive Claim</strong><br>
+                                            "We affirm that we have not claimed, and shall not claim, incentives for the
+                                            same set of MSEs or transactions under multiple ONDC-related programmes.
+                                            Specifically, if incentives have already been claimed or are claimable for the
+                                            same logistics transactions for a particular MSE under any other ONDC initiative
+                                            or scheme, we shall not submit a duplicate claim for those transactions under
+                                            the TEAM Initiative."
+                                        </em>
+                                    </div>
+                                    <a href="javascript:void(0)" class="read-more-link" onclick="toggleDeclaration(this)"
+                                        style="font-size: 0.9rem; text-decoration: underline; color: #0d6efd; display: inline-block; margin: 5px 0;">Read
+                                        more...</a>
+                                    <div class="declaration-full" style="display: none;">
+                                        <em>
+                                            <br><br>
+                                            <strong>Eligibility of MSE</strong><br>
+                                            "We confirm that incentives are being claimed only for eligible MSEs and
+                                            eligible digital on-network (ONDC) logistics transactions, in accordance with
+                                            the SOP of the TEAM Initiative. We acknowledge and accept responsibility for
+                                            ensuring that the claims pertain only to valid and complete transactions, as
+                                            defined under the TEAM Initiative, and for any duplication, ineligibility, or
+                                            discrepancies arising in this regard."
+                                            <br><br>
+                                            <strong>Declaration</strong><br>
+                                            "I / We hereby declare that the details furnished above in relation to logistics
+                                            transactions and incentive claims are true and correct to the best of my / our
+                                            knowledge and belief. If the above information is found to be incorrect /
+                                            misleading / false, appropriate action as per applicable laws may be taken
+                                            against me / us.
+                                            <br><br>
+                                            I / We hereby authorize NSIC / ONDC to use, verify, and share the relevant
+                                            details, including transaction data, for the purpose of scheme administration,
+                                            verification, and support, in compliance with applicable laws.
+                                            <br><br>
+                                            I / We hereby declare that I / We have read the Privacy Policy, Terms and
+                                            Conditions, Disclaimer, Data Sharing Policy, Operating Guidelines and SOPs of
+                                            the TEAM Initiative and agree to abide by the same. NSIC reserves the right to
+                                            change / amend the SOPs with the approval of the Ministry of MSME as per the
+                                            policy & procedural requirement, as and when warranted, and without giving any
+                                            notice."
+                                        </em>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <style>
+                            .declaration-container {
+                                line-height: 1.5;
+                            }
+
+                            .declaration-preview {
+                                margin-bottom: 5px;
+                            }
+
+                            .read-more-link {
+                                cursor: pointer;
+                                transition: color 0.3s ease;
+                            }
+
+                            .read-more-link:hover {
+                                color: #0a58ca !important;
+                            }
+                        </style>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Upload</button>
+                        <button type="submit" id="final-submit" class="btn btn-primary" style="display: none;">Save
+                            &amp; Confirm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@endsection
+
+@section('js')
+    <script>
+        // GST Type toggle functionality
+        $(document).on('change', '#gst_type', function() {
+            var selectedValue = $(this).val();
+
+            if (selectedValue === '1') {
+                $('#gst_single_container').show();
+                $('#gst_split_container').hide();
+                // Clear CGST/SGST fields when hidden
+                $('#cgst_percentage').val('');
+                $('#sgst_percentage').val('');
+            } else if (selectedValue === '2') {
+                $('#gst_single_container').hide();
+                $('#gst_split_container').show();
+                // Clear GST percentage when hidden
+                $('#gst_percentage').val('');
+            } else {
+                // Hide both if no selection
+                $('#gst_single_container').hide();
+                $('#gst_split_container').hide();
+                // Clear all fields
+                $('#gst_percentage').val('');
+                $('#cgst_percentage').val('');
+                $('#sgst_percentage').val('');
+            }
+        });
+
+        // Validate GST fields based on selection
+        function validateGSTFields() {
+            var gstType = $('#gst_type').val();
+            var isValid = false;
+
+            if (gstType === '1') {
+                var gstValue = $('#gst_percentage').val();
+                if (gstValue !== '' && parseFloat(gstValue) >= 0 && parseFloat(gstValue) <= 100) {
+                    isValid = true;
+                } else {
+                    toastr.error('Please enter valid GST percentage (0-100)');
+                }
+            } else if (gstType === '2') {
+                var cgstValue = $('#cgst_percentage').val();
+                var sgstValue = $('#sgst_percentage').val();
+                if (cgstValue !== '' && sgstValue !== '' &&
+                    parseFloat(cgstValue) >= 0 && parseFloat(cgstValue) <= 100 &&
+                    parseFloat(sgstValue) >= 0 && parseFloat(sgstValue) <= 100) {
+                    isValid = true;
+                } else {
+                    toastr.error('Please enter valid CGST and SGST percentages (0-100 each)');
+                }
+            } else {
+                isValid = true;
+                // toastr.error('Please select GST Type');
+            }
+
+            return isValid;
+        }
+
+        // Form submission handler
+        $(document).on('submit', '#bulk-upload', function(e) {
+            e.preventDefault();
+
+            document.getElementById('csv-errors').innerHTML = '';
+            var claimTypeId = document.getElementById('claim_type_id').value;
+
+            if (claimTypeId == '') {
+                toastr.error("Please select claim type.");
+                return;
+            }
+
+            // Validate GST fields
+            if (!validateGSTFields()) {
+                return;
+            }
+
+            var fileInput = document.getElementById('file');
+            if (!fileInput.files.length) {
+                toastr.error("Please select a file to upload.");
+                return;
+            }
+
+            var form = document.getElementById('bulk-upload');
+            var formData = new FormData(form);
+            formData.append('claim_type_id', claimTypeId);
+
+            $.ajax({
+                url: "{{ url('logistic-claims/bulk-import') }}",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    $("#ajax-loader").show();
+                },
+                success: function(res) {
+                    if (res.summary.inserted >= 1) {
+                        toastr.success(res.message);
+                        $('#bulk-upload input, #bulk-upload select').prop('disabled', true);
+                        $('#final-submit').show();
+                    }
+
+                    if (res.summary.failed > 0) {
+                        toastr.error('Some rows failed validation. Please check errors below.');
+                        displayCsvErrors(res);
+                    }
+                },
+                error: function(err) {
+                    toastr.error(err?.responseJSON?.message ||
+                        "Server error while processing the file.");
+                },
+                complete: function() {
+                    $("#ajax-loader").hide();
+                }
+            });
+        });
+
+        // Final submit handler
+        $(document).on('click', '#final-submit', function(e) {
+            e.preventDefault();
+
+            if (!$('#declaration').is(':checked')) {
+                toastr.error('Please accept the declaration to proceed.');
+                return;
+            }
+
+            $.ajax({
+                url: "{{ url('/save-uploaded-logistic-claims') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    claim_type_id: $('#claim_type_id').val()
+                },
+                beforeSend() {
+                    $("#ajax-loader").show();
+                },
+                success(res) {
+                    toastr.success(res.message || 'Claims saved successfully.');
+                    setTimeout(() => {
+                        window.location.href = "{{ url('/logistics-transportation-claim') }}";
+                    }, 1500);
+                },
+                error(xhr) {
+                    toastr.error(xhr.responseJSON?.message || 'Failed to save uploaded claims.');
+                },
+                complete() {
+                    $("#ajax-loader").hide();
+                }
+            });
+        });
+
+        // Reset modal on close
+        $('#myCSVModal').on('hidden.bs.modal', function() {
+            $('#csv-errors').html('');
+            $('#file').val('');
+            $('#gst_type').val('');
+            $('#gst_percentage').val('');
+            $('#cgst_percentage').val('');
+            $('#sgst_percentage').val('');
+            $('#gst_single_container').hide();
+            $('#gst_split_container').hide();
+            $('#bulk-upload input, #bulk-upload select').prop('disabled', false);
+            $("#final-submit").hide();
+        });
+
+        // File validation
+        $(document).on('change', '#file', function(e) {
+            let fileName = this.files[0]?.name;
+            if (fileName) {
+                let ext = fileName.split('.').pop().toLowerCase();
+                if (!['xlsx', 'xls'].includes(ext)) {
+                    alert("Only .xlsx, .xls files are allowed!");
+                    $('#file').val('');
+                    return;
+                }
+                toastr.success(`File "${fileName}" selected successfully!`, 'File Selected');
+            }
+        });
+
+        // Display CSV errors
+        function displayCsvErrors(response) {
+            let html = `
+            <div class="alert alert-danger">
+                <strong>Import Summary</strong><br>
+                Total Rows: ${response.summary.total_rows} <br>
+                Inserted: ${response.summary.inserted} <br>
+                Failed: ${response.summary.failed}
+            </div>
+        `;
+
+            if (response.error_token) {
+                html += `
+                <a href="{{ url('/logistic-claims/import-error-report') }}/${response.error_token}"
+                   class="btn btn-danger btn-sm mb-3">
+                   ⬇ Download Error Report
+                </a>
+            `;
+            }
+
+            response.failed_rows.forEach(row => {
+                const teamId = row.data.team_id ? row.data.team_id : 'TEAM ID not provided';
+                html += `
+                <div class="card mb-2 border-danger">
+                    <div class="card-header bg-danger text-white">
+                        Row ${row.row_number} (${teamId})
+                    </div>
+                    <div class="card-body">
+                        <ul class="mb-0">
+            `;
+
+                Object.keys(row.errors).forEach(field => {
+                    row.errors[field].forEach(message => {
+                        html += `<li><strong>${field}</strong>: ${message}</li>`;
+                    });
+                });
+
+                html += `
+                        </ul>
+                    </div>
+                </div>
+            `;
+            });
+
+            $("#csv-errors").html(html);
+        }
+
+        // Toggle declaration visibility
+        function toggleDeclaration(element) {
+            const container = element.closest('.declaration-container');
+            const fullDeclaration = container.querySelector('.declaration-full');
+            const isHidden = fullDeclaration.style.display === 'none';
+
+            if (isHidden) {
+                fullDeclaration.style.display = 'block';
+                element.textContent = 'Read less...';
+            } else {
+                fullDeclaration.style.display = 'none';
+                element.textContent = 'Read more...';
+            }
+        }
+
+        // Download predefined file
+        $('#downloadSelected').on('click', function() {
+            const selectedIds = Object.keys(selectedRows).filter(id => selectedRows[id]);
+
+            $.ajax({
+                url: '{{ url('export-selected-excel') }}',
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    ids: selectedIds,
+                    type: 'logistic'
+                },
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(blob, status, xhr) {
+                    let filename = 'selected_rows.xlsx';
+                    const disposition = xhr.getResponseHeader('Content-Disposition');
+
+                    if (disposition && disposition.indexOf('filename=') !== -1) {
+                        filename = disposition.split('filename=')[1].replace(/"/g, '');
+                    }
+
+                    const link = document.createElement('a');
+                    const url = window.URL.createObjectURL(blob);
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                },
+                error: function() {
+                    alert('Download failed');
+                }
+            });
+        });
+    </script>
+@endsection

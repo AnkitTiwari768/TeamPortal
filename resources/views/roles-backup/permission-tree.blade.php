@@ -1,0 +1,34 @@
+@if(empty($permissions))
+	<div class="alert alert-info mb-0">{{ __('message.no_permission_available') }}</div>
+@else
+	<ul id="tree1">
+		@foreach($permissions as $child)
+
+			@php
+				if ($child['have_children'] == 0 && $child['have_permissions'] == 0) {
+					continue;
+				}
+			@endphp
+
+			<li>
+				@if($child['have_permissions']==1 && $child['have_children']==0 )
+					{{ $child['name'] }}
+				@endif
+
+				@if($child['have_permissions']==0 && $child['have_children']==1)
+					{{ $child['name'] }}
+				@endif
+
+				@foreach($child['permissions'] as $resp)
+				<ul>
+					<li><label>{{ $resp->name }} <input type="checkbox" name="permissions[]" id="permissions" <?php if (in_array($resp->id, $rolePermissions)){echo "checked";}else{echo "";} ?> value="{{$resp->id}}" class="form-check-input role-permission-checkbox"></label></li>
+				</ul>
+				@endforeach
+
+				@if(count($child['children']))
+					@include('roles.childrens',['childrens' => $child['children']])
+				@endif
+			</li>
+		@endforeach
+	</ul>
+@endif

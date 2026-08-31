@@ -1,0 +1,305 @@
+<?php 
+$utl1245=require_once('modules/utl1245.php');
+$utl1070=require_once('modules/utl1070.php');
+$utl0818=require_once('modules/utl0818.php');
+$utl1207=require_once('modules/utl1207.php');
+$utl1308=require_once('modules/utl1308.php');
+
+$arr=[
+	//common lang
+	'yes' => 'Yes',
+    'no' => 'No',
+	'login_success' => 'Login successfully',
+	'active' => 'Active',
+	'in_active' => 'In-Active',
+	'status' => 'Status',
+	'select' => 'Select',
+	'draft' => 'Draft',
+	'reset' => 'Reset',
+	'submit' => 'Submit',
+	'update-photo' => 'Update Photo',
+    'file_note' => '(Max. file size - 10MB, file type - .pdf)',
+	'file_note_image' => '(Max. file size - 5MB, file type - .JPEG .JPG .PNG .pdf)',
+	'update' => 'Update',
+	'back' => 'Back',
+	'action' => 'Action',
+	'sn' => 'S.No.',
+	'dashboard_list' => 'Dashboard List',
+	'close' => 'Close',
+	'delete' => 'Delete',
+	'description' => 'Description',
+	'slug' => 'Slug',
+	'confirm_delete' => 'Confirm Delete',
+	'delete_modal_body' => 'Do you want to delete this record?',
+	'department' => 'Department',
+	'created_by' => 'Created By',
+	'created' => 'Created Successfully',
+	'updated' => 'Updated Successfully',
+	'deleted' => 'Deleted Successfully',
+	'not_created' => 'Could not created',
+	'not_updated' => 'Could not updated',
+	'not_deleted' => 'Could not deleted',
+	'plus' => '<i class="fa fa-plus"></i>',
+	'upload_photo' => 'Upload Photo',
+	'forgot_password' => 'Forgot Password?',
+	'reset_password' => 'Reset Password',	
+	'login'=>'Login',
+	'login_form'=>'Login Form',
+	'send_password_reset_link'=>'Send Password Reset Link',
+	'mine_label_en'=>'PHARMACOPOEIA COMMISSION FOR INDIAN MEDICINE & HOMOEOPATHY',
+	'mine_label_hi'=>'भारतीय चिकित्सा एवं होम्योपैथी भेषजसंहिता आयोग',
+	'front_back'=>'<i class="fa fa-angle-double-left"></i> Back',
+	'front_reset' => '<i class="fa fa-refresh" aria-hidden="true"></i> Reset',
+	'front_next' => 'Next <i class="fa fa-sign-in" aria-hidden="true"></i>',
+	'front_submit' => '<i class="fa fa-save" aria-hidden="true"></i> Submit',
+	'front_final_submit' => '<i class="fa fa-save" aria-hidden="true"></i> Final Submit',
+	'from_date'=>'From Date',
+	'to_date'=>'To Date',
+	'duration'=>'Duration',
+	'vefircation_fields_error'=>'Please verify mobile and email firstly',
+	'vefircation_mobile_fields_error'=>'Please verify mobile number firstly.',
+	
+	//Temporary User
+	'temporary_module' => 'Temporary User Roles',
+	'edit_temporary' => 'Edit Temporary User Role',
+	'add_temporary' => 'Add Temporary User Role',
+	'temporary_name' => 'Temporary User Name Role',
+	'temporary_list' => 'Temporary User Role List ',	
+	
+	//Category lang
+	'role_module' => 'Role Name',
+	'edit_role' => 'Edit Role',
+	'add_role' => 'Add Role',
+	'role_name' => 'Role Name',
+	'role_list' => 'Role List',	
+	'role_description' => 'Role Description',
+	'level' => 'Level',	
+	'search_user' => 'Search User',
+	'map_mole_with_user' => 'Map Role With User',
+	'role_type' => 'Role Type',
+	'role_details' => 'Role Details',
+	'assign_permission_to_role' => 'Assign Permissions To Role',
+	'select_role_type_to_load_permissions' => 'Select a Role Type to load its permissions.',
+	'no_role_type_assigned' => 'No role type assigned',
+	'role_requires_role_type_for_permissions' => 'This role has no Role Type assigned. Edit the role and select a Role Type before assigning permissions.',
+
+	//Role Type lang
+	'role_type_module' => 'Role Type',
+	'role_type_list' => 'Role Type List',
+	'add_role_type' => 'Add Role Type',
+	'edit_role_type' => 'Edit Role Type',
+	'role_type_name' => 'Role Type Name',
+	'role_type_details' => 'Role Type Details',
+	'role_type_permission' => 'Role Type Permission',
+	'assign_permission_to_role_type' => 'Assign Permissions To Role Type',
+	'assigned_permissions' => 'Assigned Permissions',
+	'select_all_permissions' => 'Select All',
+	'remove_all_permissions' => 'Remove All',
+	'loading_permissions' => 'Loading permissions...',
+	'no_permission_available' => 'No permission is available to assign.',
+	'permission_load_failed' => 'Could not load the permission list. Please try again.',
+	'role_type_name_required' => 'Role type name is required.',
+	'role_type_name_invalid' => 'Role type name may only contain letters, numbers and spaces.',
+	'role_type_already_exists' => 'This role type already exists.',
+	'role_type_slug_already_exists' => 'A role type with a matching slug already exists.',
+	'invalid_permission_selected' => 'One or more selected permissions are invalid.',
+	'invalid_role_type' => 'Invalid role type selected.',
+	'role_type_save_failed' => 'Could not save the role type. Please try again.',
+	'created_at' => 'Created At',
+	
+	//User lang
+	'full_name' => 'Full Name',
+	'first_name' => 'First Name',
+	'middle_name' => 'Middle Name',
+	'last_name' => 'Last Name',
+	'user_module' => 'User',
+	'edit_user' => 'Edit User',
+	'add_user' => 'Add User',
+	'user_name' => 'User Name',
+	'username' => 'User Name',
+	'user_list' => 'User List',
+	'mobile' => 'Mobile',
+	'email' => 'Email',
+	'alternate_email' => 'Alternate Email',
+	'password' => 'Password',
+	'confirm_password' => 'Confirm Password',
+	'current_password' => 'Current Password',
+	'new_password' => 'New Password',
+	'change_password' => 'Change Password',
+	'user_details'=>'User Details',
+	'your_profile'=>'My Profile',	
+	'edit_role_permission' => 'Edit Role Permission',
+	'role_permission' => 'Role Permission',
+	'update_permission' => 'Update Permission',
+	'pincode' => 'Pincode',
+	'department_email' => 'Alternate Email',
+	
+	//Permission lang
+	'permission_master' => 'Permission',
+	'edit_permission' => 'Edit Permission',
+	'new_permission' => 'New Permission',
+	'add_permission' => 'Add Permission',
+	'permission_name' => 'Permission Name',
+	'permission_list' => 'Permission List',
+	'edit_user_permission' => 'User Permission',
+	'user_permission' => 'User Permission',
+	'module_name' => 'Module Name',
+	'activity_type' => 'Activity Type',
+	'title' => 'Title',
+	'code' => 'Code',	
+	
+	//Country lang
+	'country_module' => 'Country',
+	'country_name' => 'Country Name',
+	'country_list' => 'Country List',
+	'iso2_code' => 'ISO2 Code',
+	'iso3_code' => 'ISO3 Code',
+	'country_list' => 'Country List',
+	'edit_country' => 'Edit Country',
+	'add_country' => 'Add Country',
+	'country_code'=> 'Country Code',
+	//Currency lang
+	'currency_module' => 'Currency',
+	'currency_name' => 'Name',
+	'currency_list' => 'Currency List',
+	'currency_code' => 'Code',
+	'edit_currency' => 'Edit Currency',
+	'add_currency' => 'Add Currency',
+	
+	//State lang
+	'state_module' => 'State',
+	'add_state' => 'Add State',
+	'state_list' => 'State List',
+	'state_form' => 'State Permission Form',
+	'add_state' => 'Add State',
+	'edit_state' => 'Edit State',
+	'state_name' => 'State Name',
+	
+	//District lang
+	'district_module' => 'District',
+	'add_district' => 'Add District',
+	'district_list' => 'District List',
+	'add_district' => 'Add District',
+	'edit_district' => 'Edit District',
+	'district_name' => 'District Name',
+	'location_name' => 'District/City Name',
+    
+	//Department lang
+	'department_module' => 'Department',
+	'add_department' => 'Add Department',
+	'department_list' => 'Department List',
+	'edit_department' => 'Edit Department',
+	'department_name' => 'Department Name',
+	
+	//Designation lang
+	'designation_module' => 'Designation',
+	'add_designation' => 'Add Designation',
+	'designation_list' => 'Designation List',
+	'edit_designation' => 'Edit Designation',
+	'designation_name' => 'Designation Name',
+	
+	//Module lang
+	'module' => 'Module',
+	'add_module' => 'Add Module',
+	'module_list' => 'Module List',
+	'add_module' => 'Add Module',
+	'edit_module' => 'Edit Module',
+	'module_name' => 'Module Name',
+	'url' => 'Url',
+	'icon' => 'Icon',
+	"select_parent_module"=>'Select Parent Module',
+	'deactivation_err' => 'Error: could not deactivate because this :name is mapped with other records',
+	'sort_order' => 'Sort Order',
+
+	
+
+
+	//Module Liaison Officer
+	
+	'add_liaisonOfficer' => 'Add Liaison Officer',
+	'app_id' => 'Application ID',
+	'app_type' => 'Application Type',
+	'title_name' => 'Title Name',
+	'liaisonOfficer_name' => 'Liaison Officer Name',
+	'email' => 'Email ID',
+	'contact_number' => 'Contact Number',
+	'designation' => 'Designation',
+	'address' => 'Address',
+	'imc_liaison_officer_name' => 'Name',
+	'imc_liaison_officer_email' => 'Email ID',
+	'imc_liaison_officer_contact_number' => 'Contact Number',
+	'forgot_password_select' => 'Select By Email or mobile',
+	'signup' => 'Sign Up',
+	'otp_meta' => 'Enter OTP',
+	'verify_otp' => 'Verify',
+	'alternate_mobile' => 'Alternate Mobile',
+	'landline' => 'Landline Mobile',
+	'edit_liaisonOfficer' => 'Edit Liaison Officer',
+	'view_liaisonOfficer' => 'Liaison Officer Details',
+	'national_permission_application_id' => 'Application ID',
+	'imc_name' => 'Indian Mission Country Name',
+
+
+
+	// FFO Translations
+	'approve' => 'Approved',
+	'revert' => 'Reverted',
+	'reject' => 'Rejected',
+	'pending' => 'Pending',
+	'inprogress' => 'In Progress',
+	'partiallyapprove' => 'Partially Approved',
+	'accepted' => 'Accepted(Under Approval)',
+	'completed' => 'Completed',
+	'foreign_national' => 'Foreign National',
+	'local_representative' => 'Local Representative',
+	'international' => 'International',
+	'domestic' => 'Domestic',
+	
+	
+	//Common
+	
+	'application_no' => 'Application No',
+	'assigned_to' => 'Assigned To',
+	'assigned_on'=> 'Assigned On',
+	'application_title'=> 'Application Title',
+	'production_category_name' => 'Production Category Name',
+	'success' => 'Success',
+	'failed' => 'Failed',
+	'processing' => 'Processing',
+	'submitted' => 'Submitted',
+	'in_progress' => 'InProgress',
+
+	'pdf_required' => 'File is required',
+	'pdf_mime' => 'Invalid file type found!',
+	'pdf_size' => 'File size should not exceed :filesize MB',
+
+	'excel_required' => 'File is required',
+	'excel_mime' => 'Invalid file mime type found!',
+	'excel_size' => 'File size should not exceed :filesize MB',
+
+	'image_required' => 'File is required',
+	'image_mime' => 'Invalid file type found!',
+	'image_size' => 'File size should not exceed :filesize KB',
+
+
+	//Railway Zone 
+	'railway_zone_module' => 'Railway Zone',
+	'railway_zone' => 'Railway Zone',
+	'add_railway_zone' => 'Add Railway Zone',
+	'railway_zone_list' => 'Railway Zone List',
+	'edit_railway_zone' => 'Edit Railway Zone',
+	'railway_zone_name' => 'Railway Zone Name',
+
+	// Udhayam
+	'forgot_udyam_number' => 'Forgot Udyam Number?',
+	'mse' => 'MSE',
+
+
+	'owner_name' => 'Owner Name',
+	'store_name' => 'Store Name',
+	'type_of_business_pmv_users' => 'Type of Business',
+	'type_of_business' => 'Sort Order',
+	
+];
+
+return array_merge($arr,$utl1245,$utl1070,$utl0818,$utl1207,$utl1308);

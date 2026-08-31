@@ -1,0 +1,253 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Web\Dashboard;
+
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+trait DashboardTrait
+{
+	
+    public function getNPDashboardDetails($year = null, $fromDate = null, $toDate = null,$type=null)
+    {
+        return [
+            'total_registered_nps' => $this->getTotalRegisteredNPs($year, $fromDate, $toDate,$type),
+            'total_pending_nps'    => $this->getTotalPendingNPs($year, $fromDate, $toDate,$type),
+            'total_verified_nps'   => $this->getTotalVerifiedNPs($year, $fromDate, $toDate,$type),
+            'total_rejected_nps'   => $this->getTotalRejectedNPs($year, $fromDate, $toDate,$type),
+            'total_reverted_nps'   => $this->getTotalRevertedNPs($year, $fromDate, $toDate,$type),
+        ];
+    }
+
+    /* ---------------- REGISTERED ---------------- */
+
+    public function getTotalRegisteredNPs($year, $fromDate, $toDate,$type)
+    {
+        $totalSNP = DB::table('team_snp_scheme');
+
+			if (!empty($fromDate) && !empty($toDate)) {
+
+				$totalSNP->whereBetween('created_at', [
+					Carbon::parse($fromDate)->startOfDay(),
+					Carbon::parse($toDate)->endOfDay(),
+				]);
+
+			} else {
+
+				if ($type != 1) {
+					//dd($year);
+					$totalSNP->whereYear('created_at', $year);
+				}
+			}
+
+			$totalSNP = $totalSNP->count();
+			//dd($totalSNP);
+
+
+        $totalNP = DB::table('network_providers')
+			->whereNotIn('id', function ($query) {
+                $query->select('network_provider_id')->from('team_snp_scheme');
+            });
+			
+            if (!empty($fromDate) && !empty($toDate)) {
+
+				$totalNP->whereBetween('created_at', [
+					Carbon::parse($fromDate)->startOfDay(),
+					Carbon::parse($toDate)->endOfDay(),
+				]);
+
+			} else {
+
+				if ($type != 1) {
+					$totalNP->whereYear('created_at', $year);
+				}
+			}
+			
+			$totalNP = $totalNP->count();
+
+        return $totalSNP + $totalNP;
+    }
+
+    /* ---------------- PENDING ---------------- */
+
+    public function getTotalPendingNPs($year, $fromDate, $toDate,$type)
+    {
+        $totalSNP = DB::table('team_snp_scheme')
+            ->where('status', 0);
+            if (!empty($fromDate) && !empty($toDate)) {
+
+				$totalSNP->whereBetween('created_at', [
+					Carbon::parse($fromDate)->startOfDay(),
+					Carbon::parse($toDate)->endOfDay(),
+				]);
+
+			} else {
+
+				if ($type != 1) {
+					$totalSNP->whereYear('created_at', $year);
+				}
+			}
+           $totalSNP = $totalSNP->count();
+
+        $totalNP = DB::table('network_providers')
+            ->where('status', 1)
+            ->whereNotIn('id', function ($query) {
+                $query->select('network_provider_id')->from('team_snp_scheme');
+            });
+			
+           if (!empty($fromDate) && !empty($toDate)) {
+
+				$totalNP->whereBetween('created_at', [
+					Carbon::parse($fromDate)->startOfDay(),
+					Carbon::parse($toDate)->endOfDay(),
+				]);
+
+			} else {
+
+				if ($type != 1) {
+					$totalNP->whereYear('created_at', $year);
+				}
+			}
+			
+			$totalNP = $totalNP->count();
+
+        return $totalSNP + $totalNP;
+    }
+
+    /* ---------------- VERIFIED ---------------- */
+
+    public function getTotalVerifiedNPs($year, $fromDate, $toDate,$type)
+    {
+        $totalSNP = DB::table('team_snp_scheme')->where('status', 1);
+			
+            if (!empty($fromDate) && !empty($toDate)) {
+
+				$totalSNP->whereBetween('created_at', [
+					Carbon::parse($fromDate)->startOfDay(),
+					Carbon::parse($toDate)->endOfDay(),
+				]);
+
+			} else {
+
+				if ($type != 1) {
+					$totalSNP->whereYear('created_at', $year);
+				}
+			}
+
+			$totalSNP = $totalSNP->count();
+
+        $totalNP = DB::table('network_providers')->where('status', 2)
+            ->whereNotIn('id', function ($query) {
+                $query->select('network_provider_id')->from('team_snp_scheme');
+            });
+			
+            if (!empty($fromDate) && !empty($toDate)) {
+
+				$totalNP->whereBetween('created_at', [
+					Carbon::parse($fromDate)->startOfDay(),
+					Carbon::parse($toDate)->endOfDay(),
+				]);
+
+			} else {
+
+				if ($type != 1) {
+					$totalNP->whereYear('created_at', $year);
+				}
+			}
+			$totalNP = $totalNP->count();
+
+        return $totalSNP + $totalNP;
+    }
+
+    /* ---------------- REJECTED ---------------- */
+
+    public function getTotalRejectedNPs($year, $fromDate, $toDate,$type)
+    {
+        $totalSNP = DB::table('team_snp_scheme')->where('status', 4);
+		
+            if (!empty($fromDate) && !empty($toDate)) {
+				$totalSNP->whereBetween('created_at', [
+					Carbon::parse($fromDate)->startOfDay(),
+					Carbon::parse($toDate)->endOfDay(),
+				]);
+
+			} else {
+
+				if ($type != 1) {
+					$totalSNP->whereYear('created_at', $year);
+				}
+			}
+
+		$totalSNP = $totalSNP->count();
+
+        $totalNP = DB::table('network_providers')->where('status', 3)
+            ->whereNotIn('id', function ($query) {
+                $query->select('network_provider_id')->from('team_snp_scheme');
+            });
+			
+            if (!empty($fromDate) && !empty($toDate)) {
+
+				$totalNP->whereBetween('created_at', [
+					Carbon::parse($fromDate)->startOfDay(),
+					Carbon::parse($toDate)->endOfDay(),
+				]);
+
+			} else {
+
+				if ($type != 1) {
+					$totalNP->whereYear('created_at', $year);
+				}
+			}
+			
+			$totalNP = $totalNP->count();
+
+
+        return $totalSNP + $totalNP;
+    }
+
+    /* ---------------- REVERTED ---------------- */
+
+    public function getTotalRevertedNPs($year, $fromDate, $toDate,$type)
+    {
+        $totalSNP = DB::table('team_snp_scheme')->where('status', 0)->where('review_status', 5);
+		
+            if (!empty($fromDate) && !empty($toDate)) {
+				$totalSNP->whereBetween('created_at', [
+					Carbon::parse($fromDate)->startOfDay(),
+					Carbon::parse($toDate)->endOfDay(),
+				]);
+
+			} else {
+
+				if ($type != 1) {
+					$totalSNP->whereYear('created_at', $year);
+				}
+			}
+
+		$totalSNP = $totalSNP->count();
+
+        $totalNP = DB::table('network_providers')->where('status', 4)
+            ->whereNotIn('id', function ($query) {
+                $query->select('network_provider_id')->from('team_snp_scheme');
+            });
+			
+			
+             if (!empty($fromDate) && !empty($toDate)) {
+				$totalNP->whereBetween('created_at', [
+					Carbon::parse($fromDate)->startOfDay(),
+					Carbon::parse($toDate)->endOfDay(),
+				]);
+
+			} else {
+				if ($type != 1) {
+					$totalNP->whereYear('created_at', $year);
+				}
+			}
+			
+			$totalNP = $totalNP->count();
+
+        return $totalSNP + $totalNP;
+    }
+}

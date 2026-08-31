@@ -1,0 +1,470 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\Batch;
+
+use App\Domain\Workflow\WorkflowService;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Collection;
+use App\Web\BatchWorkflow\HasTimeline;
+
+
+
+class ProcessBatchAction
+{
+    use HasTimeline;
+
+    public function __construct(
+        private readonly BatchRepository $batchRepository,
+        private readonly WorkflowService $workflowService,
+    ) {}
+
+    public function getBatchClaims(string $batchId)
+    {
+        return DB::table('dy_batch_claims')->where('batch_id', $batchId)->get();
+    }
+
+    public function getApprovedClaims(Collection $batchClaims, string|int $status)
+    {
+        return DB::table('claims')
+            ->whereIn('id', $batchClaims->pluck('claim_id')->toArray())
+            ->where('claim_status', $status)
+            ->pluck('id')
+            ->toArray();
+    }
+
+    public function transitionBatch($workflowTypeId, $batchId, $action)
+    {
+        $this->workflowService->transition(
+            workflowTypeId: $workflowTypeId,
+            entityType: EntityType::BATCH->value,
+            entityId: $batchId,
+            action: $action,
+            userRole: authRoleName()
+        );
+    }
+
+    public function transitionClaim($workflowTypeId, $claimId, $action)
+    {
+        $this->workflowService->transition(
+            workflowTypeId: $workflowTypeId,
+            entityType: EntityType::CLAIM->value,
+            entityId: $claimId,
+            action: $action,
+            userRole: authRoleName()
+        );
+    }
+
+    public function getCurrentInstance($workflowTypeId, $batchId)
+    {
+        return $this->workflowService->getWorkflowInstance(
+            workflowTypeId: $workflowTypeId,
+            entityType: EntityType::BATCH->value,
+            entityId: $batchId,
+        );
+    }
+
+    public function updateBatchStatus($batchId, $workflowState, $is_query)
+    {
+        DB::table('dy_batches')->where('id', $batchId)->update([
+            'status' => BatchStatus::getStatusByKey($workflowState->state_key),
+            'current_status' => $workflowState->state_key,
+            'updated_at' => now(),
+            'is_query' => $is_query,
+        ]);
+    }
+
+    public function updateBatchClaimsStatus($batchId, $approvedClaims, $workflowState)
+    {
+        DB::table('dy_batch_claims')
+            ->where('batch_id', $batchId)
+            ->whereIn('claim_id', $approvedClaims)
+            ->update([
+                'status' => BatchStatus::getStatusByKey($workflowState->state_key),
+                'updated_at' => now()
+            ]);
+    }
+
+    public function updateClaimsStatus($approvedClaims, $workflowState)
+    {
+        DB::table('claims')
+            ->whereIn('id', $approvedClaims)
+            ->update([
+                'claim_status' => BatchStatus::getStatusByKey($workflowState->state_key),
+            ]);
+    }
+
+    public function updateBatchClaimsStatusRejected($batchId, $rejectedClaims)
+    {
+        DB::table('dy_batch_claims')
+            ->where('batch_id', $batchId)
+            ->whereIn('claim_id', $rejectedClaims)
+            ->update([
+                'status' => BatchStatus::REJECTED_BY_ONDC->value,
+                'updated_at' => now(),
+                'is_deleted' => 1,
+                'deleted_at' => now(),
+                'deleted_by' => AuthId(),
+            ]);
+    }
+
+    public function createBatchTimeline($batchId, $status, $batchClaims)
+    {
+        $this->createTimeline([
+            'batch_id' => $batchId,
+            'comments' => request('comments'),
+            'status' => BatchStatus::getLabelByValue($status),
+            'claims' => $this->createBatchClaimTimelineDetails(
+                batchId: $batchId,
+                claimIds: $batchClaims
+            )
+        ]);
+    }
+
+    public function updateClaimsTemporaryState($batchClaims)
+    {
+        DB::table('claims')->whereIn('id', $batchClaims)->update(['temporary_state' => 0]);
+    }
+
+    private function processBatchWorkflowByOndc($batchId, $workflowTypeId, $batchClaims, $data)
+    {
+        $pendingClaims  = $this->batchRepository->getPendingClaimsForOndc($batchId);
+        $approvedClaims = $this->getApprovedClaims($batchClaims, BatchStatus::APPROVED_BY_ONDC->value);
+        $rejectedClaims = $this->getApprovedClaims($batchClaims, BatchStatus::REJECTED_BY_ONDC->value);
+
+        if ($pendingClaims > 0) {
+            throw new \Exception("Pending claims found...");
+        }
+
+        // if ($data['action'] != 'proceed-batch-workflow-sent-to-finance') {
+        //     $this->transitionBatch($workflowTypeId, $batchId, 'approve');
+        // }
+
+        if (count($approvedClaims) > 0) {
+            $this->transitionBatch($workflowTypeId, $batchId, 'send');
+        }
+
+        if ($approvedClaims) {
+            foreach ($approvedClaims as $claimId) {
+                $this->transitionClaim($workflowTypeId, $claimId, 'approve');
+            }
+        }
+
+        if ($rejectedClaims) {
+            foreach ($rejectedClaims as $claimId) {
+                $this->transitionClaim($workflowTypeId, $claimId, 'reject');
+            }
+        }
+
+        $currentInstance = $this->getCurrentInstance($workflowTypeId, $batchId);
+        $workflowState = $this->workflowService->getWorkflowStateById($currentInstance->current_state_id);
+
+        $this->updateBatchStatus($batchId, $workflowState, $is_query);
+
+        if ($approvedClaims) {
+            $this->updateBatchClaimsStatus($batchId, $approvedClaims, $workflowState);
+            $this->updateClaimsStatus($approvedClaims, $workflowState);
+        }
+
+        if ($rejectedClaims) {
+            $this->updateBatchClaimsStatusRejected($batchId, $rejectedClaims);
+        }
+
+        $batchClaims = $this->getBatchClaims($batchId);
+        $status = $this->workflowService->getWorkflowStateById($currentInstance->current_state_id)->value('state_value');
+
+        $this->updateClaimsTemporaryState($batchClaims);
+
+        $this->createBatchTimeline(
+            batchId: $batchId,
+            status: $status,
+            batchClaims: $batchClaims
+        );
+    }
+
+    private function processBatchWorkflowByNsic($batchId, $workflowTypeId, $batchClaims, $data)
+    {
+        if ($data['action'] == 'proceed-batch-workflow-sent-to-finance') {
+            $pendingClaims = 0;
+            $rejectedClaims = 0;
+            $approvedClaims = $this->getApprovedClaims($batchClaims, BatchStatus::SENT_TO_NSIC_BY_SNP->value);
+        } else {
+            $pendingClaims = $batchRepository->getPendingClaimsForNsic($batchId);
+            $approvedClaims = $this->getApprovedClaims($batchClaims, BatchStatus::APPROVED_BY_NSIC->value);
+            $rejectedClaims = $this->getApprovedClaims($batchClaims, BatchStatus::REJECTED_BY_NSIC->value);
+        }
+
+        if ($pendingClaims > 0) {
+            throw new \Exception("Pending claims found...");
+        }
+
+        if ($data['action'] != 'proceed-batch-workflow-sent-to-finance') {
+            $this->transitionBatch($workflowTypeId, $batchId, 'approve');
+        }
+
+        if (count($approvedClaims) > 0) {
+            $this->transitionBatch($workflowTypeId, $batchId, 'send');
+        }
+
+        if ($approvedClaims) {
+            foreach ($approvedClaims as $claimId) {
+                $this->transitionClaim($workflowTypeId, $claimId, 'approve');
+            }
+        }
+
+        if ($rejectedClaims) {
+            foreach ($rejectedClaims as $claimId) {
+                $this->transitionClaim($workflowTypeId, $claimId, 'reject');
+            }
+        }
+
+        $currentInstance = $this->getCurrentInstance($workflowTypeId, $batchId);
+        $workflowState = $this->workflowService->getWorkflowStateById($currentInstance->current_state_id);
+
+        $this->updateBatchStatus($batchId, $workflowState, $is_query);
+
+        if ($approvedClaims) {
+            $this->updateBatchClaimsStatus($batchId, $approvedClaims, $workflowState);
+            $this->updateClaimsStatus($approvedClaims, $workflowState);
+        }
+
+        if ($rejectedClaims) {
+            $this->updateBatchClaimsStatusRejected($batchId, $rejectedClaims);
+        }
+
+        $batchClaims = $this->getBatchClaims($batchId);
+        $status = $this->workflowService->getWorkflowStateById($currentInstance->current_state_id)->value('state_value');
+
+        $this->updateClaimsTemporaryState($batchClaims);
+
+        $this->createBatchTimeline(
+            batchId: $batchId,
+            status: $status,
+            batchClaims: $batchClaims
+        );
+    }
+
+    private function processBatchWorkflowByNsicFinance($batchId, $workflowTypeId, $batchClaims, $data)
+    {
+        $finalApproved = null;
+        $pendingClaims = $batchRepository->getPendingClaimsForNSICFinance($batchId);
+        $approvedClaims = $this->getApprovedClaims($batchClaims, BatchStatus::APPROVED->value);
+        $rejectedClaims = $this->getApprovedClaims($batchClaims, BatchStatus::REJECTED_NSIC_FINANCE->value);
+
+        if ($approvedClaims) {
+            $finalApproved = true;
+        }
+
+        if ($pendingClaims > 0) {
+            throw new \Exception("Pending claims found...");
+        }
+
+        if ($data['action'] != 'proceed-batch-workflow-sent-to-finance') {
+            $this->transitionBatch($workflowTypeId, $batchId, 'approve');
+        }
+
+        if (count($approvedClaims) > 0) {
+            $this->transitionBatch($workflowTypeId, $batchId, 'send');
+        }
+
+        $currentInstance = $this->getCurrentInstance($workflowTypeId, $batchId);
+
+        $workflowState = $this->workflowService->getWorkflowStateById($currentInstance->current_state_id);
+
+        $is_query = NULL;
+
+        if (count($rejectedClaims) > 0) {
+            $is_query = 1;
+        }
+
+        $this->updateBatchStatus($batchId, $workflowState, $is_query);
+
+        if ($approvedClaims) {
+            $this->updateBatchClaimsStatus($batchId, $approvedClaims, $workflowState);
+            $this->updateClaimsStatus($approvedClaims, $workflowState);
+
+            if ($finalApproved) {
+                $mseTeamIds = DB::table('claims')
+                    ->whereIn('id', $approvedClaims)
+                    ->pluck('team_registration_id')
+                    ->toArray();
+
+                DB::table('team_msme_schemes')
+                    ->whereIn('team_id', $mseTeamIds)
+                    ->update([
+                        'is_catalogue_claim_approved' => true
+                    ]);
+            }
+        }
+
+        if ($rejectedClaims) {
+            $this->updateBatchClaimsStatusRejected($batchId, $rejectedClaims);
+        }
+
+        $batchClaims = $this->getBatchClaims($batchId);
+        $status = $this->workflowService->getWorkflowStateById($currentInstance->current_state_id)->value('state_value');
+
+        $this->updateClaimsTemporaryState($batchClaims);
+
+        $this->createBatchTimeline(
+            batchId: $batchId,
+            status: $status,
+            batchClaims: $batchClaims
+        );
+    }
+
+    private function processWorkflowByNP()
+    {
+        $pendingClaims = 0;
+        $approvedClaims = DB::table('claims')
+            ->whereIn('id', $batchClaims->pluck('claim_id')->toArray())
+            ->where(function ($query) {
+                return $query
+                    ->where('claim_status', BatchStatus::SENT_TO_SNP_FOR_INVOICE->value)
+                    ->orWhere('claim_status', BatchStatus::SENT_TO_SNP->value);
+            })
+            ->pluck('id')
+            ->toArray();
+
+        if ($pendingClaims > 0) {
+            throw new \Exception("Pending claims found...");
+        }
+
+        if ($data['action'] != 'proceed-batch-workflow-to-ca') {
+            $this->transitionBatch($workflowTypeId, $batchId, 'upload_invoice');
+            DB::table('dy_attachments')->insert([
+                'id' => DB::raw('UUID()'),
+                'entity_type' => EntityType::BATCH->value,
+                'entity_id' => $batchId,
+                'attachment_type_id' => $data['document_category_id'],
+                'file_path' => $data['file_upload_id'],
+                'uploaded_by' => authId(),
+                'created_at' => now(),
+            ]);
+        }
+
+        $this->transitionBatch($workflowTypeId, $batchId, 'send');
+
+        if ($approvedClaims) {
+            foreach ($approvedClaims as $claimId) {
+                if ($data['action'] != 'proceed-batch-workflow-to-ca') {
+                    $this->transitionClaim($workflowTypeId, $claimId, 'upload_invoice');
+                }
+
+                $this->transitionClaim($workflowTypeId, $claimId, 'send');
+            }
+        }
+
+        $currentInstance = $this->getCurrentInstance($workflowTypeId, $batchId);
+        $workflowState = $this->workflowService->getWorkflowStateById($currentInstance->current_state_id);
+
+        $this->updateBatchStatus($batchId, $workflowState, $is_query);
+
+        if ($approvedClaims) {
+            $this->updateBatchClaimsStatus($batchId, $approvedClaims, $workflowState);
+            $this->updateClaimsStatus($approvedClaims, $workflowState);
+        }
+
+        $batchClaims = $this->getBatchClaims($batchId);
+        $status = $this->workflowService->getWorkflowStateById($currentInstance->current_state_id)->value('state_value');
+
+        $this->updateClaimsTemporaryState($batchClaims);
+
+        $this->createBatchTimeline(
+            batchId: $batchId,
+            status: $status,
+            batchClaims: $batchClaims
+        );
+    }
+
+    public function processWorkflowByCA($batchId, $workflowTypeId, $batchClaims, $data)
+    {
+        $pendingClaims = 0;
+
+        $approvedClaims = DB::table('claims')
+            ->whereIn('id', $batchClaims->pluck('claim_id')->toArray())
+            ->where('claim_status', BatchStatus::SENT_TO_CA->value)
+            ->pluck('id')
+            ->toArray();
+
+
+        if ($pendingClaims > 0) {
+            throw new \Exception("Pending claims found...");
+        }
+
+        $this->transitionBatch($workflowTypeId, $batchId, 'upload_certificate');
+
+        DB::table('dy_attachments')->insert([
+            'id' => DB::raw('UUID()'),
+            'entity_type' => EntityType::BATCH->value,
+            'entity_id' => $batchId,
+            'attachment_type_id' => $data['document_category_id'],
+            'file_path' => $data['file_upload_id'],
+            'uploaded_by' => authId(),
+            'created_at' => now(),
+        ]);
+
+        $this->transitionBatch($workflowTypeId, $batchId, 'send');
+
+        foreach ($approvedClaims as $claimId) {
+            $this->transitionClaim($workflowTypeId, $claimId, 'upload_certificate');
+            $this->transitionClaim($workflowTypeId, $claimId, 'send');
+        }
+
+        $currentInstance = $this->getCurrentInstance($workflowTypeId, $batchId);
+        $workflowState = $this->workflowService->getWorkflowStateById($currentInstance->current_state_id);
+
+        $this->updateBatchStatus($batchId, $workflowState, $is_query);
+
+        if ($approvedClaims) {
+            $this->updateBatchClaimsStatus($batchId, $approvedClaims, $workflowState);
+            $this->updateClaimsStatus($approvedClaims, $workflowState);
+        }
+
+        $batchClaims = $this->getBatchClaims($batchId);
+        $status = $this->workflowService->getWorkflowStateById($currentInstance->current_state_id)->value('state_value');
+
+        $this->updateClaimsTemporaryState($batchClaims);
+
+        $this->createBatchTimeline(
+            batchId: $batchId,
+            status: $status,
+            batchClaims: $batchClaims
+        );
+    }
+
+
+    public function execute(array $data)
+    {
+        DB::transaction(function () use ($data) {
+            $batchId                = $data['batch_id'];
+            $workflowTypeId         = $this->workflowService->getWorkflowTypeIdBySlug($data['claim_type']);
+            $batchClaims            = $this->getBatchClaims($batchId);
+
+            $pendingClaims          = -1;
+            $approvedClaims         = [];
+            $rejectedClaims         = [];
+
+            if (hasRole('ondc-admin')) {
+                $this->processBatchWorkflowByOndc($batchId, $workflowTypeId, $batchClaims, $data);
+            }
+
+            if (hasRole('nsic')) {
+                $this->processBatchWorkflowByNsic($batchId, $workflowTypeId, $batchClaims, $data);
+            }
+
+            if (hasRole('nsic-finance')) {
+                $this->processBatchWorkflowByNsicFinance($batchId, $workflowTypeId, $batchClaims, $data);
+            }
+
+            if (hasRole('snp') || hasRole('lsp') || hasRole('bnp')) {
+                $this->processBatchWorkflowBySnp($batchId, $workflowTypeId, $batchClaims, $data);
+            }
+
+            if (hasRole('ca')) {
+                $this->processBatchWorkflowByCa($batchId, $workflowTypeId, $batchClaims, $data);
+            }
+        });
+    }
+}

@@ -1,0 +1,209 @@
+<div class="card common-card h-100">
+    <div class="card-body">
+        <div class="d-flex justify-content-between main-charts-headding-wrap pb-2">
+            <h3>MSE By Top 10 Categories</h3>
+            <div class="chart-controls">
+                <button type="button" class="btn btn-sm btn-outline-secondary" onclick="toggleValues()">
+                    <i class="fas fa-chart-simple"></i> Toggle Values
+                </button>
+            </div>
+        </div>
+
+        <div class="graph-area mt-2 w-100 m-auto text-center mb-2"
+            data-endpoint="{{ $url ?? url('get-msme-category-count-onboarded') }}" id="msmeBarChartContainer">
+            <figure class="highcharts-figure">
+                <div id="barChart" style="min-height: 450px;"></div>
+            </figure>
+        </div>
+    </div>
+</div>
+
+<script>
+    let currentBarChart = null;
+    let showValues = true;
+
+    if (typeof window.getMsmeCategoryCountOnboarded === 'undefined') {
+
+        window.getMsmeCategoryCountOnboarded = function (isDateSearch = false) {
+            let filterData = {};
+            if (typeof window.getFilterParams === 'function') {
+                filterData = window.getFilterParams(isDateSearch);
+            } else if (typeof getFilterParams === 'function') {
+                filterData = getFilterParams(isDateSearch);
+            }
+
+            let endpointUrl = document.getElementById('msmeBarChartContainer').getAttribute('data-endpoint');
+
+            $.ajax({
+                url: endpointUrl,
+                type: "GET",
+                data: filterData,
+                dataType: "json",
+                headers: {
+                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                },
+                success: function (response) {
+                    getMsmeCategoryCountOnboardedBarchart(response);
+                },
+                error: function (xhr) {
+                    console.error("Error fetching category data:", xhr.responseText);
+                }
+            });
+        };
+
+        window.getMsmeCategoryCountOnboardedBarchart = function (response) {
+            if (!response || !response.data || response.data.length === 0) {
+                document.getElementById('barChart').innerHTML = '<div class="alert alert-info mt-5">No data available</div>';
+                return;
+            }
+
+            // Sort data by count descending and take top 10
+            let sortedData = [...response.data].sort((a, b) => b.count - a.count);
+            let top10Data = sortedData.slice(0, 10);
+
+            if (typeof Highcharts === 'undefined') {
+                console.error("Highcharts is not loaded.");
+                return;
+            }
+
+            if (currentBarChart) {
+                currentBarChart.destroy();
+            }
+
+            const totalCount = top10Data.reduce((acc, item) => acc + item.count, 0);
+
+            currentBarChart = Highcharts.chart('barChart', {
+                chart: {
+                    type: 'bar',
+                    height: 450,
+                    spacing: [10, 10, 10, 10]
+                },
+                title: {
+                    text: undefined
+                },
+                subtitle: {
+                    text: `Total MSEs: ${totalCount.toLocaleString()}`,
+                    style: { fontSize: '12px', color: '#666' }
+                },
+                xAxis: {
+                    categories: top10Data.map(item => item.name),
+                    title: {
+                        text: null
+                    },
+                    labels: {
+                        style: {
+                            fontSize: '11px',
+                            fontWeight: 'bold'
+                        },
+                        overflow: 'justify'
+                    }
+                },
+                yAxis: {
+                    min: 0,
+                    title: {
+                        text: 'Number of MSEs',
+                        align: 'high'
+                    },
+                    labels: {
+                        overflow: 'justify',
+                        formatter: function () {
+                            return this.value.toLocaleString();
+                        }
+                    },
+                    gridLineColor: '#e0e0e0'
+                },
+                tooltip: {
+                    pointFormat: '<b>{point.category}</b><br/>' +
+                        'Count: <b>{point.y.toLocaleString()}</b><br/>' +
+                        'Share: <b>{point.percentage:.1f}%</b>',
+                    shared: false,
+                    followPointer: true
+                },
+                plotOptions: {
+                    bar: {
+                        dataLabels: {
+                            enabled: true,
+                            formatter: function () {
+                                if (showValues) {
+                                    return this.y.toLocaleString();
+                                }
+                                return null;
+                            },
+                            style: {
+                                fontSize: '11px',
+                                fontWeight: 'bold',
+                                textOutline: 'none',
+                                color: '#333'
+                            },
+                            inside: false,
+                            align: 'right'
+                        },
+                        borderRadius: 4,
+                        borderWidth: 0,
+                        pointWidth: 25,
+                        cursor: 'pointer',
+                        point: {
+                            events: {
+                                click: function () {
+                                    alert(`Category: ${this.category}\nCount: ${this.y.toLocaleString()}\nPercentage: ${this.percentage.toFixed(1)}%`);
+                                }
+                            }
+                        }
+                    }
+                },
+                legend: {
+                    enabled: false
+                },
+                series: [{
+                    name: 'MSE Count',
+                    colorByPoint: true,
+                    data: top10Data.map(item => ({
+                        y: item.count,
+                        name: item.name,
+                        percentage: (item.count / totalCount) * 100
+                    })),
+                    colors: [
+                        '#2E86AB', '#A23B72', '#F18F01', '#C73E1D', '#6A994E',
+                        '#BC4A6C', '#5D576B', '#F4A261', '#2A9D8F', '#E76F51'
+                    ]
+                }],
+                credits: {
+                    enabled: false
+                },
+                responsive: {
+                    rules: [{
+                        condition: {
+                            maxWidth: 500
+                        },
+                        chartOptions: {
+                            xAxis: {
+                                labels: {
+                                    style: { fontSize: '9px' }
+                                }
+                            },
+                            plotOptions: {
+                                bar: {
+                                    dataLabels: {
+                                        style: { fontSize: '9px' }
+                                    }
+                                }
+                            }
+                        }
+                    }]
+                }
+            });
+        };
+
+        window.toggleValues = function () {
+            showValues = !showValues;
+            if (currentBarChart) {
+                const series = currentBarChart.series[0];
+                series.update({
+                    dataLabels: {
+                        enabled: showValues
+                    }
+                });
+            }
+        };
+    }
+</script>

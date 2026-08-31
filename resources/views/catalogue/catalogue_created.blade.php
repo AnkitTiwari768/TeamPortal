@@ -1,0 +1,742 @@
+@extends('components.admin.content-layout')
+
+@section('card-content')
+
+    <div class="align-items-end border-bottom card-body d-flex justify-content-between catalogue-filter-row">
+        <form id="search_form" autocomplete="off">
+            <div class="filter-bar d-flex gap-3 align-items-center">
+                <div class="select-box">
+                    <label class="form-label">From date</label>
+                    <input type="text" class="form-control filter_btn" name="from_date" id="from_date"
+                        placeholder="From Date">
+                </div>
+                <div class="select-box">
+                    <label class="form-label">To date</label>
+                    <input type="text" class="form-control filter_btn" name="to_date " id="to_date"
+                        placeholder="To Date">
+                </div>
+                <a href="javascript:void(0)" class="clear-action" id="reset_btn" style="display: none;"> <img
+                        src="{{ asset('assets/ffo-admin/img/close-blue.svg') }}">Clear all</a>
+            </div>
+        </form>
+
+        @if (hasRole('snp'))
+            <div class="card-header d-flex">
+                <div class="action-header ms-auto">
+                    <button id="downloadSelected" class="btn btn-primary">
+                        <i class="fa fa-download"></i> Download Predefined File
+                    </button>
+                    <div class="btn-group drop-btn">
+
+                        <button type="button" class="btn btn-outline-primary" data-bs-toggle="modal"
+                            data-bs-target="#myCSVModal">
+                            <img src="{{ asset('assets/img-new/add.svg') }}">
+                            Add Bulk Claim
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+
+    </div>
+
+    <div class="card-body">
+        <div class="table-responsive">
+            <table class="table table-bordered table-striped table-hover" id="dataTable" width="100%" cellspacing="0">
+                <thead>
+                    <tr>
+                        <th><input type="checkbox" id="selectAll"></th>
+                        <th>{{ __('message.sn') }}</th>
+                        <th>TEAMID</th>
+                        <th>Udyam</th>
+                        <th>Mobile</th>
+                        <th>Email</th>
+                        <th>State</th>
+                        <th>Name of enterprise</th>
+                        <th>Enterprise Type </th>
+                        <th>Date of Registration</th>
+                        <!-- <th class="actions">{{ __('message.action') }}</th> -->
+                    </tr>
+                </thead>
+            </table>
+        </div>
+    </div>
+
+
+    <!-- Modal CSV -->
+    <div class="modal fade" id="myCSVModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="modal-title mb-0">Add Bulk Claim</h5>
+                    </div>
+
+                    @php
+                        /*
+                    <div class="text-center flex-grow-1">
+                        <a href="{{ url('storage/app/download_format/claim_bulk_import.zip') }}"
+                            class="btn btn-sm btn-outline-primary">Download Sample Format</a>
+                    </div>
+                    */
+                    @endphp
+
+                    <div class="flex-grow-1 text-end">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+
+                <form id="bulk-upload">
+                    @csrf
+                    <div class="modal-body">
+                        <!-- Claim Type - Full Width -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <p>
+                                    <select class="form-select" name="claim_type_id" id="claim_type_id">
+                                        <option value="">Select Claim Type</option>
+                                        @foreach ($claim_types ?? [] as $claim_type_id => $claim_type_name)
+                                            <option value="{{ $claim_type_id }}"
+                                                @if (($claimTypeIdValue ?? null) == $claim_type_id) selected @endif>
+                                                {{ $claim_type_name }}
+                                            </option>
+                                        @endforeach
+                                    </select>
+                                </p>
+                            </div>
+                        </div>
+
+                        <!-- GST Type - Full Width commented out and hidden -->
+                        <!--
+                            <div class="row">
+                                <div class="col-md-12">
+                                    <p>
+                                        <select id="gst_type" name="gst_type" class="form-select">
+                                            <option value="">-- Select GST Type --</option>
+                                            <option value="1">GST</option>
+                                            <option value="2">CGST + SGST</option>
+                                        </select>
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="row" id="gst_percentage_wrapper" style="display:none;">
+                                <div class="col-md-12">
+                                    <p>
+                                        <input type="number" name="gst_percentage" id="gst_percentage"
+                                            class="form-control @error('gst_percentage') is-invalid @enderror"
+                                            placeholder="Enter GST Percentage (%)" min="0" max="100" step="any"
+                                            maxlength="3" oninput="validateThreeDigits(this)"
+                                            value="{{ old('gst_percentage') }}" />
+                                        @error('gst_percentage')
+        <span class="invalid-feedback" role="alert" style="display:block;">
+                                                    <strong>{{ $message }}</strong>
+                                                </span>
+    @enderror
+                                    </p>
+                                </div>
+                            </div>
+
+                            <div class="row" id="cgst_sgst_wrapper" style="display:none;">
+                                <div class="col-md-6">
+                                    <p>
+                                        <input type="number" name="cgst_percentage" id="cgst_percentage" class="form-control"
+                                            placeholder="Enter CGST Percentage" min="0" max="100" step="any"
+                                            maxlength="3" oninput="validateThreeDigits(this)"
+                                            value="{{ old('cgst_percentage') }}" />
+                                    </p>
+                                </div>
+                                <div class="col-md-6">
+                                    <p>
+                                        <input type="number" name="sgst_percentage" id="sgst_percentage"
+                                            class="form-control" placeholder="Enter SGST Percentage" min="0"
+                                            max="100" step="any" maxlength="3" oninput="validateThreeDigits(this)"
+                                            value="{{ old('sgst_percentage') }}" />
+                                    </p>
+                                </div>
+                            </div>
+                            -->
+                        <input type="hidden" name="gst_type" id="gst_type" value="1" />
+                        <input type="hidden" name="gst_percentage" id="gst_percentage" value="0" />
+                        <input type="hidden" name="cgst_percentage" id="cgst_percentage" value="0" />
+                        <input type="hidden" name="sgst_percentage" id="sgst_percentage" value="0" />
+
+                        <!-- File Upload -->
+                        <div class="row">
+                            <div class="col-md-12">
+                                <p class="mt-3">Select File : <input type="file" name="file" id="file"
+                                        accept=".xlsx"></p>
+                                <span class="text-primary">Please ensure the file is in the correct format by downloading
+                                    the
+                                    predefined format.</span>
+                            </div>
+                        </div>
+
+                        <div id="csv-errors" style="color: red; font-family: Arial; padding: 10px;"></div>
+
+                        <div class="form-group col-md-12 form-check mt-2">
+                            <input class="form-check-input" type="checkbox" name="declaration" id="declaration"
+                                value="1" required />
+                            <strong>Declaration:</strong>
+                            <label class="form-check-label" for="declaration"><em>
+                                    We understand and acknowledge that incentives under this program are intended
+                                    exclusively
+                                    for
+                                    onboarding and/or facilitating transactions of Micro and Small Enterprises (MSEs) that
+                                    are
+                                    not
+                                    currently on the Open Network for Digital Commerce (ONDC) as sellers and have not
+                                    previously
+                                    been on ONDC as sellers.
+                                    <br />
+                                    We shall not claim dual or duplicate incentives for the same set of MSEs or transactions
+                                    under
+                                    multiple ONDC-related programs.
+                                    <br />
+                                    Specifically, if an MSE has already been onboarded or incentivized through any other
+                                    ONDC-related program run by institutions such as SIDBI, SFAC, or any other entity, we
+                                    shall
+                                    not
+                                    claim incentives under this program for the same MSE or related transactions.
+                                    <br />
+                                    Similarly, if incentives have been claimed by us or any other party for transactions
+                                    involving a
+                                    specific MSE under a different program, we shall not submit claims for those
+                                    transactions
+                                    under
+                                    this program.
+                                    <br />
+                                    We confirm that due diligence has been conducted to ensure that all MSEs for whom we
+                                    claim
+                                    incentives under this program are eligible, and have not been previously onboarded or
+                                    incentivized under any other ONDC-related scheme. 6. We understand and accept that the
+                                    liability
+                                    for any duplication or misrepresentation lies solely with us, the SNP. In the event of
+                                    any
+                                    violation, we shall be fully accountable for returning any undue incentives received and
+                                    may
+                                    be
+                                    subject to penalties or disqualification from further participation in ONDC
+                                    programs.</em>
+                            </label>
+                        </div>
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Upload</button>
+                        <button type="submit" id="final-submit" class="btn btn-primary" style="display: none;">Save
+                            &amp;
+                            Confirm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+@section('js')
+    <script>
+        // Validation function for max 3 digits
+        function validateThreeDigits(input) {
+            var value = input.value;
+            if (value.length > 3) {
+                input.value = value.slice(0, 3);
+            }
+            // Allow only numbers and decimal point
+            if (!/^\d*\.?\d*$/.test(input.value)) {
+                input.value = input.value.replace(/[^0-9.]/g, '');
+            }
+        }
+
+        $('#myCSVModal').on('hidden.bs.modal', function() {
+            $('#csv-errors').html(''); // clear the error messages
+            $('#file').val('');
+            $('#gst_percentage').val('');
+            $('#cgst_percentage').val('');
+            $('#sgst_percentage').val('');
+            $('#gst_type').val('');
+            $('#gst_percentage_wrapper').hide();
+            $('#cgst_sgst_wrapper').hide();
+
+            // Remove error classes and feedback messages
+            $('#gst_percentage, #cgst_percentage, #sgst_percentage').removeClass('is-invalid');
+            $('#gst-feedback, #cgst-feedback, #sgst-feedback').remove();
+
+            // Enable all disabled form controls inside the modal
+            $('#myCSVModal').find(':input:disabled').prop('disabled', false);
+            $("#final-submit").hide();
+        });
+
+        $(document).on('change', '#file', function(e) {
+            let fileName = e.target.files[0]?.name; // get selected file name
+            if (fileName) {
+                let ext = fileName.split('.').pop().toLowerCase();
+                if (ext !== 'xlsx') {
+                    alert("Only .xlsx files are allowed!");
+                    $('#file').val('');
+                }
+            }
+        });
+
+        // ── GST Type dropdown toggle ──────────────────────────────────
+        $('#gst_type').on('change', function() {
+            let type = $(this).val();
+
+            // Hide all wrappers
+            $('#gst_percentage_wrapper').hide();
+            $('#cgst_sgst_wrapper').hide();
+
+            // Clear values and remove validation states
+            $('#gst_percentage').val('').removeClass('is-invalid');
+            $('#cgst_percentage').val('').removeClass('is-invalid');
+            $('#sgst_percentage').val('').removeClass('is-invalid');
+            $('#gst-feedback, #cgst-feedback, #sgst-feedback').remove();
+
+            // Show based on selection
+            if (type === '1') {
+                // GST selected - show full width
+                $('#gst_percentage_wrapper').show();
+            } else if (type === '2') {
+                // CGST + SGST selected - show 6+6 columns
+                $('#cgst_sgst_wrapper').show();
+            }
+        });
+
+        $(document).on('submit', '#bulk-upload', function(e) {
+            e.preventDefault();
+
+            document.getElementById('csv-errors').innerHTML = '';
+            var claimTypeId = document.getElementById('claim_type_id').value;
+            var gstType = document.getElementById('gst_type').value;
+
+            var form = document.getElementById('bulk-upload');
+            var formData = new FormData(form);
+            formData.append('claim_type_id', claimTypeId);
+
+            if (claimTypeId == '') {
+                toastr.error("Please select claim type.");
+                return;
+            }
+
+            // if (gstType == '') {
+            //     toastr.error("Please select GST Type.");
+            //     return;
+            // }
+
+            // Validate based on GST type selection
+            if (gstType === '1') {
+                // GST validation
+                var gstPercentage = document.getElementById('gst_percentage').value;
+                if (gstPercentage === '') {
+                    toastr.error("Please enter GST percentage.");
+                    $('#gst_percentage').addClass('is-invalid');
+                    if ($('#gst-feedback').length === 0)
+                        $('#gst_percentage').after(
+                            '<span id="gst-feedback" class="invalid-feedback" style="display:block;"><strong>GST Percentage is required.</strong></span>'
+                        );
+                    return;
+                }
+
+                var gstNum = parseFloat(gstPercentage);
+                if (isNaN(gstNum) || gstNum < 0 || gstNum > 100) {
+                    toastr.error("GST percentage must be between 0 and 100.");
+                    $('#gst_percentage').addClass('is-invalid');
+                    if ($('#gst-feedback').length === 0)
+                        $('#gst_percentage').after(
+                            '<span id="gst-feedback" class="invalid-feedback" style="display:block;"><strong>GST Percentage must be between 0 and 100.</strong></span>'
+                        );
+                    return;
+                }
+                $('#gst_percentage').removeClass('is-invalid');
+                $('#gst-feedback').remove();
+                formData.append('gst_percentage', gstPercentage);
+
+            } else if (gstType === '2') {
+                // CGST + SGST validation
+                var cgstPercentage = document.getElementById('cgst_percentage').value;
+                var sgstPercentage = document.getElementById('sgst_percentage').value;
+
+                if (cgstPercentage === '') {
+                    toastr.error("Please enter CGST percentage.");
+                    $('#cgst_percentage').addClass('is-invalid');
+                    if ($('#cgst-feedback').length === 0)
+                        $('#cgst_percentage').after(
+                            '<span id="cgst-feedback" class="invalid-feedback" style="display:block;"><strong>CGST Percentage is required.</strong></span>'
+                        );
+                    return;
+                }
+
+                if (sgstPercentage === '') {
+                    toastr.error("Please enter SGST percentage.");
+                    $('#sgst_percentage').addClass('is-invalid');
+                    if ($('#sgst-feedback').length === 0)
+                        $('#sgst_percentage').after(
+                            '<span id="sgst-feedback" class="invalid-feedback" style="display:block;"><strong>SGST Percentage is required.</strong></span>'
+                        );
+                    return;
+                }
+
+                var cgstNum = parseFloat(cgstPercentage);
+                var sgstNum = parseFloat(sgstPercentage);
+
+                if (isNaN(cgstNum) || cgstNum < 0 || cgstNum > 100) {
+                    toastr.error("CGST percentage must be between 0 and 100.");
+                    $('#cgst_percentage').addClass('is-invalid');
+                    if ($('#cgst-feedback').length === 0)
+                        $('#cgst_percentage').after(
+                            '<span id="cgst-feedback" class="invalid-feedback" style="display:block;"><strong>CGST must be between 0 and 100.</strong></span>'
+                        );
+                    return;
+                }
+
+                if (isNaN(sgstNum) || sgstNum < 0 || sgstNum > 100) {
+                    toastr.error("SGST percentage must be between 0 and 100.");
+                    $('#sgst_percentage').addClass('is-invalid');
+                    if ($('#sgst-feedback').length === 0)
+                        $('#sgst_percentage').after(
+                            '<span id="sgst-feedback" class="invalid-feedback" style="display:block;"><strong>SGST must be between 0 and 100.</strong></span>'
+                        );
+                    return;
+                }
+
+                // Validate total CGST + SGST doesn't exceed 100%
+                var totalGst = cgstNum + sgstNum;
+                if (totalGst > 100) {
+                    toastr.error("CGST + SGST total cannot exceed 100%.");
+                    $('#cgst_percentage, #sgst_percentage').addClass('is-invalid');
+                    return;
+                }
+
+                $('#cgst_percentage, #sgst_percentage').removeClass('is-invalid');
+                $('#cgst-feedback, #sgst-feedback').remove();
+                formData.append('cgst_percentage', cgstPercentage);
+                formData.append('sgst_percentage', sgstPercentage);
+            }
+
+            // ✅ Declaration validation
+            if (!$('#declaration').is(':checked')) {
+                toastr.error('Please accept the declaration to proceed.');
+                return;
+            }
+
+            var fileInput = document.getElementById('file');
+            if (!fileInput.files.length) {
+                toastr.error("Please select a file to upload.");
+                return;
+            }
+
+            $.ajax({
+                url: "{{ url('claims/bulk-import') }}",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    $("#ajax-loader").show();
+                },
+                success: function(res) {
+
+                    // ✅ ALL ROWS SUCCESS
+                    if (res.summary.inserted >= 1) {
+
+                        toastr.success(res.message);
+
+                        // ✅ LOCK FIRST FORM
+                        $('#bulk-upload input, #bulk-upload select').prop('disabled', true);
+
+                        // ✅ SHOW FINAL SUBMIT
+                        $('#final-submit').show();
+
+                        // return;
+                    }
+
+                    if (res.summary.failed > 0) {
+                        // Some rows failed
+                        toastr.error('Some rows failed validation. Please check errors below.');
+                        displayCsvErrors(res); // 👈 unchanged
+                    }
+                },
+
+                error: function(err) {
+                    toastr.error(err?.responseJSON?.message ||
+                        "Server error while processing the file.");
+                },
+                complete: function() {
+                    $("#ajax-loader").hide();
+                }
+            });
+        });
+
+        $(document).on('click', '#final-submit', function(e) {
+            e.preventDefault();
+
+            // ✅ Declaration check again (safety)
+            if (!$('#declaration').is(':checked')) {
+                toastr.error('Please accept the declaration to proceed.');
+                return;
+            }
+
+            $.ajax({
+                url: "{{ url('/save-uploaded-claims') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}"
+                },
+                beforeSend() {
+                    $("#ajax-loader").show();
+                },
+                success(res) {
+                    toastr.success(res.message || 'Claims saved successfully.');
+                    setTimeout(() => {
+                        window.location.href = "{{ url('claims') }}";
+                    }, 1500);
+                },
+                error(xhr) {
+                    toastr.error(
+                        xhr.responseJSON?.message ||
+                        'Failed to save uploaded claims.'
+                    );
+                },
+                complete() {
+                    $("#ajax-loader").hide();
+                }
+            });
+        });
+
+        function displayCsvErrors(response) {
+
+            let html = `
+                <div class="alert alert-danger">
+                    <strong>Import Summary</strong><br>
+                    Total Rows: ${response.summary.total_rows} <br>
+                    Inserted: ${response.summary.inserted} <br>
+                    Failed: ${response.summary.failed}
+                </div>
+            `;
+
+            // ✅ ADD THIS BLOCK
+            if (response.error_token) {
+                html += `
+            <a href="{{ url('/claims/import-error-report') }}/${response.error_token}"
+               class="btn btn-danger btn-sm mb-3">
+               ⬇ Download Error Report
+            </a>
+        `;
+            }
+
+
+            response.failed_rows.forEach(row => {
+
+                const teamId = row.data.team_id ? row.data.team_id : 'TEAM ID not provided';
+
+                html += `
+                    <div class="card mb-2 border-danger">
+                        <div class="card-header bg-danger text-white">
+                            Row ${row.row_number} (${teamId})
+                        </div>
+                        <div class="card-body">
+                            <ul class="mb-0">
+                `;
+
+                Object.keys(row.errors).forEach(field => {
+                    row.errors[field].forEach(message => {
+                        html += `<li><strong>${field}</strong>: ${message}</li>`;
+                    });
+                });
+
+                html += `
+                    </ul>
+                </div>
+            </div>
+        `;
+            });
+
+            $("#csv-errors").html(html);
+        }
+
+        window.customExportUrl = "{{ url('custom-export-by-ids-catalogue') }}";
+        window.csrfToken = "{{ csrf_token() }}";
+        var selectedRows = {};
+        dataTableInit({
+            id: "#dataTable",
+            showExcelExport: true,
+            showCustomExportOption: true,
+            order: {
+                column: 1,
+                direction: "asc"
+            },
+            url: "{{ url('catalogue-created/datalist') }}",
+            columns: [{
+                    "orderable": false,
+                    "className": "noExport",
+                    "render": function(data, type, row) {
+                        var checked = selectedRows[row.id] ? 'checked' : '';
+                        return '<input type="checkbox" class="row-checkbox" value="' + row.id + '" ' +
+                            checked + '>';
+                    }
+                },
+                {
+                    "orderable": false,
+                    "render": function(data, type, full, meta) {
+                        return serialNumber("#dataTable", meta.row);
+                    }
+                },
+                {
+                    "orderable": true,
+                    "render": function(data, type, row) {
+                        return row.team_id;
+                    }
+                },
+                {
+                    "orderable": true,
+                    "render": function(data, type, row) {
+                        return row.udyam_no;
+                    }
+                },
+
+                {
+                    "orderable": true,
+                    "render": function(data, type, row) {
+                        return row.mobile;
+                    }
+                },
+                {
+                    "orderable": true,
+                    "render": function(data, type, row) {
+                        return row.email;
+                    }
+                },
+                {
+                    "orderable": true,
+                    "render": function(data, type, row) {
+                        return row.state_name;
+                    }
+                },
+                {
+                    "orderable": true,
+                    "render": function(data, type, row) {
+                        return row.enterprise_name;
+                    }
+                },
+
+                {
+                    "orderable": true,
+                    "render": function(data, type, row) {
+                        return row.msme_classification;
+                    }
+                },
+
+
+                {
+                    "orderable": true,
+                    "render": function(data, type, row) {
+                        return row.created_at;
+                    }
+                },
+
+                /*{
+                    "orderable": false,
+                    "render": function(data, type, row) {
+                        var catealog_creation = '<a href="{{ url('catalogue-creation') }}/' + row.id +
+                            '" rel="tooltip" title=" Claim For Catalogue Creation" class="btn  bg-primary btn-sm btn-circle m-1 view-action-btn" >  <img src="{{ asset('assets/img-new/Catalogue.svg') }}"></a>';
+                        var actions = createActionButtons([catealog_creation]);
+                        return actions;
+                    }
+                },*/
+
+            ],
+            filters: ["from_date", "to_date"]
+        });
+
+        $(document).on("change", ".row-checkbox", function() {
+            var id = $(this).val();
+            selectedRows[id] = $(this).prop("checked");
+
+            var allChecked = $(".row-checkbox").length && $(".row-checkbox:checked").length === $(".row-checkbox")
+                .length;
+            $("#selectAll").prop("checked", allChecked);
+        });
+
+        $(document).on("change", "#selectAll", function() {
+            var checked = $(this).prop("checked");
+            $(".row-checkbox").each(function() {
+                $(this).prop("checked", checked);
+                selectedRows[$(this).val()] = checked;
+            });
+        });
+        $('#dataTable').on('draw.dt', function() {
+            $(".row-checkbox").each(function() {
+                var id = $(this).val();
+                $(this).prop("checked", selectedRows[id] ? true : false);
+            });
+            var allChecked = $(".row-checkbox").length && $(".row-checkbox:checked").length === $(".row-checkbox")
+                .length;
+            $("#selectAll").prop("checked", allChecked);
+        });
+
+        var selectedRows = {}; // {id: true}
+
+        $(document).on('change', '.row-checkbox', function() {
+            const id = $(this).val();
+            selectedRows[id] = $(this).is(':checked');
+        });
+
+        $(document).on('change', '#selectAll', function() {
+            const checked = this.checked;
+            $('.row-checkbox').each(function() {
+                $(this).prop('checked', checked).trigger('change');
+            });
+        });
+
+        $('#downloadSelected').on('click', function() {
+
+            const selectedIds = Object.keys(selectedRows)
+                .filter(id => selectedRows[id]);
+
+            if (selectedIds.length === 0) {
+                alert('Please select at least one row');
+                return;
+            }
+
+            $.ajax({
+                url: '{{ url('export-selected-excel') }}',
+                method: 'POST',
+                data: {
+                    _token: csrfToken,
+                    ids: selectedIds
+                },
+                xhrFields: {
+                    responseType: 'blob' // ⭐ REQUIRED
+                },
+                success: function(blob, status, xhr) {
+
+                    // Get filename from header (optional)
+                    let filename = 'selected_rows.xlsx';
+                    const disposition = xhr.getResponseHeader('Content-Disposition');
+
+                    if (disposition && disposition.indexOf('filename=') !== -1) {
+                        filename = disposition
+                            .split('filename=')[1]
+                            .replace(/"/g, '');
+                    }
+
+                    // Create download
+                    const link = document.createElement('a');
+                    const url = window.URL.createObjectURL(blob);
+
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                },
+                error: function() {
+                    alert('Download failed');
+                }
+            });
+        });
+    </script>
+@endsection
+@endsection

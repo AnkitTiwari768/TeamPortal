@@ -1,0 +1,603 @@
+@import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700;800&display=swap');
+
+body{
+    font-family: 'Poppins', sans-serif;
+    transition: 0.3s;
+}
+P{
+    font-size: 14px;
+    color: #151515b8;
+}
+h4{  color: #122546;
+    font-weight: 600;
+    font-size: 20px;}
+.topbar{
+    background-color: #eeeeee;
+       padding: 2px 0;
+    height: 38px;
+}
+.topbar ul li{
+    list-style: none;
+ border-left: 1px solid #cfcfcf;
+    padding: 0 8px;
+}
+.topbar ul li:nth-child(1){border-left: none;}
+.topbar ul li img{
+width: 20px;
+}
+.topbar ul li, .topbar ul li a{
+    color: #000000;
+    font-weight: 500;
+    font-size: 12px;
+    text-decoration: none;
+    padding: 6px 7px;
+}
+.topbar button{
+	color: #ffffff;
+    font-weight: 500;
+    font-size: 12px;
+}
+
+.topbar li.language{
+    font-size: 14px;
+    padding-right: 31px;
+    padding-left: 10px;
+    background: url(../img/expand_more.svg) no-repeat;
+    background-position: 94% 44%;
+}
+.topbar .dropdown-toggle::after{
+    display: none;
+}
+
+.topbar li.language .dropdown-menu li{
+    padding: 0;
+    border-bottom: 1px solid #efefef40;
+    height: auto;
+}
+.topbar li.language .dropdown-menu li a{
+    padding: 12px 20px;
+}
+.topbar li.login_btn{background-color: #041951; border-radius: 15px; padding: 4px 10px;}
+.topbar li.login_btn a{color: #fff;}
+
+.form-select:focus {
+    border-color: #86b7fe;
+    outline: 0;
+    box-shadow: none;
+}
+
+
+/* STart Header LOGO Section  */
+
+.header-logo-section .first-row {
+    display: flex;
+    justify-content: end;
+    align-items: center;
+    min-height: 62px;
+}
+
+.header-bar .logo {
+    padding-top: 0px;
+    display: flex;
+    align-items: center;
+}
+.logo .title-full .title-eng {
+        color: #15479e;
+        font-weight: 500;
+        font-size: 14px;
+        line-height: 19px;
+        margin-bottom: 5px;
+        text-transform: uppercase;
+    }   
+    .logo .title-full .title-hindi {
+        color: #15479e;
+        font-size: 13px;
+    }
+ .header-bar .logo .logo-img {
+    padding-right: 12px;
+    border-right: 1px solid #e6e6e6;
+}
+
+.header-bar .logo .text-content {
+    padding-left: 12px;
+}
+
+
+/* END Header LOGO Section  CSS */
+
+
+
+.header-logo-section{padding:10px 0;}
+
+    .logo-section {
+      display: flex;
+      align-items: center;
+      gap: 15px;
+    }
+    .logo-text {
+      font-size: 14px;
+      line-height: 1.2;}
+
+
+
+
+
+/* Nav Section CSS Start */
+
+      
+.nav-main {background-color: #0A3A6A;margin-bottom: -2px; padding: 0;}
+
+.navbar-expand-lg .navbar-nav .nav-link{
+    color: #ffffff;
+    font-size: 14px;
+}
+.navbar-nav .dropdown:hover > .dropdown-menu {
+    display: block;
+    margin-top: 0; 
+}
+ul.navbar-nav{padding: 0; margin: 0;}
+ul.navbar-nav li.nav-item:hover {
+    background-color: #ffeae3;
+    color: #000;
+    transition: .6s;
+}
+
+
+
+/* Nav Section CSS END */
+
+/* SlIDER SECTION CSS START */
+
+
+.hero-slider-mmrd .slider .slick-prev {
+    left: 40px !important;
+    left: 0;
+    background: url(../img/arrow_left.svg) !important;
+    background-repeat: no-repeat !important;
+    z-index: 99999;
+    top: 47%;
+    border: 0px;
+    font-size: 0px;
+    width: 48px;
+    height: 48px;
+    background-size: 33px;
+}
+.hero-slider-mmrd .slider .slick-next {
+     right: 40px !important;
+     background: url(../img/arrow_right.svg) !important;
+     background-repeat:
+     no-repeat !important;
+     z-index: 99999;
+     top: 47%;
+     border: 0px;
+     font-size: 0px;
+     width: 48px;
+     height: 48px;
+     background-size: 95%!important;
+     }
+
+.slider1{overflow: hidden;}
+.slider1 img.banner_img{min-height: 100vh;}
+.slider1 .slick-prev{
+    left: 96px;
+    top: 70%;
+    background: url(../img/arrow_left.svg) !important;
+    background-repeat: no-repeat !important;
+    z-index: 99999;
+    width: 55px;
+    height: 55px;
+}
+.slider1 .slick-next{
+     left: 156px;
+    top: 70%;
+    background: url(../img/arrow_right.svg) !important;
+    background-repeat: no-repeat !important;
+    z-index: 99999;
+    width: 55px;
+    height: 55px;
+}
+
+.slider1 .slick-prev::before{
+    background: url(../img/grid-bg.png) no-repeat;
+    padding-top: 200px;
+    margin-top: -130px;
+    
+}
+/* 
+.footer-wrapper{
+    background-color: #001438;
+}
+
+
+.footer {
+    padding: 40px 20px;
+    background-color: #000C22;
+}
+
+
+.footer-section ul {
+  list-style: none;
+  padding: 0;
+}
+
+.footer-section ul li {
+  margin-bottom: 10px;
+}
+
+.footer-section ul li a {
+  color: #bbb;
+  text-decoration: none;
+  font-size: 14px;
+}
+
+.footer-section ul li a:hover {
+  text-decoration: underline;
+} */
+
+.social-icons a {
+  color: #bbb;
+  margin-right: 15px;
+  font-size: 18px;
+  text-decoration: none;
+}
+
+.social-icons a:hover {
+  color: #fff;
+}
+
+
+/* FOoTER CSS */
+.footer-bottom {
+    padding: 40px 0;
+    background-color: #001124;
+}
+
+.footer-bottom ul {
+    margin: 0px;
+    padding: 0px;
+}
+
+.footer-bottom ul li {
+    display: inline-block;
+}
+
+.footer-bottom ul li:first-child a {
+    padding-left: 0px;
+}
+.footer-bottom ul li a {
+    font-size: 14px;
+    color: #ffffff;
+    padding: 7px 9px;
+    display: block; text-decoration: none;
+}
+
+
+
+.footer-bottom .region.region-footer-second span, 
+.region-visitor .item-list ul li {font-size: 14px;
+    color: #ffffff;}
+
+    /* FOoTER CSS END*/
+
+
+
+    /* CSS START Footer LOGO Slider section */
+    .footer-wrapper {
+    background-color: #001438;
+}
+.footer-wrapper .slider3 .slick-prev {
+    left: -60px;
+    background: url(../img/arrow_left.svg) !important;
+    background-repeat: no-repeat !important;
+    left: -35px;
+    top: 42px;
+    background-repeat: no-repeat !important;
+    z-index: 99999;
+    width: 42px;
+    height: 42px;
+    background-size: 89% !important;
+}
+
+.slick-dotted.slick-slider {
+    margin-bottom: inherit !important;
+}
+
+.footer-wrapper .slider3 .slick-next {
+    right: -35px;
+    top: 42px;
+    background: url(../img/arrow_right.svg) !important;
+    background-repeat: no-repeat !important;
+    z-index: 99999;
+    width: 42px;
+    height: 42px;
+    background-size: 89% !important;
+}
+
+.slick-next:before { 
+     display: none;
+}
+
+.slick-prev:before  {   
+    display: none;
+}
+
+
+    
+    /* END Footer LOGO Slider section */
+
+
+ /* Start CSS Main SVG Daigram section Start */
+.main-application-status-section {
+    background: url(../img/mmrda-backgrpound-main.png) no-repeat;
+    height: 1070px;
+    background-position: center;
+    background-size: cover;
+}
+
+.footer-wrapper .slick-initialized .slick-slide {
+    display: block;
+    margin: 0 8px !important;
+    width: 170px !important;
+}
+
+.footer-wrapper .slick-slide img {
+    display: block;
+    width: 173px;
+    height: 82px;
+}
+
+
+.application-status {
+      background: linear-gradient(to right, #003d7c, #0073e6);
+      color: white;
+      padding: 30px;
+      border-radius: 10px;
+      margin-top: -50px;
+      z-index: 10;
+      position: relative;
+    }
+    .dept-circle {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
+    .dept-circle div {
+      border-radius: 50%;
+      padding: 20px;
+      text-align: center;
+      width: 140px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #eaf2f8;
+      border: 2px solid #0073e6;
+    }
+    .slick-slide img {
+      width: 100%;
+      border-radius: 8px;
+    }
+    .slick-prev:before, .slick-next:before {
+      color: #0073e6;
+    }
+    footer {
+      background: #002147;
+      color: white;
+      padding: 30px 0;
+    }
+
+    
+
+
+.application-status {
+      background: linear-gradient(to right, #003d7c, #0073e6);
+      color: white;
+      padding: 30px;
+      border-radius: 10px;
+      margin-top: -50px;
+      z-index: 10;
+      position: relative;
+    }
+    .dept-circle {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 1rem;
+    }
+    .dept-circle div {
+      border-radius: 50%;
+      padding: 20px;
+      text-align: center;
+      width: 140px;
+      height: 140px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      background: #eaf2f8;
+      border: 2px solid #0073e6;
+    }
+    .slick-slide img {
+      width: 100%;
+      border-radius: 8px;
+    }
+    .slick-prev:before, .slick-next:before {
+      color: #0073e6;
+    }
+    footer {
+      background: #002147;
+      color: white;
+      padding: 30px 0;
+    }
+
+    
+
+.main-application-status-section {}
+.application-status-wrap {
+    clip-path: polygon(0 0, 100% 1%, 84% 100%, 23% 100%);
+    background: linear-gradient(to right, #133a69, #154783);
+    color: white;
+    padding: 24px 0 35px 0;
+    border-radius: 17px;
+    margin-top: -6px;
+    z-index: 10;
+    position: relative;
+    min-height: 156px;
+    min-width: 887px;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+}
+
+
+.main-application-status-section .application-status-wrap h2 {
+    font-size: 18px;
+    justify-content: center;
+    text-align: center;
+    padding-bottom: 20px;
+}
+
+.main-application-status-section .form-application-status {
+    display: flex;
+    flex-direction: row;
+    column-gap: 12px;
+    justify-content: center;
+    width: 100%;
+}
+.main-application-status-section .form-application-status select.form-select {
+    width: 25%;
+}
+.main-application-status-section .form-application-status .form-select {}
+.main-application-status-section .form-application-status .form-select option{}
+
+.main-application-status-section .form-application-status input.form-control{
+    width: 26%;
+}
+
+.main-application-status-section .form-application-status button.search-btn {
+    width: 48px !important;
+    background-color: #00ae5b;
+    border: none;
+    color: #ffff;
+}
+.main-application-status-section .form-application-status button.search-btn:hover {
+     background-color: #96e9bb;
+    color: #1c1b1bdd;
+    transition: 0.2s linear;
+}
+
+
+.main-application-status-section .form-application-status button.search-btn:hover img {
+     transition: 0.2s linear;
+    filter: invert(1);
+}
+
+.form-apply-wrap {
+    padding: 16px;
+    background-color: #ffffffdd;
+    border-radius: 11px;
+    box-shadow: rgba(0, 0, 0, 0.1) 0px 4px 12px;
+    margin-top: 28px;
+    /* width: auto; */
+    display: block;
+}
+.form-apply-wrap .form-apply-box {
+    display: flex;
+    justify-content: left;
+    align-items: center;
+    column-gap: 21px;
+    padding-left: 17px;
+}
+.form-apply-wrap .form-apply-box  h2{
+    font-size: 15px;
+    font-weight: 700;
+    display: block;
+    padding: 0;
+    margin: 0;
+    position: relative;
+} 
+
+
+
+.form-apply-wrap .form-apply-box  h2:after{content:'';position: absolute;border-right: 1.5px solid #d4dce7;height: 70px;padding-left: 8px;top: -24px;}
+.form-apply-wrap .form-apply-box select.form-select{
+    width: 311px;
+    border: none;
+    border-bottom: 1px solid #bbb5b5;
+    border-radius: 0;
+}
+.form-apply-wrap .form-apply-box button.apply-btn {
+    width: inherit !important;
+    background-color: #00AE5B;
+    border: none;
+    margin-left: 28px;
+}
+.form-apply-wrap .form-apply-box button.apply-btn:hover {
+    background-color: #96e9bb;
+    color: #1c1b1bdd;
+    transition: 0.2s linear;
+}
+
+
+
+
+/* SVG IMAGE CSS */
+
+
+
+.on_hover path {
+	-webkit-transition-duration: 0.4s;
+	-o-transition-duration: 0.4s;
+	transition-duration: 0.4s;
+}
+
+.on_hover:hover path:nth-child(1) {
+	fill: #0d72e6;
+	-webkit-transform: translateX(-30px);
+	-ms-transform: translateX(-30px);
+	transform: translateX(-30px);
+	-webkit-transition-duration: 0.4s;
+	-o-transition-duration: 0.4s;
+	transition-duration: 0.4s;
+}
+
+.on_hover:hover path[fill="white"] {
+    fill:  #061050;
+}
+.on_hover_1 path {
+	-webkit-transition-duration: 0.4s;
+	-o-transition-duration: 0.4s;
+	transition-duration: 0.4s;
+}
+
+.on_hover_1:hover path:nth-child(1) {
+	fill: #0d72e6;
+	-webkit-transform: translateX(30px);
+	-ms-transform: translateX(30px);
+	transform: translateX(30px);
+	-webkit-transition-duration: 0.4s;
+	-o-transition-duration: 0.4s;
+	transition-duration: 0.4s;
+}
+
+.on_hover_1:hover path[fill="white"] {
+	fill:  #061050; 
+}
+
+.rotate_animation::before {
+	content: '';
+	position: absolute;
+	left: 0;
+	top: 0;
+	fill: #000;
+}
+
+.on_hover1,
+.on_hover1 rect,
+.on_hover1 ellipse {
+	-webkit-transition-duration: 0.4s;
+	-o-transition-duration: 0.4s;
+	transition-duration: 0.4s;
+}
+

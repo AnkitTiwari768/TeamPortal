@@ -1,0 +1,408 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Web\Import;
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Maatwebsite\Excel\Concerns\ToCollection;
+use Maatwebsite\Excel\Concerns\WithHeadingRow;
+use Maatwebsite\Excel\Concerns\ToModel;
+use Maatwebsite\Excel\Concerns\WithBatchInserts;
+use Maatwebsite\Excel\Concerns\WithStartRow;
+use Maatwebsite\Excel\Concerns\WithValidation;
+use Maatwebsite\Excel\Concerns\WithMultipleSheets;
+use Illuminate\Support\Collection;
+
+use App\Web\Claim\ClaimService;
+use App\Web\Claim\ClaimReviewStatus;
+use Carbon\Carbon;
+use PhpOffice\PhpSpreadsheet\Shared\Date as ExcelDate;
+
+class CatalogueClaimImport implements ToCollection
+{
+    public array $validRows = [];
+    public array $invalidRows = [];
+    public int $totalRows = 0;
+
+    private static array $excelTransactionIds = [];
+    private static array $excelInvoiceNumbers = [];
+
+
+    public function sheets(): array
+    {
+        return [
+            0 => $this
+        ];
+    }
+
+    public function customAttributes()
+    {
+        return [
+            'team_id'                     => 'TEAM ID of MSE',
+            'seller_network_id'           => 'ONDC Seller Network ID of MSE',
+            'onboarding_date'             => 'Date of onboarding of MSE on ONDC',
+            'sku_count'                   => 'Number of SKUs',
+            'sku_update_date'             => 'Date of SKU Update',
+            'seller_credential_report_id' => 'Seller Credential Report ID',
+            'catalogue_score_report_id'   => 'Catalogue Score Report ID',
+            'network_transaction_id'      => 'Network Transaction ID',
+            'network_transaction_date'    => 'Network Transaction Date',
+            'transaction_status'          => 'Transaction Status',
+            'order_invoice_number'        => 'Order Invoice Number',
+        ];
+    }
+
+    public function rules(): array
+    {
+        return [
+
+            'team_id' => [
+                'required',
+                'string',
+                'max:100',
+                'exists:team_msme_schemes,team_id',
+                'unique:claims,team_registration_id',
+            ],
+
+            'seller_network_id' => [
+                'required',
+                'string',
+                'max:200',
+            ],
+
+            'onboarding_date' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    try {
+                        // Excel serial date
+                        if (is_numeric($value)) {
+                            ExcelDate::excelToDateTimeObject($value);
+                        } else {
+                            // dd-mm-yyyy format
+                            Carbon::createFromFormat('d-m-Y', $value);
+                        }
+                    } catch (\Exception $e) {
+                        $fail('The Date of onboarding of MSE on ONDC must be in dd-mm-yyyy format.');
+                    }
+                }
+            ],
+
+            'sku_count' => [
+                'required',
+                'integer',
+                'min:0',
+            ],
+
+            'sku_update_date' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    try {
+                        if (is_numeric($value)) {
+                            ExcelDate::excelToDateTimeObject($value);
+                        } else {
+                            Carbon::createFromFormat('d-m-Y', $value);
+                        }
+                    } catch (\Exception $e) {
+                        $fail('The Date of SKU Update must be in dd-mm-yyyy format.');
+                    }
+                }
+            ],
+
+            'seller_credential_report_id' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'catalogue_score_report_id' => [
+                'required',
+                'string',
+                'max:100',
+            ],
+
+            'network_transaction_id' => [
+                'required',
+                function ($attribute, $value, $fail) {
+
+                    $ids = array_filter(array_map('trim', explode(',', $value)));
+
+                    // Max 2 allowed
+                    if (count($ids) > 2) {
+                        $fail('Only maximum two Network Transaction IDs are allowed.');
+                        return;
+                    }
+
+                    foreach ($ids as $id) {
+
+                        // Excel-level uniqueness
+                        if (in_array($id, self::$excelTransactionIds)) {
+                            $fail("Network Transaction ID '{$id}' is duplicated in the Excel file.");
+                            return;
+                        }
+
+                        // DB-level uniqueness
+                        if (DB::table('claim_orders')
+                            ->whereIn('network_transaction_id', [$id])
+                            ->exists()
+                        ) {
+                            $fail("Network Transaction ID '{$id}' already exists in the system.");
+                            return;
+                        }
+
+                        self::$excelTransactionIds[] = $id;
+                    }
+                }
+            ],
+
+
+            'network_transaction_date' => [
+                'required',
+                function ($attribute, $value, $fail) {
+                    $dates = array_filter(array_map('trim', explode(',', $value)));
+
+                    if (count($dates) > 2) {
+                        $fail('Only maximum two Network Transaction Dates are allowed.');
+                        return;
+                    }
+
+                    foreach ($dates as $date) {
+                        try {
+                            if (is_numeric($date)) {
+                                ExcelDate::excelToDateTimeObject($date);
+                            } else {
+                                Carbon::createFromFormat('d-m-Y', $date);
+                            }
+                        } catch (\Exception $e) {
+                            $fail('Each Network Transaction Date must be in dd-mm-yyyy format.');
+                            break;
+                        }
+                    }
+                }
+            ],
+
+            'transaction_status' => [
+                'required',
+                function ($attribute, $value, $fail) {
+
+                    $statuses = array_filter(array_map('trim', explode(',', $value)));
+
+                    // Allow max 2 statuses
+                    if (count($statuses) > 2) {
+                        $fail('Only maximum two Transaction Status values are allowed.');
+                        return;
+                    }
+
+                    foreach ($statuses as $status) {
+
+                        if (!in_array(strtoupper($status), ['YES', 'NO'])) {
+                            $fail("Transaction Status must be Yes or No. Invalid value: '{$status}'.");
+                            return;
+                        }
+                    }
+                }
+            ],
+
+            'order_invoice_number' => [
+                'required',
+                function ($attribute, $value, $fail) {
+
+                    $invoices = array_filter(array_map('trim', explode(',', $value)));
+
+                    // Max 2 allowed
+                    if (count($invoices) > 2) {
+                        $fail('Only maximum two Order Invoice Numbers are allowed.');
+                        return;
+                    }
+
+                    foreach ($invoices as $invoice) {
+
+                        // Excel-level uniqueness
+                        if (in_array($invoice, self::$excelInvoiceNumbers)) {
+                            $fail("Order Invoice Number '{$invoice}' is duplicated in the Excel file.");
+                            return;
+                        }
+
+                        // DB-level uniqueness
+                        if (DB::table('claim_orders')
+                            ->whereIn('invoice_number', [$invoice])
+                            ->exists()
+                        ) {
+                            $fail("Order Invoice Number '{$invoice}' already exists in the system.");
+                            return;
+                        }
+
+                        self::$excelInvoiceNumbers[] = $invoice;
+                    }
+                }
+            ]
+        ];
+    }
+
+
+
+    public function collection(Collection $rows)
+    {
+        $this->totalRows = $rows->count();
+
+        foreach ($rows as $index => $row) {
+
+            if ($index == 0) continue; // Skip header row
+
+            $rowData = [
+                'team_id'                     => is_string($row[0]) ? trim($row[0] ?? '') : $row[0],
+                'seller_network_id'           => is_string($row[1]) ? trim($row[1] ?? '') : (string) $row[1],
+                'onboarding_date'             => is_string($row[2]) ? trim($row[2] ?? '') : $row[2],
+                'sku_count'                   => is_string($row[3]) ? trim($row[3] ?? '') : $row[3],
+                'sku_update_date'             => is_string($row[4]) ? trim($row[4] ?? '') : $row[4],
+                'seller_credential_report_id' => is_string($row[5]) ? trim($row[5] ?? '') : $row[5],
+                'catalogue_score_report_id'   => is_string($row[6]) ? trim($row[6] ?? '') : $row[6],
+                'network_transaction_id'      => is_string($row[7]) ? trim($row[7] ?? '') : $row[7],
+                'network_transaction_date'    => is_string($row[8]) ? trim($row[8] ?? '') : $row[8],
+                'transaction_status'          => is_string($row[9]) ? trim($row[9] ?? '') : $row[9],
+                'order_invoice_number'        => is_string($row[10]) ? trim($row[10] ?? '') : $row[10],
+            ];
+
+            $validator = Validator::make($rowData, $this->rules(), [], $this->customAttributes());
+
+            $validator->setAttributeNames($this->customAttributes());
+
+
+            if ($validator->fails()) {
+                $this->invalidRows[] = [
+                    'row_number' => $index + 2,
+                    'data'       => $rowData,
+                    'errors'     => $validator->errors()
+                ];
+                continue;
+            }
+
+            $this->validRows[] = $rowData;
+        }
+
+        // 🔹 Insert all valid rows in one query
+        if (!empty($this->validRows)) {
+            DB::beginTransaction();
+
+            try {
+
+                $claimService = app(ClaimService::class);
+                foreach ($this->validRows as $row) {
+
+                    $msmeDetails = $claimService->getMsmeDetails($row['team_id']);
+
+                    $claimId = uuid();
+
+                    $claimTypeId = request()->input('claim_type_id');
+
+                    /** -------------------------
+                     *  Insert into claims table
+                     *  ------------------------- */
+                    DB::table('claims')->insert([
+                        'id'                     => $claimId,
+                        'claim_type_id'          => $claimTypeId,
+                        'snp_id'                 => auth()->user()->username,
+                        'application_number'     => $claimService->generateApplicationNumber(),
+                        'team_registration_id'   => $row['team_id'],
+                        'catalogue_type'         => 'Manual',
+                        'onboarding_date'        => $this->transformDate($row['onboarding_date']),
+                        'bpp_id'                 => $row['seller_network_id'],
+                        'number_of_skus'         => $row['sku_count'],
+                        'msme_transaction_type'  => $msmeDetails->ondc_transaction_type_id ?? null,
+                        'is_bulk'                => true,
+                        'status'                 => ClaimReviewStatus::DRAFT->value,
+                        'msme_name'              => $msmeDetails->enterprise_name ?? null,
+                        'msme_udyam_number'      => $msmeDetails->udyam_no ?? null,
+                        'msme_classification'    => $msmeDetails->msme_classification ?? null,
+                        'msme_category'          => $msmeDetails->major_activity ?? null,
+                        'created_by'             => auth()->id(),
+                        'created_at'             => now(),
+                        'updated_at'             => now(),
+                    ]);
+
+                    /** -------------------------
+                     *  Prepare order data
+                     *  ------------------------- */
+                    $orderIds   = array_map('trim', explode(',', $row['network_transaction_id']));
+                    $dates      = array_map('trim', explode(',', $row['network_transaction_date']));
+                    $statuses   = array_map('trim', explode(',', $row['transaction_status']));
+                    $invoices   = array_map('trim', explode(',', $row['order_invoice_number']));
+
+                    $orders = [];
+
+                    foreach ($orderIds as $i => $orderId) {
+                        $orders[] = [
+                            'id'                       => uuid(),
+                            'claim_id'                 => $claimId,
+                            'network_transaction_id'   => $orderId,
+                            'invoice_number'           => $invoices[$i] ?? null,
+                            'network_transaction_date' => $this->transformDate($dates[$i] ?? null),
+                            'transaction_status'       => strtoupper($statuses[$i] ?? $statuses[0]) === 'YES' ? 1 : 0,
+                            'created_at'               => now(),
+                            'updated_at'               => now(),
+                        ];
+                    }
+
+
+                    $dto = (object) [
+                        'msme_id' => $msmeDetails->id,
+                        'claim_type_id' => 'catalogue_creation',
+                        'order_details' => [
+                            [
+                                'network_transaction_id' => $orders[0]['network_transaction_id'],
+                                'order_invoice_number'   => $orders[0]['invoice_number']
+                            ],
+                            [
+                                'network_transaction_id' => $orders[1]['network_transaction_id'],
+                                'order_invoice_number'   => $orders[1]['invoice_number']
+                            ]
+                        ]
+                    ];
+
+                    $response = app(\App\Web\Claim\StoreClaimAction::class)->processCatalogueCreationClaim($dto);
+
+                    if ($response['success']) {
+                        DB::table('claims')->where('id', $claimId)->update([
+                            'amount' => $response['data']['amount']
+                        ]);
+                    }
+
+                    DB::table('claim_orders')->insert($orders);
+
+                    DB::table('team_msme_schemes')->where('team_id', $row['team_id'])->update([
+                        'bpp_id' => $row['seller_network_id'],
+                        'bpp_updated_at' => now(),
+                    ]);
+                }
+
+                DB::commit();
+            } catch (\Throwable $e) {
+                DB::rollBack();
+                throw $e;
+            }
+        }
+    }
+
+    private function transformDate($value): ?string
+    {
+        if (empty($value)) {
+            return null;
+        }
+
+        try {
+            // Excel numeric date
+            if (is_numeric($value)) {
+                return Carbon::instance(
+                    ExcelDate::excelToDateTimeObject((float) $value)
+                )->format('Y-m-d');
+            }
+
+            // dd-mm-yyyy string
+            return Carbon::createFromFormat('d-m-Y', trim($value))
+                ->format('Y-m-d');
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+}

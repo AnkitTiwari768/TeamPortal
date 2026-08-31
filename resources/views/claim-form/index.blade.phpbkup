@@ -1,0 +1,594 @@
+@extends('components.admin.content-layout')
+
+@section('card-content')
+    <div class="card-body">
+
+        {{-- Filter form (commented out in original) --}}
+
+        <?php /*<form id="search_form" autocomplete="off">
+            <div class="filter-bar d-flex px-3 py-2 gap-3 align-items-center">
+
+
+                <div class="select-box">
+                    <label class="form-label">Upload Mode</label>
+                    {!! Form::select('is_bulk', ['' => 'Select'] + [0 => 'Manual', 1 => 'Bulk Import'], '', [
+                        'class' => 'form-select filter_btn',
+                        'id' => 'is_bulk',
+                    ]) !!}
+
+                </div>
+
+                <a href="javascript:void(0)" class="clear-action" id="reset_btn" style="display: none;">
+                    <img src="{{ asset('assets/ffo-admin/img/close-blue.svg') }}">Clear all
+                </a>
+            </div>
+        </form> */ ?>
+
+
+
+       <?php /* @if (hasRole('snp'))
+            <div class="card-header d-flex">
+                <div class="action-header ms-auto">
+                    <div class="btn-group drop-btn">
+                        <button type="button" class="btn btn-danger" data-bs-toggle="modal" data-bs-target="#myCSVModal">
+                            <img src="{{ asset('assets/img-new/add.svg') }}">
+                            Add Bulk Claim
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif */ ?>
+
+    </div>
+
+    <div class="card-body">
+        <input type="hidden" id="review_status" value="">
+
+        <ul class="nav nav-tabs" id="myTab" role="tablist">
+            @php
+                $statuses = $tabs['status'] ?? [];
+                $defaultStatus = null;
+            @endphp
+
+            @foreach ($statuses as $key => $status)
+                @if ($loop->first)
+                    @php $defaultStatus = $key; @endphp
+                @endif
+                @if (hasRole('snp') || $key !== 'Drafts')
+                    <li class="nav-item" role="presentation">
+                        <button class="nav-link filter_btn" data-val="{{ $key }}" id="{{ $key }}-tab"
+                            data-bs-toggle="tab" data-bs-target="#{{ $key }}" type="button" role="tab"
+                            aria-controls="{{ $key }}" aria-selected="true">
+                            <span class="badge bg-primary">{{ $status }}</span>
+                            {{ hasRole('nsic-finance') && $key === 'Approved' ? 'Processed for Reimbursement' : $key }}
+                        </button>
+                    </li>
+                @endif
+            @endforeach
+        </ul>
+
+        @php
+            $dataTableComponent =
+                '
+            <div class="table-responsive">
+                <table class="table" id="dataTable" width="100%" cellspacing="0">
+                    <thead>
+                        <tr>
+						    <th><input type="checkbox" id="selectAll"></th>
+                            <th>' .__('message.sn') .'</th>
+                            <th>Claim No</th>
+							<th>SNP ID</th>
+							<th>SNP Name</th>
+                            <th>Udyam No</th>
+                            <th>Team ID of MSE</th>
+							<th>Name of MSE</th>
+							<th>Category of MSE</th>
+							<th>Target Customer</th>
+							<th>Major Category</th>
+                            <th>Seller/Provider ID</th>
+							<th>Product Category</th>
+                            <th>Claimed Amount (Rs)</th>
+							<th>GST Amount(Rs)</th>
+							<th>Total Amount (Rs)</th>
+                            <!--<th>Status</th>-->
+                            <th class="actions">' .
+							__('message.action') .
+							'</th>
+                        </tr>
+                    </thead>
+                </table>
+            </div>
+        ';
+        @endphp
+
+        <div class="tab-content" id="myTabContent">
+            {!! $dataTableComponent !!}
+        </div>
+		<div><button type="button" id="create_batch" class="btn btn-primary">
+			Create Batch & Forward to CA
+		</button></div>
+
+    </div>
+
+    <!-- Modal CSV -->
+    <div class="modal fade" id="myCSVModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="modal-title mb-0">Add Bulk Claim</h5>
+                    </div>
+
+                    <div class="text-center flex-grow-1">
+                        @if (($claimSlug ?? '') === 'claim-for-catalogue-creation')
+                            <a href="{{ url('storage/app/download_format/claim_bulk_import.zip') }}"
+                                class="btn btn-sm btn-outline-primary">Download Sample Format</a>
+                        @elseif(($claimSlug ?? '') === 'claim-for-accounts-management')
+                            <a href="{{ url('storage/app/download_format/account_bulk_import.zip') }}"
+                                class="btn btn-sm btn-outline-primary">Download Sample Format</a>
+                        @elseif(($claimSlug ?? '') === 'claim-for-logistics-and-transportation')
+                            <a href="{{ url('storage/app/download_format/logistic_bulk_import.zip') }}"
+                                class="btn btn-sm btn-outline-primary">Download Sample Format</a>
+                        @else
+                            <a href="javascript:void(0);" class="btn btn-sm btn-outline-secondary disabled">Unknown</a>
+                        @endif
+                    </div>
+
+                    <div class="flex-grow-1 text-end">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+
+                <form id="bulk-upload">
+                    @csrf
+                    <div class="modal-body">
+                        <p>
+                            <select class="form-select" name="claim_type_id" id="claim_type_id">
+                                <option value="">Select Claim Type</option>
+                                @foreach ($claim_types ?? [] as $claim_type_id => $claim_type_name)
+                                    <option value="{{ $claim_type_id }}" @if (($claimTypeIdValue ?? null) == $claim_type_id) selected @endif>
+                                        {{ $claim_type_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </p>
+                        <p>Select File : <input type="file" name="file" id="file" accept=".zip"></p>
+                        <span class="text-primary">Please ensure the file is in the correct format by downloading the sample format.</span>
+
+                        <div id="csv-errors" style="color: red; font-family: Arial; padding: 10px;"></div>
+
+
+                    </div>
+                    <div class="modal-footer">
+                        <button type="sbumit" class="btn btn-success">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+
+
+    <!-- Modal for Payment -->
+    <div class="modal fade" id="myPaymentModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="modal-title mb-0">Add Payment</h5>
+                    </div>
+
+                    <div class="flex-grow-1 text-end">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+
+                <form id="payment-form">
+                    @csrf
+                    <input type="hidden" name="claim_id" id="claim_id">
+                    <div class="modal-body">
+                        <p>PFMS Number  <input type="text" name="pfms_number" id="pfms_number" class="form-control" placeholder="Enter PFMS Number"></p>
+                        <p>Amount  <input type="text" name="amount" id="amount" class="form-control numeric" placeholder="Amount"></p>
+                        <p>Comment <textarea name="comment" id="comment" class="form-control"></textarea></p>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="sbumit" class="btn btn-success">Submit</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+@section('js')
+    <script>
+      var hasFinanceRole = {{ hasRole('nsic-finance') ? 'true' : 'false' }};
+     
+            $('#myPaymentModal').on('show.bs.modal', function (event) {
+                var button = $(event.relatedTarget); // Button/link that triggered modal
+                var claim_id = button.attr('claim-id'); // Or button.data('id')
+                $('#claim_id').val(claim_id);
+        });
+
+
+       $('#myCSVModal').on('hidden.bs.modal', function () {
+            $('#csv-errors').html(''); // clear the error messages
+            $('#file').val('');
+        });
+		
+		$(document).on('change', '#bulk-upload', function(e) {
+			e.preventDefault();
+			let fileName = e.target.files[0]?.name; // get selected file name
+			if (fileName) {
+				let ext = fileName.split('.').pop().toLowerCase();
+				if (ext !== 'zip') {
+					alert("Only .zip files are allowed!");
+					 $('#file').val('');
+				}
+			}
+		});
+
+        $(document).on('submit', '#bulk-upload', function(e) {
+            e.preventDefault();
+			
+            document.getElementById('csv-errors').innerHTML = '';
+            var claimTypeId = document.getElementById('claim_type_id').value;
+
+            var form = document.getElementById('bulk-upload');
+            var formData = new FormData(form);
+            formData.append('claim_type_id', claimTypeId);
+            if (claimTypeId == '') {
+                toastr.error("Please select claim type.");
+                return;
+            }
+
+            var fileInput = document.getElementById('file');
+            if (!fileInput.files.length) {
+                toastr.error("Please select a file to upload.");
+                return;
+            }
+
+            $.ajax({
+                url: "{{ url('claims/bulk-import') }}",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+				beforeSend: function() {
+					$("#ajax-loader").show();
+				},
+                success: function(res) {
+                    toastr.success(res.message);
+                    $("#csv-errors").html('');
+                    setTimeout(function() {
+                        window.location.href = "{{ url('claims') }}";
+                    }, 2000);
+                },
+                error: function(xhr) {
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        toastr.error(xhr.responseJSON.message);
+                        displayCsvErrors(xhr.responseJSON);
+                    } else {
+                        toastr.error("Something went wrong.");
+                        document.getElementById('csv-errors').innerHTML = '';
+                    }
+                },
+				complete: function() {
+					$("#ajax-loader").hide();
+				}
+            });
+        });
+
+        // Function to format and display errors
+        function displayCsvErrors(data) {
+            let errorHtml = `<strong>${data.message}</strong><ul>`;
+
+            for (let cell in data.errors) {
+                data.errors[cell].forEach(msg => {
+                    errorHtml += `<li><strong>Cell ${cell}</strong>: ${msg}</li>`;
+                });
+            }
+
+            errorHtml += `</ul>`;
+            document.getElementById('csv-errors').innerHTML = errorHtml;
+        }
+
+
+        $(document).on('submit', '#payment-form', function(e) {
+            e.preventDefault();
+            var claimId = document.getElementById('claim_id').value;
+            var pfms_number = document.getElementById('pfms_number').value;
+            var amount = document.getElementById('amount').value;
+            var comment = document.getElementById('comment').value;
+
+            if (claimId == '') {
+                toastr.error("Claim ID is missing.");
+                return;
+            }
+            if (pfms_number == '') {
+                toastr.error("Please enter PFMS Number.");
+                return;
+            }
+
+           if (amount == '') {
+                toastr.error("Please enter Amount.");
+                return;
+            }
+
+            $.ajax({
+                url: "{{ url('claims/payment') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    claim_id: claimId,
+                    pfms_number: pfms_number,
+                    amount: amount,
+                    comment: comment
+                },
+                success: function(res) { 
+                    toastr.success(res.message);
+                    setTimeout(function() {
+                        window.location.href = "{{ url('claims') }}";
+                    }, 2000);
+                },
+                error: function(xhr) {
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        toastr.error(xhr.responseJSON.message);
+                    } else {
+                        toastr.error("Something went wrong.");
+                    }
+                }
+            });
+        });
+
+
+        @isset($defaultStatus)
+            $("#review_status").val("{{ $defaultStatus }}");
+            $(".filter_btn[data-val='{{ $defaultStatus }}']").addClass("active");
+        @endisset
+
+
+       var selectedRows = {};
+        dataTableInit({
+            id: "#dataTable",
+            showExcelExport: true,
+            order: {
+                column: 0,
+                direction: "asc"
+            },
+            url: "{{ url('claims-list/' . ($tabs['claim_type_slug'] ?? 'claim-for-catalog-creation')) }}",
+            columns: [
+			   
+			   {
+                    "orderable": false,
+                    "className": "noExport",
+                    "render": function(data, type, row) {
+                        var checked = selectedRows[row.id] ? 'checked' : '';
+                        return '<input type="checkbox" class="row-checkbox" value="' + row.id + '" ' + checked + '>';
+                    }
+                },
+			
+			    {
+                    orderable: false,
+                    render: function(data, type, full, meta) {
+                        return full.is_bulk ?
+                            serialNumber("#dataTable", meta
+                                .row) :
+                            serialNumber("#dataTable", meta.row);
+                    }
+                },
+                {
+                    orderable: true,
+                    render: function(data, type, row) {
+                        return row.application_number ?? '';
+                    }
+                },
+				
+				{
+                    orderable: true,
+                    render: function(data, type, row) {
+                        return row.snp_id ?? '';
+                    }
+                },
+				
+				{
+                    orderable: true,
+                    render: function(data, type, row) {
+                        return row.snp_name ?? '';
+                    }
+                },
+				
+                {
+                    orderable: true,
+                    render: function(data, type, row) {
+                        return row.udyam_no ?? '';
+                    }
+                },
+                {
+                    orderable: true,
+                    render: function(data, type, row) {
+                        return row.team_id ?? '';
+                    }
+                },
+				{
+                    orderable: true,
+                    render: function(data, type, row) {
+                        return row.msme_name ?? '';
+                    }
+                },
+				{
+                    orderable: true,
+                    render: function(data, type, row) {
+                        return row.msme_classification ?? '';
+                    }
+                },
+				
+				{
+                    orderable: true,
+                    render: function(data, type, row) {
+                        return row.target_customer ?? '';
+                    }
+                },
+				{
+                    orderable: true,
+                    render: function(data, type, row) {
+                        return row.major_activity ?? '';
+                    }
+                },
+                {
+                    orderable: true,
+                    render: function(data, type, row) {
+                        return row.seller_provider_id ?? '';
+                    }
+                },
+				
+				{
+                    orderable: true,
+                    render: function(data, type, row) {
+                        return row.subdomain_names ?? '';
+                    }
+                },
+                {
+                    orderable: true,
+                    render: function(data, type, row) {
+						return parseFloat(row.amount) - parseFloat(row.gst_charge_amount);
+                    }
+                },
+				{
+                    orderable: true,
+                    render: function(data, type, row) {
+                        return row.gst_charge_amount ?? '';
+                    }
+                },
+				
+				{
+                    orderable: true,
+                    render: function(data, type, row) {
+						return row.amount ?? '';
+                    }
+                },
+				
+                /**{
+                    orderable: true,
+                    render: function(data, type, row) {
+                        let status = row.status ?? '';
+                        let label = '';
+
+                        if (status === 'Submitted') {
+                            label = `<span class="badge bg-primary">${status}</span>`;
+                        } else if (status === 'Forwarded') {
+                            label = `<span class="badge bg-warning">Pending</span>`;
+                        } else if (status === 'Approved') {
+                            label = `<span class="badge bg-success">${status}</span>`;
+                        } else if (status === 'Rejected' || status === 'Reverted') {
+                            label = `<span class="badge bg-danger">${status}</span>`;
+                        } else {
+                            label = `<span class="badge bg-secondary">${status}</span>`;
+                        }
+
+                        return label;
+                    }
+                },*/
+
+                {
+                    orderable: false,
+                    render: function(data, type, row) {
+                        var viewBtn = buttonView("{{ url('claim-show') }}", row.id);
+                        var editBtn = '';
+                        @if(hasRole('snp'))
+                        if (row.status === 'Reverted' || (row.is_bulk && row.status === 'Draft')) {
+                            editBtn = buttonEdit("{{ url('claim-edit') }}", row.id);
+                        }
+                        @endif
+                        var timelineBtn = viewTHistory(row.id);
+                        var FinanceIcon = "";
+                        if (hasFinanceRole && row.status === 'Approved') {
+                            FinanceIcon = '<a href="javascript:void(0)" claim-id="' + row.id + '" data-bs-toggle="modal" data-bs-target="#myPaymentModal" class="btn btn-sm btn-primary btn-circle m-1" title="Payment"><i class="fa fa-check"></i></a>';
+                        }
+
+                        return createActionButtons([viewBtn, timelineBtn, editBtn,FinanceIcon]);
+                    }
+                }
+            ],
+            createdRow: true,
+            filters: ['review_status', 'is_bulk']
+        });
+		
+		$(document).on("change", ".row-checkbox", function() {
+            var id = $(this).val();
+            selectedRows[id] = $(this).prop("checked");
+
+            var allChecked = $(".row-checkbox").length && $(".row-checkbox:checked").length === $(".row-checkbox")
+                .length;
+            $("#selectAll").prop("checked", allChecked);
+        });
+
+        $(document).on("change", "#selectAll", function() {
+            var checked = $(this).prop("checked");
+            $(".row-checkbox").each(function() {
+                $(this).prop("checked", checked);
+                selectedRows[$(this).val()] = checked;
+            });
+        });
+		
+		
+		$(document).on("click", "#create_batch", function() {
+			let selected = [];
+			$(".row-checkbox:checked").each(function() {
+				selected.push($(this).val());
+			});
+			
+			$.ajax({
+                url: "{{ url('create-batch-claim') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    claim_id: selected,
+                    claim_type_id:'{{$claimSlug}}'
+                },
+                success: function(res) {
+				    if(res.status===false){
+						toastr.error(res.errors.message);
+						return false;
+					}
+					
+                    toastr.success(res.message);
+					
+                    /*setTimeout(function() {
+                        window.location.href = "{{ url('claims') }}";
+                    }, 2000);*/
+                },
+                error: function(xhr) {
+                   toastr.error('Some thing wrong!');
+                }
+            });
+			
+			//console.log("Selected values:", selected);
+		});
+		
+		
+		
+		
+
+        $(".filter_btn").on("click", function() {
+            const status = $(this).data("val");
+            $("#review_status").val(status);
+            $(".filter_btn").removeClass("active");
+            $(this).addClass("active");
+            oTable.draw();
+        });
+
+
+        function viewTHistory(id) {
+            return `<a 
+			  href="#" data-id="${id}" 
+			  class="btn btn-sm btn-warning btn-circle m-1 timeline-request" rel="tooltip" title="History"
+			  ><i class="fa fa-history"></i>
+			</a>`;
+        }
+		
+		
+    </script>
+@endsection
+@endsection

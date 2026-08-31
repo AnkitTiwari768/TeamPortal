@@ -1,0 +1,210 @@
+@extends('components.admin.content-layout')
+@section('action-header')
+<div class="btn-group drop-btn">
+	
+	@include('components.admin.buttons.back-button')
+	
+</div>
+@endsection
+@section('card-content') 
+<div class="card-body pt-1">      
+
+		<div class="card mb-4">
+			<div class="card-header d-flex justify-content-between"> 
+				<h5 class="m-0 box-heading heading-1">
+				@if(!empty($row['id']))
+					Update Claim for Catalogue Creation
+					@else
+					 Add Claim for Catalogue Creation
+				@endif
+
+				</h5>
+			</div>
+
+			<div class="card card-body">
+				<form id="formId">
+					<div class="row g-3">
+						<!-- SNP ID -->
+						<div class="col-md-4">
+							<label class="form-label required">SNP ID</label>
+							<input type="text" class="form-control" name="snp_id" placeholder="To be filled by SNP">
+						</div>
+
+						<!-- MSME Udyam Number -->
+						<div class="col-md-4">
+							<label class="form-label required">MSME Udyam Number</label>
+							<input type="text" class="form-control" name="udyam_number" placeholder="Auto-filled">
+						</div>
+
+						<!-- MSME TEAM Registration ID -->
+						<div class="col-md-4">
+							<label class="form-label required">MSME TEAM Registration ID</label>
+							<input type="text" class="form-control" name="team_id" placeholder="To be filled by SNP">
+						</div>
+
+						<!-- MSME Name -->
+						<div class="col-md-4">
+							<label class="form-label required">MSME Name</label>
+							<input type="text" class="form-control" name="msme_name" placeholder="Auto-filled">
+						</div>
+
+						<!-- MSME Classification -->
+						<div class="col-md-4">
+							<label class="form-label required">MSME Classification</label>
+							<select class="form-select" name="msme_classification">
+								<option>Micro</option>
+								<option>Small</option>
+								<option>Medium</option>
+							</select>
+						</div>
+
+						<!-- Category -->
+						<div class="col-md-4">
+							<label class="form-label required">MSME Category</label>
+							<select class="form-select" name="msme_category">
+								<option>Manufacturing</option>
+								<option>Services</option>
+								<option>Trading</option>
+							</select>
+						</div>
+
+						<!-- Date of onboarding on ONDC -->
+						<div class="col-md-4">
+							<label class="form-label required">Date of onboarding of MSME on ONDC</label>
+							<input type="date" class="form-control" name="onboard_date">
+						</div>
+
+						<!-- Seller Provider ID -->
+						<div class="col-md-4">
+							<label class="form-label required">MSME Seller Provider ID</label>
+							<input type="text" class="form-control" name="seller_id" placeholder="To be filled by SNP">
+						</div>
+
+						<!-- No. of SKUs -->
+						<div class="col-md-4">
+							<label class="form-label required">Number of SKUs Catalogued for the MSME</label>
+							<input type="number" class="form-control" name="num_skus">
+						</div>
+
+						<!-- MSME Target Audience -->
+						<div class="col-md-4">
+							<label class="form-label required">MSME Target Audience</label>
+							<input type="text" class="form-control" name="target_audience">
+						</div>
+
+						<!-- ONDC Order ID -->
+						<div class="col-md-4">
+							<label class="form-label required">ONDC Order ID</label>
+							<input type="text" class="form-control" name="ondc_order_id">
+						</div>
+
+						<!-- Order Invoice Number & Date -->
+						<div class="col-md-4">
+							<label class="form-label required">Order Invoice Number & Date</label>
+							<input type="text" class="form-control" name="invoice_number" placeholder="To be filled by SNP">
+							<input type="date" class="form-control mt-1" name="invoice_date">
+						</div>
+		
+						@foreach($claimDocuments as $key=>$claimDocument)
+						<div class="col-md-4">
+							<label class="form-label required">{{$claimDocument->document_category_name}}</label>
+							<input type="file" name="{{$claimDocument->document_category_slug}}" id="{{$claimDocument->document_category_slug}}" document_category_id={{$claimDocument->document_category_id}} class="form-control upload-pdf" accept="application/pdf">
+							
+							<input type="hidden" name="claim_documents[]" value="" id="claim_documents_{{$claimDocument->document_category_id}}" />
+						</div>
+						@endforeach
+						<div class="form-check mt-4">
+						<input class="form-check-input" type="checkbox" name="incentive_claim" id="incentive_claim" required><b>No Dual- Incentive Claim : </b>
+						<label class="form-check-label" for="incentive_claim">
+							We affrm that we have not, and will not, claim incentives for the same set of MSEs or transactions under multiple
+							ONDC-related programs. Specifcally, if any MSE has already been onboarded through another ONDC initiative
+							facilitated by institutions such as SIDBI, SFAC, or similar entities, we shall not claim incentives for the same MSE
+							under this program. Furthermore, if incentives have been claimed for any transactions under a different program for
+							a particular MSE, we shall not submit a duplicate claim for those same transactions under this program.
+						</label>
+					</div>
+
+					<div class="form-check mt-4">
+						<input class="form-check-input" type="checkbox" name="eligibility" id="eligibility" required><b>Eligibility of MSE:</b>
+						<label class="form-check-label" for="eligibility">
+							We confrm that incentives are being claimed only for those MSEs who are either currently not onboarded as
+							sellers on the ONDC platform or have never been onboarded previously. We acknowledge and accept full
+							responsibility for verifying the onboarding status of MSEs and for any duplication or discrepancies arising in this
+							regard.
+
+						</label>
+					</div>
+
+					<!-- Submit -->
+					<div class="mt-4">
+						<button type="submit" class="btn btn-primary">Submit your Claim</button>
+					</div>
+				</form>
+			</div>
+		</div> 
+
+</div>
+				
+@section('js');
+
+<script>
+
+
+
+$("#formId").on("submit", function (event) {
+		event.preventDefault();
+		var formData=$("#formId").serializeArray();
+		var csrfToken = "{{ csrf_token() }}";
+		
+		@isset($id)
+			var method = 'POST';
+			var url = "{{ url('/claim-update/'. $id) }}";
+		@else 
+			var method = 'POST';
+			var url = "{{ url('/claims') }}";
+		@endisset
+
+		var requestData = {
+			url: url,
+			method: method,
+			data: formData,
+		};
+
+		sendRequest(requestData, "{{ url('cliams') }}");
+	});
+
+
+
+$('.upload-pdf').on('change', function () {
+	const file = this.files[0];
+	if (!file) return;
+	var document_category_id=$(this).attr('document_category_id');
+	const formData = new FormData();
+	formData.append('_token', '{{ csrf_token() }}');
+	//formData.append('application_id', $('#application_id').val());
+	formData.append('document_category_id',document_category_id);
+	formData.append('file', file); 
+	
+	$.ajax({
+		url: '{{ url("upload-claim-documents") }}',
+		method: 'POST',
+		data: formData,
+		processData: false, 
+		contentType: false, 
+		success: function (response) {
+			if(response.status){
+				toastr.success(response.message);
+				$('#claim_documents_'+document_category_id).val(response.data.claim_document);
+				//$('#upload_file').val('');
+			}
+		},
+		error: function (xhr, status, error) {
+			//console.error('Upload Error:', error);
+			toastr.error('File upload failed.');
+		}
+	});
+});
+</script>
+@endsection
+@endsection
+

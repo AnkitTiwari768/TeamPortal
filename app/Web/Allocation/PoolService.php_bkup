@@ -1,0 +1,401 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Web\Allocation;
+
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Str;
+use RuntimeException;
+
+/**
+ * PoolService
+ *
+ * Centralized business engine for fund pooling and deduction.
+ * Manages the generation, lookup, update, and rebuilding of fund_pools
+ * based on configurable Strict (Mode 1) or Merged (Mode 2) pooling strategies.
+ */
+class PoolService
+{
+    /**
+     * Resolve the unique pool key based on the configured pooling mode.
+     *
+     * @param array $data Input dataset containing financial_year, duration_id, sub_duration_id, major_component_id, sub_component_id.
+     * @return array The resolved pool key structure.
+     */
+    public function resolvePoolKey(array $data): array
+    {
+        $mode = (int) config('allocation.pooling_mode', 1);
+
+        if ($mode === 2) {
+            // Merged Pooling: Use Financial Year + Major Component + Sub Component only.
+            // Satisfy the non-null constraint on duration_id using a fixed system dummy UUID.
+            return [
+                'financial_year' => $data['financial_year'],
+                'duration_id' => config('allocation.merged_pool_duration_uuid', '00000000-0000-0000-0000-000000000000'),
+                'sub_duration_id' => null,
+                'major_component_id' => $data['major_component_id'],
+                'sub_component_id' => $data['sub_component_id'] ?? null,
+            ];
+        }
+
+        // Strict Pooling (Default): Use the fully-qualified granular keys.
+        return [
+            'financial_year' => $data['financial_year'],
+            'duration_id' => $data['duration_id'],
+            'sub_duration_id' => $data['sub_duration_id'] ?? null,
+            'major_component_id' => $data['major_component_id'],
+            'sub_component_id' => $data['sub_component_id'] ?? null,
+        ];
+    }
+
+    /**
+     * Find an existing fund pool by its unique key.
+     * NEVER creates a new pool.
+     */
+    public function findPool(array $key, bool $lock = false): ?object
+    {
+        $query = DB::table('fund_pools')
+            ->where('financial_year', $key['financial_year'])
+            ->where('duration_id', $key['duration_id'])
+            ->where('major_component_id', $key['major_component_id']);
+
+        if (is_null($key['sub_duration_id'] ?? null)) {
+            $query->whereNull('sub_duration_id');
+        } else {
+            $query->where('sub_duration_id', $key['sub_duration_id']);
+        }
+
+        if (is_null($key['sub_component_id'] ?? null)) {
+            $query->whereNull('sub_component_id');
+        } else {
+            $query->where('sub_component_id', $key['sub_component_id']);
+        }
+
+        if ($lock) {
+            $query->lockForUpdate();
+        }
+
+        return $query->first();
+    }
+
+    /**
+     * Find or create a fund pool by its unique key.
+     */
+    public function findOrCreatePool(array $key, bool $lock = false): object
+    {
+        $pool = $this->findPool($key, $lock);
+
+        if (!$pool) {
+            $poolId = (string) Str::uuid();
+            $newPoolData = [
+                'id' => $poolId,
+                'financial_year' => $key['financial_year'],
+                'duration_id' => $key['duration_id'],
+                'sub_duration_id' => $key['sub_duration_id'] ?? null,
+                'major_component_id' => $key['major_component_id'],
+                'sub_component_id' => $key['sub_component_id'] ?? null,
+                'total_allocated_amount' => 0.00,
+                'total_distributed_amount' => 0.00,
+                'remaining_balance' => 0.00,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ];
+            DB::table('fund_pools')->insert($newPoolData);
+            $pool = (object) $newPoolData;
+        }
+
+        return $pool;
+    }
+
+    /**
+     * Update the total allocated amount in a fund pool.
+     */
+    public function updatePoolAllocation(array $key, float $amountChange): void
+    {
+        $pool = $this->findOrCreatePool($key, true);
+
+        $newTotalAllocated = (float) $pool->total_allocated_amount + $amountChange;
+
+        DB::table('fund_pools')->where('id', $pool->id)->update([
+            'total_allocated_amount' => $newTotalAllocated,
+            'updated_at' => now(),
+        ]);
+
+        $this->recalculateBalance($pool->id);
+    }
+
+    /**
+     * Update the total distributed amount in a fund pool.
+     */
+    public function updatePoolDistribution(array $key, float $amountChange): void
+    {
+        $pool = $this->findOrCreatePool($key, true);
+
+        $newTotalDistributed = (float) $pool->total_distributed_amount + $amountChange;
+
+        DB::table('fund_pools')->where('id', $pool->id)->update([
+            'total_distributed_amount' => $newTotalDistributed,
+            'updated_at' => now(),
+        ]);
+
+        $this->recalculateBalance($pool->id);
+    }
+
+    /**
+     * Recalculate remaining balance and perform cleanup of empty pools.
+     * Enforces that remaining balance never dips below zero to maintain financial sanity.
+     */
+    public function recalculateBalance(string $poolId): void
+    {
+        $pool = DB::table('fund_pools')->where('id', $poolId)->lockForUpdate()->first();
+        if ($pool) {
+            $totalAllocated = (float) $pool->total_allocated_amount;
+            $totalDistributed = (float) $pool->total_distributed_amount;
+            $remaining = $totalAllocated - $totalDistributed;
+
+            // Safe remaining balance update (overdraft allowed)
+
+            DB::table('fund_pools')->where('id', $poolId)->update([
+                'remaining_balance' => $remaining,
+                'updated_at' => now(),
+            ]);
+
+            // Safe cleanup: Delete pool only if both values are 0 (using float threshold)
+            if (abs($totalAllocated) < 0.01 && abs($totalDistributed) < 0.01) {
+                DB::table('fund_pools')->where('id', $poolId)->delete();
+            }
+        }
+    }
+
+    /**
+     * Rebuild all fund pools from raw Allocation Lines and Fund Distributions.
+     * Crucial for dynamic mode changes, recalculation cron jobs, and financial audits.
+     */
+    public function rebuildAllPools(): void
+    {
+        DB::transaction(function () {
+            // Step 1: Wipe the fund_pools table completely using transaction-safe delete
+            DB::table('fund_pools')->delete();
+
+            // Step 2: Recalculate and inject all Allocation Lines
+            $allocationLines = collect();
+            if (\Illuminate\Support\Facades\Schema::hasTable('fund_allocation_component_mappings') && \Illuminate\Support\Facades\Schema::hasTable('fund_allocations')) {
+                $allocationLines = DB::table('fund_allocation_component_mappings as al')
+                    ->join('fund_allocations as ah', 'ah.id', '=', 'al.fund_allocation_id')
+                    ->select(
+                        'ah.financial_year',
+                        'ah.duration_id',
+                        'ah.sub_duration_id',
+                        'al.major_component_id',
+                        'al.sub_component_id',
+                        'al.amount'
+                    )
+                    ->get();
+            } elseif (\Illuminate\Support\Facades\Schema::hasTable('allocation_lines') && \Illuminate\Support\Facades\Schema::hasTable('allocation_headers')) {
+                $allocationLines = DB::table('allocation_lines as al')
+                    ->join('allocation_headers as ah', 'ah.id', '=', 'al.allocation_header_id')
+                    ->select(
+                        'ah.financial_year',
+                        'ah.duration_id',
+                        'ah.sub_duration_id',
+                        'al.major_component_id',
+                        'al.sub_component_id',
+                        'al.amount'
+                    )
+                    ->get();
+            }
+
+            foreach ($allocationLines as $line) {
+                $key = $this->resolvePoolKey((array) $line);
+                $this->updatePoolAllocation($key, (float) $line->amount);
+            }
+
+            // Step 3: Recalculate and inject legacy Fund Distributions if present
+            if (\Illuminate\Support\Facades\Schema::hasTable('fund_distribution')) {
+                $distributions = DB::table('fund_distribution as fd')
+                    ->select(
+                        'fd.financial_year',
+                        'fd.duration',
+                        'fd.duration_limit',
+                        'fd.major_component_id',
+                        'fd.sub_component_id',
+                        'fd.amount_allocated'
+                    )
+                    ->get();
+
+                foreach ($distributions as $dist) {
+                    $durationId = null;
+                    $subDurationId = null;
+
+                    $durationAttr = DB::table('attribute_values')
+                        ->where('attribute_value', $dist->duration)
+                        ->first();
+
+                    if ($durationAttr) {
+                        $durationId = $durationAttr->id;
+
+                        if ($dist->duration_limit) {
+                            $subDurationAttr = DB::table('attribute_values')
+                                ->where('attribute_value', $dist->duration_limit)
+                                ->where('parent_id', $durationId)
+                                ->first();
+                            if ($subDurationAttr) {
+                                $subDurationId = $subDurationAttr->id;
+                            }
+                        }
+                    }
+
+                    $keyData = [
+                        'financial_year' => $dist->financial_year,
+                        'duration_id' => $durationId,
+                        'sub_duration_id' => $subDurationId,
+                        'major_component_id' => $dist->major_component_id,
+                        'sub_component_id' => $dist->sub_component_id,
+                    ];
+
+                    $key = $this->resolvePoolKey($keyData);
+                    $this->updatePoolDistribution($key, (float) $dist->amount_allocated);
+                }
+            }
+
+            // Step 4: Recalculate and inject all FINAL Isolated Fund Distributions
+            if (\Illuminate\Support\Facades\Schema::hasTable('fund_distributions')) {
+                $finalDistributions = DB::table('fund_distributions as fds')
+                    ->whereNull('fds.deleted_at')
+                    ->select(
+                        'fds.financial_year',
+                        'fds.duration_id',
+                        'fds.sub_duration_id',
+                        'fds.major_component_id',
+                        'fds.sub_component_id',
+                        'fds.distribution_amount'
+                    )
+                    ->get();
+
+                foreach ($finalDistributions as $finalDist) {
+                    $keyDataFinal = [
+                        'financial_year'    => $finalDist->financial_year,
+                        'duration_id'       => $finalDist->duration_id,
+                        'sub_duration_id'   => $finalDist->sub_duration_id,
+                        'major_component_id'=> $finalDist->major_component_id,
+                        'sub_component_id'  => $finalDist->sub_component_id,
+                    ];
+
+                    $keyFinal = $this->resolvePoolKey($keyDataFinal);
+                    $this->updatePoolDistribution($keyFinal, (float) $finalDist->distribution_amount);
+                }
+            }
+        });
+    }
+
+    /**
+     * Get Component Utilization Mapping amount for matching financial year and target major/sub component.
+     */
+    public function getComponentUtilizationAmount(
+        string $financialYear, 
+        ?string $durationId,
+        ?string $subDurationId,
+        string $majorComponentId, 
+        ?string $subComponentId = null
+    ): float
+    {
+        if (empty($financialYear) || empty($majorComponentId)) {
+            return 0.0;
+        }
+
+        // 1. Fetch matching mappings
+        $mappingQuery = DB::table('component_utilization_mappings')
+            ->where('financial_year', $financialYear);
+
+        if (!empty($durationId)) {
+            $mappingQuery->where('duration', $durationId);
+        } else {
+            $mappingQuery->whereNull('duration');
+        }
+
+        if (!empty($subDurationId)) {
+            $mappingQuery->where('sub_duration', $subDurationId);
+        } else {
+            $mappingQuery->whereNull('sub_duration');
+        }
+
+        $mappingIds = $mappingQuery->pluck('id');
+
+        if ($mappingIds->isEmpty()) {
+            return 0.0;
+        }
+
+        // 2. Fetch sum of amount_to_be_allocated for the target component
+        $query = DB::table('component_utilization_mapping_details')
+            ->whereIn('mapping_id', $mappingIds)
+            ->where('target_category', $majorComponentId);
+
+        if (!empty($subComponentId) && strtolower((string)$subComponentId) !== 'null') {
+            $query->where(function ($q) use ($subComponentId) {
+                $q->where('target_sub_component', $subComponentId)
+                  ->orWhereNull('target_sub_component');
+            });
+        } else {
+            $query->whereNull('target_sub_component');
+        }
+
+        return (float) $query->sum('amount_to_be_allocated');
+    }
+
+    /**
+     * Get the amount this component has sent OUT to other components via
+     * Component Utilization Mapping (the mirror of getComponentUtilizationAmount(),
+     * which reports what a component received). Used to reconstruct the original
+     * fresh-allocation figure for display, since updatePoolAllocation() debits this
+     * straight out of the pool's total_allocated_amount at transfer time.
+     */
+    public function getComponentUtilizationOutgoingAmount(
+        string $financialYear,
+        ?string $durationId,
+        ?string $subDurationId,
+        string $majorComponentId,
+        ?string $subComponentId = null
+    ): float
+    {
+        if (empty($financialYear) || empty($majorComponentId)) {
+            return 0.0;
+        }
+
+        $mappingQuery = DB::table('component_utilization_mappings')
+            ->where('financial_year', $financialYear);
+
+        if (!empty($durationId)) {
+            $mappingQuery->where('duration', $durationId);
+        } else {
+            $mappingQuery->whereNull('duration');
+        }
+
+        if (!empty($subDurationId)) {
+            $mappingQuery->where('sub_duration', $subDurationId);
+        } else {
+            $mappingQuery->whereNull('sub_duration');
+        }
+
+        $mappingIds = $mappingQuery->pluck('id');
+
+        if ($mappingIds->isEmpty()) {
+            return 0.0;
+        }
+
+        $query = DB::table('component_utilization_mapping_details')
+            ->whereIn('mapping_id', $mappingIds)
+            ->where('source_major_component', $majorComponentId);
+
+        if (!empty($subComponentId) && strtolower((string)$subComponentId) !== 'null') {
+            $query->where(function ($q) use ($subComponentId) {
+                $q->where('source_sub_component', $subComponentId)
+                  ->orWhereNull('source_sub_component');
+            });
+        } else {
+            $query->whereNull('source_sub_component');
+        }
+
+        return (float) $query->sum('amount_to_be_allocated');
+    }
+}

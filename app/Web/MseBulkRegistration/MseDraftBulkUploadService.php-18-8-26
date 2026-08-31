@@ -1,0 +1,1282 @@
+<?php
+namespace App\Web\MseBulkRegistration;
+
+use Illuminate\Support\Collection;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Validator;
+use Illuminate\Support\Str;
+use App\Contracts\GrantType;
+use Maatwebsite\Excel\Concerns\{
+    ToCollection,
+    WithHeadingRow,
+    WithValidation,
+    SkipsEmptyRows,
+    SkipsOnFailure
+};
+use Maatwebsite\Excel\Concerns\WithStartRow;
+use Maatwebsite\Excel\Concerns\SkipsFailures;
+use Illuminate\Support\Facades\Http;
+
+use Maatwebsite\Excel\Events\BeforeImport;
+use Maatwebsite\Excel\Concerns\WithEvents;
+use App\Web\Notification\SendNotificationEvent;
+use Illuminate\Support\Facades\Auth;
+class MseDraftBulkUploadService implements
+    ToCollection,
+    WithHeadingRow,
+    WithValidation,
+    SkipsEmptyRows,
+    SkipsOnFailure,
+	WithStartRow,
+	WithEvents
+{
+    use SkipsFailures;
+    protected MseDraftBulkUpload $importHelper;
+	
+    protected array $summary = [
+        'draft_count'  => 0,
+        'temp_count'   => 0,
+        'failed_count' => 0,
+    ];
+	/** Maximum number of Udyam API attempts allowed per draft. */
+	public const MAX_API_ATTEMPTS = 3;
+
+	public const STATUS_PENDING  = 'Pending';
+	public const STATUS_MIGRATED = 'Migrated';
+	public const STATUS_FAILED   = 'Failed';
+
+	public const ROLE_TYPE_SNP = 1;
+	public const ROLE_TYPE_IA  = 2;
+
+	/** How many drafts to pull per chunk. */
+	private const CHUNK_SIZE = 200;
+
+	/**
+	 * Errors that point at the API being unavailable rather than the data being
+	 * wrong. These are still retried, but they no longer bypass the attempt cap.
+	 */
+	private const TRANSIENT_API_ERRORS = [
+		'Udyam API timeout — server not responding',
+		'Udyam API is currently not responding. Please try again later',
+		'Udyam API stopped responding',
+		'External government API rejected connection. Please try again.',
+	];
+
+	
+	// ✅ ADD HERE
+     protected array $requiredHeaders = [
+        'udyam_no',
+        'mobile',
+        'current_state_business_id',
+        'attending_ondc_awareness_workshop',
+        'turnover',
+        'pan_no',
+        'gstin_no',
+        'product_category_id',
+        'ondc_transaction_type_id'
+    ];
+
+
+	 protected $batchId; // ✅ Store batch ID
+	public function headingRow(): int
+    {
+        return 2;
+    }
+
+    public function startRow(): int
+    {
+        return 3;
+    }
+    public function __construct(MseDraftBulkUpload $importHelper)
+    {
+        $this->importHelper = $importHelper;
+		
+    }
+
+  	public function collection(Collection $rows)
+	{
+		 // ✅ Limit check (max 5000 rows)
+			if ($rows->count() > 5000) {
+				throw new \Exception('Maximum 5000 rows allowed in import file.');
+			}
+			
+		 $this->batchId = $this->generateBatchId();
+        $this->summary['batch_id'] = $this->batchId; // Store in summary
+
+		static $deleted = false;
+		// delete only once
+		if (!$deleted) {
+			DB::table('team_msme_scheme_temps')
+				->where('created_by', AuthId())
+				->delete();
+			$deleted = true;
+		}
+		$insertData    = [];
+		$duplicateData = [];
+		foreach ($rows as $index => $payload) {
+			$rowNumber = $index + 3;
+			$data = $payload->toArray();
+
+			$mobile   = trim($data['mobile'] ?? '');
+			$udyam_no = trim($data['udyam_no'] ?? '');
+
+			if ($mobile === "" && $udyam_no === "") {
+				continue;
+			}
+  		 // ✅ DB Lookups (only if value exists)
+			$productCategoryId = !empty($data['product_category_id']) ? $this->getSubdomainTypes('sub_domains', $data['product_category_id']) : null;
+			$currentBusinessId = !empty($data['current_state_business_id']) ? $this->getCurrentBuisinessTypes('attribute_values', slugify($data['current_state_business_id'])) : null;
+			$transactionTypeId = !empty($data['ondc_transaction_type_id']) ? $this->getTransactionTypes('attribute_values', slugify($data['ondc_transaction_type_id'])) : null;
+            // ✅ Validate row
+
+			
+            $validator = $this->validateRow($data,$productCategoryId,$currentBusinessId,$transactionTypeId);
+
+			if ($validator->fails()) {
+				$errorMessage = implode(', ', $validator->errors()->all());
+				$duplicateData[] = $this->prepareInsertArray($data, $errorMessage);
+				$this->summary['temp_count']++;
+				$this->summary['failed_count']++;
+				continue;
+			}
+
+			// duplicate check
+			$duplicateCheck = $this->isDuplicate($mobile, $udyam_no);
+			if ($duplicateCheck) {
+				$duplicateData[] = $this->prepareInsertArray($data, 'Duplicate Mobile or Udyam No');
+				$this->summary['temp_count']++;
+				$this->summary['failed_count']++;
+			} else {
+				$insertData[] = $this->prepareDraftInsert($data);
+				$this->summary['draft_count']++;
+				$this->summary['failed_count']++;
+			}
+		}
+
+		  if (!empty($insertData)) {
+			foreach (array_chunk($insertData, 500) as $chunk) {
+				DB::table('team_msme_scheme_drafts')->insert($chunk);
+			}
+		}
+
+		if (!empty($duplicateData)) {
+			foreach (array_chunk($duplicateData, 500) as $chunk) {
+				DB::table('team_msme_scheme_temps')->insert($chunk);
+			}
+		}
+	}
+
+    public function getDraftsByBatch(string $batchId)
+    {
+        $userIds = getSubUserAndParentIds(AuthId());
+        $roleType = hasRole('snp') ? 1 : 2;
+
+        $drafts = DB::table('team_msme_scheme_drafts')
+            ->whereIn('created_by', $userIds)
+            ->where('role_type', $roleType)
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return $drafts->unique(function ($item) {
+            return $item->mobile . '-' . $item->udyam_no;
+        })->where('batch_id', $batchId)->values();
+    }
+
+    public function getUserBatches()
+    {
+        $userIds = getSubUserAndParentIds(AuthId());
+        $roleType = hasRole('snp') ? 1 : 2;
+
+        $drafts = DB::table('team_msme_scheme_drafts')
+            ->whereIn('created_by', $userIds)
+            ->where('role_type', $roleType)
+            ->whereNotNull('batch_id')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        $uniqueDrafts = $drafts->unique(function ($item) {
+            return $item->mobile . '-' . $item->udyam_no;
+        });
+
+        $batches = $uniqueDrafts->groupBy('batch_id')->map(function ($batchDrafts, $batchId) {
+            return (object) [
+                'batch_id' => $batchId,
+                'total' => $batchDrafts->count(),
+                'pending' => $batchDrafts->where('status', self::STATUS_PENDING)->count(),
+                'migrated' => $batchDrafts->where('status', self::STATUS_MIGRATED)->count(),
+                'failed' => $batchDrafts->where('status', self::STATUS_FAILED)->count(),
+                'created_at' => $batchDrafts->max('created_at')
+            ];
+        })->values();
+
+        return $batches->sortBy('batch_id')->values();
+    }
+    public function getNextBatchNumber(): string
+    {
+        $userId = AuthId();
+        
+        $lastBatch = DB::table('team_msme_scheme_drafts')
+            ->where('created_by', $userId)
+            ->where('batch_id', 'LIKE', 'B%')
+            ->orderBy('batch_id', 'desc')
+            ->value('batch_id');
+
+        if ($lastBatch) {
+            $lastNumber = (int) substr($lastBatch, 1);
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+
+        return 'B' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+    }
+
+
+    private function generateBatchId(): string
+    {
+        $userId = AuthId();
+        $lastBatch = DB::table('team_msme_scheme_drafts')
+            ->where('created_by', $userId)
+            ->where('batch_id', 'LIKE', 'B%')
+            ->orderBy('batch_id', 'desc')
+            ->value('batch_id');
+
+        if ($lastBatch) {
+            $lastNumber = (int) substr($lastBatch, 1);
+            $newNumber = $lastNumber + 1;
+        } else {
+            $newNumber = 1;
+        }
+
+        return 'B' . str_pad($newNumber, 3, '0', STR_PAD_LEFT);
+    }
+
+	public function registerEvents(): array
+	{
+		return [
+			BeforeImport::class => function (BeforeImport $event) {
+				$worksheet = $event->getReader()->getActiveSheet();
+				// Get second row (header row)
+				$headerRow = $worksheet->rangeToArray('A2:I2')[0];
+				$this->validateExcelHeader($headerRow);
+			},
+		];
+	}
+
+	protected function validateExcelHeader($headerRow)
+	{
+		$headers = array_map(function ($value) {
+			return strtolower(trim((string) $value));
+		}, $headerRow);
+
+		$missing = array_diff($this->requiredHeaders, $headers);
+		$extra   = array_diff($headers, $this->requiredHeaders);
+
+		if (!empty($missing) || !empty($extra)) {
+			throw new \Exception(
+				"Invalid Excel format. Please upload file using the provided template."
+			);
+		}
+	}
+	
+	/**
+	 * Persist the reason a row could not be migrated.
+	 *
+	 * $createdBy is passed explicitly by the cron: the scheduler runs without an
+	 * authenticated session, so AuthId() is null there and the owning user has to
+	 * come from the draft row itself.
+	 */
+	private function saveTempImportError($payload, $errorMessage, $createdBy = null)
+	{
+
+		$uuid = uuid();
+		try {
+			$mobile   = $payload->get('mobile');
+			$udyam_no = $payload->get('udyam_no');
+
+			/// ✅ INSERT new temp record
+			DB::table('team_msme_scheme_temps')->insert([
+				'id'   => $uuid,
+				'udyam_no'  => $udyam_no,
+				'mobile'    => $mobile,
+				'current_state_business_id' =>$payload->get('current_state_business_id'),
+				'attending_ondc_awareness_workshop' =>$payload->get('attending_ondc_awareness_workshop'),
+				'turnover' => $payload->get('turnover'),
+				'pan_no'   => $payload->get('pan_no'),
+				'gstin_no' => $payload->get('gstin_no'),
+				'product_category_id' =>$payload->get('product_category_id'),
+				'ondc_transaction_type_id' =>$payload->get('ondc_transaction_type_id'),
+				'error_message' => $errorMessage,
+				'created_by' => $createdBy ?? AuthId(),
+				'created_at' => now()
+			]);
+
+		} catch (\Exception $e) {
+			\Log::error('Temp Import Save Failed: ' . $e->getMessage());
+		}
+	}
+	
+    /**
+     * Duplicate check for bulk upload.
+     *
+     * Exception: a draft that has already exhausted its Udyam API attempts and
+     * ended up Failed no longer blocks a re-upload of the same mobile / udyam
+     * pair — there is no other way for the user to retry such a record.
+     *
+     * Every other status / attempt count keeps the original behaviour, and an
+     * already-registered MSME in team_msme_schemes always blocks.
+     */
+    private function isDuplicate(string $mobile, string $udyam_no): bool
+    {
+        $blockingDraftExists = DB::table('team_msme_scheme_drafts')
+            ->where('mobile', $mobile)
+            ->where('udyam_no', $udyam_no)
+            ->whereNot(function ($query) {
+                $query->where('status', self::STATUS_FAILED)
+                    ->where(function ($q) {
+                        $q->where('api_attempts', '>=', self::MAX_API_ATTEMPTS)
+                          ->orWhere('api_attempts', 4);
+                    });
+            })
+            ->exists();
+
+        if ($blockingDraftExists) {
+            return true;
+        }
+
+        return DB::table('team_msme_schemes')
+            ->where('mobile', $mobile)
+            ->where('udyam_no', $udyam_no)
+            ->exists();
+    }
+
+   private function validateRow($data, $productCategoryId, $currentBusinessId, $transactionTypeId)
+	{
+		return Validator::make($data, [
+			'mobile' => ['required','digits:10','regex:/^[6-9]\d{9}$/'],
+			'udyam_no' => ['required','regex:/^UDYAM-[A-Z]{2}-\d{2}-\d{7}$/'],
+			'pan_no' => ['nullable','regex:/^[A-Z]{5}[0-9]{4}[A-Z]{1}$/'],
+			'gstin_no' => ['nullable','regex:/^[0-9]{2}[A-Z]{5}[0-9]{4}[A-Z]{1}[A-Z0-9]{1}Z[A-Z0-9]{1}$/'],
+			'product_category_id' => ['required', fn($attr, $value, $fail) => empty($productCategoryId) ? $fail("Invalid or missing product category") : null],
+			'current_state_business_id' => ['required', fn($attr, $value, $fail) => !$currentBusinessId ? $fail("Invalid or missing business type") : null],
+			'ondc_transaction_type_id' => ['required', fn($attr, $value, $fail) => !$transactionTypeId ? $fail("Invalid or missing transaction type") : null],
+			'attending_ondc_awareness_workshop' => ['nullable', 'in:Yes,No,yes,no,YES,NO'],
+			'turnover' => ['nullable','numeric'],
+		], [
+			'mobile.required' => 'Mobile is required',
+			'mobile.digits' => 'Mobile must be 10 digits',
+			'mobile.regex' => 'Invalid mobile format',
+			'udyam_no.required' => 'Udyam No is required',
+			'udyam_no.regex' => 'Invalid Udyam format',
+			'pan_no.regex' => 'Invalid PAN format',
+			'gstin_no.regex' => 'Invalid GSTIN format',
+			'product_category_id.required' => 'Product category is required',
+			'current_state_business_id.required' => 'Business type is required',
+			'ondc_transaction_type_id.required' => 'Transaction type is required',
+			'attending_ondc_awareness_workshop.in' => 'Workshop must be Yes or No',
+			'turnover.regex' => 'Turnover should contain only numbers.'
+		]);
+	}
+
+    private function prepareInsertArray(array $data, string $errorMessage = null): array
+    {
+    
+
+        return [
+            'id' => (string) Str::uuid(),
+			'batch_id' => $this->batchId,
+            'mobile' => $data['mobile'] ?? null,
+            'udyam_no' => $data['udyam_no'] ?? null,
+            'pan_no' => $data['pan_no'] ?? null,
+            'gstin_no' => $data['gstin_no'] ?? null,
+            'product_category_id' => $data['product_category_id'] ?? null,
+            'current_state_business_id' => $data['current_state_business_id'] ?? null,
+            'ondc_transaction_type_id' => $data['ondc_transaction_type_id'] ?? null,
+            'attending_ondc_awareness_workshop' => $data['attending_ondc_awareness_workshop'] ?? null,
+            'turnover' => $data['turnover'] ?? null,
+            'error_message' => $errorMessage,
+            'created_at' => now(),
+			'created_by' => AuthId(),
+			'updated_by' => AuthId(),
+            'updated_at' => now(),
+        ];
+    }
+
+    // ✅ Draft Insert (NO error_message here)
+    private function prepareDraftInsert($data)
+	{
+		return [
+
+			'id'   => uuid(),
+			'batch_id' => $this->batchId,
+			'udyam_no'  => $data['udyam_no'] ?? null,
+			'mobile'    => $data['mobile'] ?? null,
+			'current_state_business_id' => $data['current_state_business_id'] ?? null,
+			'attending_ondc_awareness_workshop' => $data['attending_ondc_awareness_workshop'] ?? null,
+			'turnover' => $data['turnover'] ?? null,
+			'pan_no'   => $data['pan_no'] ?? null,
+			'gstin_no' => $data['gstin_no'] ?? null,
+			'product_category_id' => $data['product_category_id'] ?? null,
+			'ondc_transaction_type_id' => $data['ondc_transaction_type_id'] ?? null,
+			'primary_snp_id' => $this->getSnpId(AuthId()),
+			'role_type'=> hasRole('snp') ? 1 : 2, // 1 for SNP, 2 for IA
+			'created_by' => AuthId(),
+			'updated_by' => AuthId(),
+			'created_at' => now(),
+			'updated_at' => now(),
+		];
+	}
+
+    public function getSummary(): array
+    {
+        return $this->summary;
+    }
+    public function rules(): array
+    {
+        return [];
+    }
+
+
+	
+	/**
+	 * Process pending SNP drafts (role_type = 1).
+	 */
+	public function msmePendingDrafts(): array
+	{
+		return $this->processPendingDrafts(self::ROLE_TYPE_SNP);
+	}
+
+	/**
+	 * Process pending IA drafts (role_type = 2).
+	 */
+	public function msmePendingDraftsIa(): array
+	{
+		return $this->processPendingDrafts(self::ROLE_TYPE_IA);
+	}
+
+	/**
+	 * Shared driver for both the SNP and IA crons so the two flows cannot drift.
+	 */
+	private function processPendingDrafts(int $roleType): array
+	{
+		$success    = 0;
+		$failed     = 0;
+		$retry      = 0;
+		$skipped    = 0;
+		$apiMessage = '';
+
+		// Heal rows left stranded by an earlier run: Pending but already out of
+		// attempts, so the selector below would never see them again.
+		$reconciled = $this->failExhaustedDrafts($roleType);
+
+		DB::table('team_msme_scheme_drafts')
+			->where('status', self::STATUS_PENDING)
+			->where('role_type', $roleType)
+			->where('api_attempts', '<', self::MAX_API_ATTEMPTS)
+			->chunkById(self::CHUNK_SIZE, function ($drafts) use (
+				&$success, &$failed, &$retry, &$skipped, &$apiMessage, $roleType
+			) {
+				foreach ($drafts as $draft) {
+					switch ($this->processSingleDraft($draft, $roleType, $apiMessage)) {
+						case 'migrated':
+							$success++;
+							break;
+						case 'failed':
+							$failed++;
+							break;
+						case 'retry':
+							$retry++;
+							break;
+						default:
+							$skipped++;
+							break;
+					}
+				}
+			}, 'id');
+
+		$failed += $reconciled;
+
+		$pendingLeft = DB::table('team_msme_scheme_drafts')
+			->where('role_type', $roleType)
+			->where('status', self::STATUS_PENDING)
+			->count();
+
+		$this->sendCompletionNotification($success, $pendingLeft);
+
+		\Log::info('MSME draft cron finished', [
+			'role_type'   => $roleType,
+			'migrated'    => $success,
+			'failed'      => $failed,
+			'retry_later' => $retry,
+			'skipped'     => $skipped,
+			'reconciled'  => $reconciled,
+			'pending'     => $pendingLeft,
+		]);
+
+		return [
+			'status'      => true,
+			'success'     => $success,
+			'failed'      => $failed,
+			'retry_later' => $retry,
+			'skipped'     => $skipped,
+			'reconciled'  => $reconciled,
+			'pending'     => $pendingLeft,
+			'api_message' => $apiMessage,
+			'message'     => 'MSME Registration Udyam Process Completed',
+		];
+	}
+
+	/**
+	 * Run one draft through the Udyam API and migrate / fail / defer it.
+	 *
+	 * @return string one of: migrated, failed, retry, skipped
+	 */
+	private function processSingleDraft(object $draft, int $roleType, ?string &$apiMessage): string
+	{
+		$mobile   = trim((string) $draft->mobile);
+		$udyam_no = trim((string) $draft->udyam_no);
+		$attempt  = (int) $draft->api_attempts + 1;
+
+		/*
+		 * ---------- CLAIM THE ROW ----------
+		 * Compare-and-swap on api_attempts. This both records the attempt and
+		 * guarantees that two overlapping cron runs cannot process the same
+		 * draft: the second UPDATE matches 0 rows and bails out.
+		 *
+		 * Committed on its own (no surrounding transaction) so the counter is
+		 * durable even if the migration below rolls back.
+		 */
+		$claimed = DB::table('team_msme_scheme_drafts')
+			->where('id', $draft->id)
+			->where('status', self::STATUS_PENDING)
+			->where('api_attempts', (int) $draft->api_attempts)
+			->update($this->draftUpdatePayload($draft, [
+				'api_attempts'    => $attempt,
+				'last_attempt_at' => now(),
+			]));
+
+		if ($claimed === 0) {
+			return 'skipped';
+		}
+
+		$isFinalAttempt = $attempt >= self::MAX_API_ATTEMPTS;
+
+		// ---------- CALL API ----------
+		try {
+			$apiDetails = $this->getUdyamDetailsOrDummy($udyam_no, $mobile);
+		} catch (\Throwable $e) {
+			return $this->failOrRetry($draft, $isFinalAttempt, 'Udyam API call failed: ' . $e->getMessage());
+		}
+
+		// ---------- API ERROR ----------
+		if (!empty($apiDetails['error'])) {
+			$errorMsg = $apiDetails['message'] ?? 'API error';
+
+			if ($this->isTransientApiError($errorMsg)) {
+				$apiMessage = $errorMsg;
+			}
+
+			return $this->failOrRetry($draft, $isFinalAttempt, $errorMsg);
+		}
+
+		// ---------- DATA CHECK ----------
+		if (!isset($apiDetails['data'])) {
+			return $this->failOrRetry($draft, $isFinalAttempt, 'Invalid API response');
+		}
+
+		$udetails = $apiDetails['data'];
+
+		// ---------- INVALID DETAILS ----------
+		if (isset($udetails['BasicDetail']['Error']) && $udetails['BasicDetail']['Error'] === 'Wrong Detail') {
+			$errorMsg = $udetails['BasicDetail']['message'] ?? 'Invalid Udyam details';
+
+			return $this->failOrRetry($draft, $isFinalAttempt, $errorMsg);
+		}
+
+		// ---------- ELIGIBILITY ----------
+		$majorActivity  = strtolower(trim($udetails['BasicDetail']['MajorActivity'] ?? ''));
+		$enterpriseType = strtolower(trim($udetails['BasicDetail']['EnterpriseType'] ?? ''));
+		$finalUdyamNo   = $udetails['BasicDetail']['UdyamNo'] ?? $udyam_no;
+
+		// Not eligible is a permanent verdict — fail now, do not spend attempts.
+		if ($majorActivity === 'trading' || $enterpriseType === 'medium') {
+			$msg = $majorActivity === 'trading'
+				? 'Registration on the TEAMS Portal is currently restricted for MSMEs engaged in Trading activities.'
+				: 'Medium-scale MSMEs are not eligible for registration on the TEAMS Portal.';
+
+			$this->markFailed($draft, $msg);
+
+			return 'failed';
+		}
+
+		// ---------- ALREADY PRESENT ----------
+		$exists = DB::table('team_msme_schemes')
+			->where('mobile', $mobile)
+			->where('udyam_no', $finalUdyamNo)
+			->exists();
+
+		if ($exists) {
+			$this->markMigrated($draft);
+
+			return 'migrated';
+		}
+
+		// ---------- MIGRATE ----------
+		return $this->migrateDraft($draft, $udetails, $mobile, $roleType, $isFinalAttempt);
+	}
+
+	/**
+	 * Create the MSME + user records for a draft. This is the only part that
+	 * needs a transaction, because it writes across several tables.
+	 */
+	private function migrateDraft(
+		object $draft,
+		array $udetails,
+		string $mobile,
+		int $roleType,
+		bool $isFinalAttempt
+	): string {
+		$payload = collect((array) $draft);
+
+		DB::beginTransaction();
+
+		try {
+			$msmeId = uuid();
+			$userId = uuid();
+
+			$msmeData = $roleType === self::ROLE_TYPE_IA
+				? $this->prepareMsmeDataIa($payload, $udetails, $msmeId, $userId)
+				: $this->prepareMsmeData($payload, $udetails, $msmeId, $userId);
+
+			DB::table('team_msme_schemes')->insert($msmeData);
+			DB::table('users')->insert($this->prepareUserData($payload, $udetails, $userId, $mobile));
+
+			$roleId = DB::table('roles')->where('slug', 'msme')->value('id');
+			DB::table('user_roles')->insert([
+				'user_id' => $userId,
+				'role_id' => $roleId,
+				'type'    => GrantType::THROUGH_ROLE,
+			]);
+
+			// SNP drafts carry the SNP mapping; IA drafts do not.
+			if ($roleType === self::ROLE_TYPE_SNP) {
+				DB::table('team_snpmsme_mapping')->insert([
+					'id'         => uuid(),
+					'snp_id'     => $draft->primary_snp_id ?? null,
+					'msme_id'    => $msmeId,
+					'created_at' => currentDateTime(),
+				]);
+			}
+
+			DB::table('team_msme_scheme_drafts')
+				->where('id', $draft->id)
+				->update($this->draftUpdatePayload($draft, [
+					'status'       => self::STATUS_MIGRATED,
+					'processed_at' => now(),
+				]));
+
+			DB::commit();
+
+			return 'migrated';
+
+		} catch (\Throwable $e) {
+			DB::rollBack();
+
+			\Log::error('MSME draft migration failed', [
+				'draft_id' => $draft->id,
+				'error'    => $e->getMessage(),
+			]);
+
+			// The attempt counter was committed before this transaction opened,
+			// so the rollback did not undo it.
+			return $this->failOrRetry($draft, $isFinalAttempt, $e->getMessage());
+		}
+	}
+
+	/**
+	 * Mark the draft Failed when its attempts are spent, otherwise leave it
+	 * Pending for the next run.
+	 */
+	private function failOrRetry(object $draft, bool $isFinalAttempt, string $reason): string
+	{
+		if ($isFinalAttempt) {
+			$this->markFailed(
+				$draft,
+				$reason . ' (failed after ' . self::MAX_API_ATTEMPTS . ' attempts)'
+			);
+
+			return 'failed';
+		}
+
+		\Log::warning('MSME draft deferred for retry', [
+			'draft_id' => $draft->id,
+			'attempt'  => (int) $draft->api_attempts + 1,
+			'of'       => self::MAX_API_ATTEMPTS,
+			'reason'   => $reason,
+		]);
+
+		return 'retry';
+	}
+
+	/**
+	 * Terminal failure: the pending cron will not select this row again.
+	 */
+	private function markFailed(object $draft, string $reason): void
+	{
+		DB::table('team_msme_scheme_drafts')
+			->where('id', $draft->id)
+			->update($this->draftUpdatePayload($draft, [
+				'status'       => self::STATUS_FAILED,
+				'processed_at' => now(),
+			]));
+
+		$this->saveTempImportError(
+			collect((array) $draft),
+			$reason,
+			$draft->created_by ?? null
+		);
+	}
+
+	private function markMigrated(object $draft): void
+	{
+		DB::table('team_msme_scheme_drafts')
+			->where('id', $draft->id)
+			->update($this->draftUpdatePayload($draft, [
+				'status'       => self::STATUS_MIGRATED,
+				'processed_at' => now(),
+			]));
+	}
+
+	/**
+	 * Build an update payload for team_msme_scheme_drafts.
+	 *
+	 * team_msme_scheme_drafts.created_at is declared ON UPDATE CURRENT_TIMESTAMP,
+	 * so any UPDATE that omits it silently rewrites the upload date to "now" and
+	 * the row drifts out of its original month. Re-stating the existing value
+	 * pins it; updated_at carries the real change time.
+	 */
+	private function draftUpdatePayload(object $draft, array $changes): array
+	{
+		$changes['updated_at'] = now();
+
+		$createdAt = $draft->created_at ?? null;
+
+		if (!empty($createdAt) && !str_starts_with((string) $createdAt, '0000-00-00')) {
+			$changes['created_at'] = $createdAt;
+		}
+
+		return $changes;
+	}
+
+	private function isTransientApiError(string $errorMessage): bool
+	{
+		return in_array($errorMessage, self::TRANSIENT_API_ERRORS, true);
+	}
+
+	/**
+	 * Close out drafts that are still Pending but have already used up their
+	 * attempts. Without this they sit Pending forever: the selector filters them
+	 * out on api_attempts, so nothing ever advances their status again.
+	 */
+	private function failExhaustedDrafts(int $roleType): int
+	{
+		$stranded = DB::table('team_msme_scheme_drafts')
+			->where('status', self::STATUS_PENDING)
+			->where('role_type', $roleType)
+			->where('api_attempts', '>=', self::MAX_API_ATTEMPTS)
+			->get();
+
+		foreach ($stranded as $draft) {
+			$this->markFailed(
+				$draft,
+				'Maximum ' . self::MAX_API_ATTEMPTS . ' Udyam API attempts exhausted.'
+			);
+		}
+
+		if ($stranded->isNotEmpty()) {
+			\Log::info('MSME drafts reconciled to Failed', [
+				'role_type' => $roleType,
+				'count'     => $stranded->count(),
+			]);
+		}
+
+		return $stranded->count();
+	}
+
+	/**
+	 * The cron runs unauthenticated, so there is no session user to attribute the
+	 * notification to. A failure here must not fail the whole run.
+	 */
+	private function sendCompletionNotification(int $success, int $pendingLeft): void
+	{
+		try {
+			$fromUserId = AuthId();
+
+			$fromRoleId = $fromUserId
+				? DB::table('user_roles')->where('user_id', $fromUserId)->value('role_id')
+				: null;
+
+			event(new SendNotificationEvent(
+				templateKey: 'pending-mse-transferred-migrated',
+				fromUserId: $fromUserId,
+				toUserId: null,
+				formRole: $fromRoleId,
+				toRole: $fromRoleId,
+				type: 2,
+				message: [
+					'SUCCESS_COUNT' => (string) $success,
+					'TOTAL_COUNT'   => (string) $pendingLeft,
+				]
+			));
+		} catch (\Throwable $e) {
+			\Log::error('MSME draft cron notification failed: ' . $e->getMessage());
+		}
+	}
+    private function prepareMsmeData($payload, $udetails, $uuid, $userId)
+	{
+		
+		$incDate = \DateTime::createFromFormat('d/m/Y', $udetails['BasicDetail']['IncorporationDate'] ?? null);
+		return [
+			'id' => $uuid,
+			'user_id' => $userId,
+			//'team_id' => 'TEAM' . rand(10000, 99999),
+			'team_id' =>  getNextTeamId() ?: null,
+			'udyam_no' => $udetails['BasicDetail']['UdyamNo'],
+			'mobile' => trim($payload->get('mobile')),
+			'email' => $udetails['BasicDetail']['EmailId'],
+			'enterprise_name' => $udetails['BasicDetail']['EnterpriseName'],
+			'entrepreneur_name' => $udetails['BasicDetail']['EntrepreneurName'],
+			'organisation_type' => $udetails['BasicDetail']['OrganisationType'],
+			'address' => $udetails['BasicDetail']['CommunicationAddress'],
+			'pincode' => $udetails['BasicDetail']['PINCode'],
+			'ph' => $udetails['BasicDetail']['PH'],
+			'major_activity' => $udetails['BasicDetail']['MajorActivity'],
+			'msme_classification' => $udetails['BasicDetail']['EnterpriseType'],
+			'gender' => $udetails['BasicDetail']['Gender'],
+			'social_category' => $udetails['BasicDetail']['SocialCategory'],
+			'incorporation_date' => $incDate?->format('Y-m-d'),
+			'total_emp' => $udetails['BasicDetail']['TotalEmp'],
+			'state_id' => $this->getStateId('states', $udetails['BasicDetail']['LG_ST_Code']),
+			'district_id' => $this->getStateId('locations', $udetails['BasicDetail']['LG_DT_Code']),
+			'enterprise_details' => json_encode($udetails['BasicDetail']['EnterpriseDetail']),
+			'activity_details' => isset($udetails['ActivityDetail']) ? json_encode($udetails['ActivityDetail']) : null,
+			'gstin_no' => $payload->get('gstin_no') ?? null,
+			'pan_no' => $payload->get('pan_no'),
+			'turnover' => $payload->get('turnover'),
+			'current_state_business_id' => $this->getCurrentBuisinessTypes('attribute_values', slugify($payload->get('current_state_business_id'))),
+			'ondc_transaction_type_id' => $this->getTransactionTypes('attribute_values', slugify($payload->get('ondc_transaction_type_id'))),
+			'product_category_id' => $this->getSubdomainTypes('sub_domains', $payload['product_category_id']),
+			'select_snp' => 1,
+			'attending_ondc_awareness_workshop' => strtolower($payload->get('attending_ondc_awareness_workshop')) === 'yes' ? 1 : 0,
+			'status' => 1,
+			'is_bulk_import' => 1,
+			'created_at' => currentDateTime(),
+			'updated_at' => currentDateTime(),
+			'created_by' => $payload['created_by'],
+		];
+	}
+	private function prepareMsmeDataIa($payload, $udetails, $uuid, $userId)
+	{
+		
+		$incDate = \DateTime::createFromFormat('d/m/Y', $udetails['BasicDetail']['IncorporationDate'] ?? null);
+		return [
+			'id' => $uuid,
+			'user_id' => $userId,
+			//'team_id' => 'TEAM' . rand(10000, 99999),
+			'team_id' =>  getNextTeamId() ?: null,
+			'udyam_no' => $udetails['BasicDetail']['UdyamNo'],
+			'mobile' => trim($payload->get('mobile')),
+			'email' => $udetails['BasicDetail']['EmailId'],
+			'enterprise_name' => $udetails['BasicDetail']['EnterpriseName'],
+			'entrepreneur_name' => $udetails['BasicDetail']['EntrepreneurName'],
+			'organisation_type' => $udetails['BasicDetail']['OrganisationType'],
+			'address' => $udetails['BasicDetail']['CommunicationAddress'],
+			'pincode' => $udetails['BasicDetail']['PINCode'],
+			'ph' => $udetails['BasicDetail']['PH'],
+			'major_activity' => $udetails['BasicDetail']['MajorActivity'],
+			'msme_classification' => $udetails['BasicDetail']['EnterpriseType'],
+			'gender' => $udetails['BasicDetail']['Gender'],
+			'social_category' => $udetails['BasicDetail']['SocialCategory'],
+			'incorporation_date' => $incDate?->format('Y-m-d'),
+			'total_emp' => $udetails['BasicDetail']['TotalEmp'],
+			'state_id' => $this->getStateId('states', $udetails['BasicDetail']['LG_ST_Code']),
+			'district_id' => $this->getStateId('locations', $udetails['BasicDetail']['LG_DT_Code']),
+			'enterprise_details' => json_encode($udetails['BasicDetail']['EnterpriseDetail']),
+			'activity_details' => isset($udetails['ActivityDetail']) ? json_encode($udetails['ActivityDetail']) : null,
+			'gstin_no' => $payload->get('gstin_no') ?? null,
+			'pan_no' => $payload->get('pan_no'),
+			'turnover' => $payload->get('turnover'),
+			'current_state_business_id' => $this->getCurrentBuisinessTypes('attribute_values', slugify($payload->get('current_state_business_id'))),
+			'ondc_transaction_type_id' => $this->getTransactionTypes('attribute_values', slugify($payload->get('ondc_transaction_type_id'))),
+			'product_category_id' => $this->getSubdomainTypes('sub_domains', $payload['product_category_id']),
+			'select_snp' => 0,
+			'attending_ondc_awareness_workshop' => strtolower($payload->get('attending_ondc_awareness_workshop')) === 'yes' ? 1 : 0,
+			'status' => 1,
+			'is_bulk_import' => 2,
+			'created_at' => currentDateTime(),
+			'updated_at' => currentDateTime(),
+			'created_by' => $payload['created_by'],
+		];
+	}
+
+	private function prepareUserData($payload, $udetails, $userId, $mobile)
+	{
+		return [
+			'id' => $userId,
+			'username' => $udetails['BasicDetail']['EmailId'],
+			'first_name' => $udetails['BasicDetail']['EnterpriseName'],
+			'mobile' => $mobile,
+			'email' => $udetails['BasicDetail']['EmailId'],
+			'status' => 1,
+			'is_msme' => 1,
+			'created_at' => currentDateTime()
+		];
+	}
+	public function getStateId($table, $state_code)
+    {
+        $record = DB::table($table)
+            ->where("code", $state_code)
+            ->first();
+        return $record ? $record->id : null;
+    }
+    public function getSnpId($authId){
+		return DB::table('team_snp_scheme')->where('user_id', $authId)->value('id');
+	}
+	public function getCurrentBuisinessTypes($table,$state_code)
+	{
+		 $record = DB::table($table)->where('code',$state_code)->first();
+		 return $record ? $record->id : null;
+	}
+	public function getSubdomainTypes($table, $code)
+	{
+		$sub = explode(",", $code);
+ 
+		$slugs = collect($sub)->map(function ($item) {
+			$item = trim($item);
+
+			if (str_contains($item, '-')) {
+				return \Str::slug($item);
+			}
+
+			return \Str::slug($item);
+		})->filter()->values()->toArray();
+
+		if (count($slugs) > 1) {
+			$combinedSlug = implode('-', $slugs);
+
+			$checkCombined = DB::table($table)
+				->where('code', $combinedSlug)
+				->pluck('id');
+
+			if ($checkCombined->isNotEmpty()) {
+				return $checkCombined->toJson();
+			}
+		}
+
+		$ids = DB::table($table)
+			->whereIn('code', $slugs)
+			->pluck('id');
+
+		return $ids->isEmpty() ? null : $ids->toJson();
+	}
+    
+	// public function getSubdomainTypes($table,$code)
+	// {
+	// 	$slug = \Str::slug(trim($code));
+	// 	 $ids = DB::table($table)
+    //     ->where('code', $slug)
+    //     ->pluck('id');
+
+    // 	return $ids->isEmpty() ? null : $ids->toJson();
+	// 	// dd($slug);
+	// 	//  $sub = explode(",", $code);
+	// 	//  $slugs = collect($sub)->map(fn($item) => \Str::slug(trim($item)))->toArray();
+	// 	//  dd($slugs);
+	// 	//  $ids = DB::table($table)->whereIn('code', $slugs)->pluck('id');
+	// 	//  return $ids->isEmpty() ? null : $ids->toJson();	
+	// }
+    	
+    public function getTransactionTypes($table,$code)
+	{
+		$record = DB::table($table)->where('code',$code)->first();
+		return $record ? $record->id : null;
+	}
+	
+	
+    private function getUdyamDetailsOrDummy($udyam_no, $mobile)
+	{
+		if (!config('settings.udyam_api_by_pass')) {
+			return $this->getUdyamDetails($udyam_no, $mobile);
+		}
+		$xml = simplexml_load_string($this->getDummyUdyamXML());
+		return json_decode(json_encode($xml), true);
+	}
+
+	public function getUdyamDetails($udyam_no, $mobile)
+    {
+        $token = config("constant.UDYAM_TOKEN");
+        $url = "https://udyogaadhaar.gov.in/sv/Udyam_NsicB2BService.svc/GetUdyam/$udyam_no,$mobile,$token";
+        $ch = curl_init($url);
+        curl_setopt_array($ch, [
+            CURLOPT_RETURNTRANSFER => true,
+            // 1️⃣ Connection detection — tolerant enough not to fail on latency
+            CURLOPT_CONNECTTIMEOUT => (int) config('settings.udyam_api_connect_timeout', 10),
+            // 2️⃣ Cap total time so one stalled record cannot consume the whole cron
+            CURLOPT_TIMEOUT => (int) config('settings.udyam_api_timeout', 60),
+            // 3️⃣ Detect hanging API
+            CURLOPT_LOW_SPEED_LIMIT => 5,
+            CURLOPT_LOW_SPEED_TIME => 10,
+            CURLOPT_NOSIGNAL => 1,
+            CURLOPT_SSL_VERIFYPEER => false,
+            CURLOPT_SSL_VERIFYHOST => false,
+        ]);
+
+        $response = curl_exec($ch);
+        $errorNo = curl_errno($ch);
+        $errorMsg = curl_error($ch);
+        $httpCode = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        curl_close($ch);
+
+        /* ---------- ERROR HANDLING ---------- */
+
+        if ($errorNo) {
+            switch ($errorNo) {
+                case CURLE_OPERATION_TIMEDOUT:
+                    return [
+                        "error" => true,
+                        "message" =>
+                            "Udyam API is currently not responding. Please try again later",
+                    ];
+                case CURLE_COULDNT_CONNECT:
+                    return [
+                        "error" => true,
+                        "message" =>
+                            "Udyam API timeout — server not responding",
+                    ];
+                case CURLE_RECV_ERROR:
+                    return [
+                        "error" => true,
+                        "message" => "Udyam API stopped responding",
+                    ];
+                case CURLE_SSL_CONNECT_ERROR:
+                    return [
+                        "error" => true,
+                        "message" =>
+                            "External government API rejected connection. Please try again.",
+                    ];
+                default:
+                    return [
+                        "error" => true,
+                        "message" => "API error: " . $errorMsg,
+                    ];
+            }
+        }
+        /* ---------- HTTP RESPONSE CHECK ---------- */
+
+        if ($httpCode >= 200 && $httpCode < 300) {
+            $xml = @simplexml_load_string($response);
+            if ($xml === false) {
+                return [
+                    "error" => true,
+                    "message" => "Invalid XML received from Udyam API",
+                ];
+            }
+            $data = json_decode(json_encode($xml), true);
+            return [
+                "data" => $data,
+            ];
+        }
+        return [
+            "error" => true,
+            "message" => "Udyam API responded with HTTP " . $httpCode,
+        ];
+    }
+    
+	
+	//  public function getUdyamDetails($udyam_no, $mobile)
+    // {
+    //    /*  $response = Http::timeout(60)
+    //         ->retry(3, 100)
+    //         ->get("https://udyogaadhaar.gov.in/sv/Udyam_NsicB2BService.svc/GetUdyam/$udyam_no,$mobile,b2bmrt-VGVzdEBoeXc2MA=="); */
+			
+	// 	$udyam_token=config('constant.UDYAM_TOKEN');
+	// 	$response = Http::get("https://udyogaadhaar.gov.in/sv/Udyam_NsicB2BService.svc/GetUdyam/$udyam_no,$mobile,$udyam_token");
+
+    //     if ($response->successful()) {
+    //         $xml = simplexml_load_string($response->body());
+    //         return json_decode(json_encode($xml), true);
+    //     }
+
+    //     return ['error' => true];
+    // }
+
+    public function getDummyUdyamXML(){
+		$udetails = '<UdyamDetail>
+			<BasicDetail>
+			<UdyamNo>UDYAM-HR-01-0008625</UdyamNo>
+			<EnterpriseName>M/S AGN ENTERPRISES</EnterpriseName>
+			<EntrepreneurName>M/S AGN ENTERPRISES</EntrepreneurName>
+			<OrganisationType>Partnership</OrganisationType>
+			<EmailId>agnenterprises4@gmail.com</EmailId>
+			<SocialCategory>OBC</SocialCategory>
+			<Gender>Male</Gender>
+			<PH>No</PH>
+			<CommunicationAddress>FIRST FLOOR, 2556/2, AMBALA, FIRST FLOOR, AMBALA, AMBALA</CommunicationAddress>
+			<LG_ST_Code>6</LG_ST_Code>
+			<State>HARYANA</State>
+			<LG_DT_Code>58</LG_DT_Code>
+			<District>AMBALA</District>
+			<PINCode>133001</PINCode>
+			<IncorporationDate>21/08/2021</IncorporationDate>
+			<MajorActivity>Manufacturing</MajorActivity>
+			<EnterpriseType>Micro</EnterpriseType>
+			<EnterpriseDetail>
+			<EType CL_Year="2025-26" CL_Date="01/04/2025" EnterpriseType="A" EnterpriseTypee="Micro"/>
+			<EType CL_Year="2024-25" CL_Date="19/09/2024" EnterpriseType="A" EnterpriseTypee="Micro"/>
+			<EType CL_Year="2023-24" CL_Date="18/09/2024" EnterpriseType="A" EnterpriseTypee="Micro"/>
+			<EType CL_Year="2022-23" CL_Date="26/06/2022" EnterpriseType="A" EnterpriseTypee="Micro"/>
+			<EType CL_Year="2021-22" CL_Date="22/10/2021" EnterpriseType="A" EnterpriseTypee="Micro"/>
+			</EnterpriseDetail>
+			<TotalEmp>4</TotalEmp>
+			<AppliedDate>22/10/2021</AppliedDate>
+			</BasicDetail>
+			<ActivityDetail>
+			<Activities>
+			<Two_DigitActivity>26 - Manufacture of computer, electronic and optical products</Two_DigitActivity>
+			<Four_DigitActivity>2670 - Manufacture of optical instruments and equipment</Four_DigitActivity>
+			<Five_DigitActivity>26700 - Manufacture of optical instruments and equipment</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>25 - Manufacture of fabricated metal products, except machinery and equipment</Two_DigitActivity>
+			<Four_DigitActivity>2593 - Manufacture of cutlery, hand tools and general hardware</Four_DigitActivity>
+			<Five_DigitActivity>25932 - Manufacture of hand tools (non-power-driven) for agricultural/horticulture/forestry</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>22 - Manufacture of rubber and plastics products</Two_DigitActivity>
+			<Four_DigitActivity>2220 - Manufacture of plastics products</Four_DigitActivity>
+			<Five_DigitActivity>22209 - Manufacture of other plastics products n.e.c</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>23 - Manufacture of other non-metallic mineral products</Two_DigitActivity>
+			<Four_DigitActivity>2310 - Manufacture of glass and glass products</Four_DigitActivity>
+			<Five_DigitActivity>23104 - Manufacture of laboratory or pharmaceutical glassware</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>27 - Manufacture of electrical equipment</Two_DigitActivity>
+			<Four_DigitActivity>2720 - Manufacture of batteries and accumulators</Four_DigitActivity>
+			<Five_DigitActivity>27201 - Manufacture of primary cells and primary batteries nd rechargable batteries, cells containing manganese oxide, mercuric oxide silver oxide or other material</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>27 - Manufacture of electrical equipment</Two_DigitActivity>
+			<Four_DigitActivity>2790 - Manufacture of other electrical equipment</Four_DigitActivity>
+			<Five_DigitActivity>27900 - Manufacture of other electrical equipment</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>28 - Manufacture of machinery and equipment n.e.c.</Two_DigitActivity>
+			<Four_DigitActivity>2815 - Manufacture of ovens, furnaces and furnace burners</Four_DigitActivity>
+			<Five_DigitActivity>28150 - Manufacture of ovens, furnaces and furnace burners</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>31 - Manufacture of furniture</Two_DigitActivity>
+			<Four_DigitActivity>3100 - Manufacture of furniture</Four_DigitActivity>
+			<Five_DigitActivity>31009 - Manufacture of other furniture n.e.c.</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>32 - Other manufacturing</Two_DigitActivity>
+			<Four_DigitActivity>3250 - Manufacture of medical and dental instruments and supplies</Four_DigitActivity>
+			<Five_DigitActivity>32502 - Manufacture of laboratory apparatus (laboratory ultrasonic cleaning machinery, laboratory sterilizers, laboratory type distilling apparatus, laboratory centrifuges etc.)</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>32 - Other manufacturing</Two_DigitActivity>
+			<Four_DigitActivity>3250 - Manufacture of medical and dental instruments and supplies</Four_DigitActivity>
+			<Five_DigitActivity>32505 - Manufacture of measuring instruments suc as thermometers etc.</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>32 - Other manufacturing</Two_DigitActivity>
+			<Four_DigitActivity>3250 - Manufacture of medical and dental instruments and supplies</Four_DigitActivity>
+			<Five_DigitActivity>32509 - Manufacture of other medical and dental instruments n.e.c.</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>32 - Other manufacturing</Two_DigitActivity>
+			<Four_DigitActivity>3290 - Other manufacturing n.e.c.</Four_DigitActivity>
+			<Five_DigitActivity>32909 - Manufacture of other articles n.e.c.</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>85 - Education</Two_DigitActivity>
+			<Four_DigitActivity>8510 - Primary education</Four_DigitActivity>
+			<Five_DigitActivity>85109 - Other primary education activities n.e.c.</Five_DigitActivity>
+			<Activity>Services</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>85 - Education</Two_DigitActivity>
+			<Four_DigitActivity>8521 - General secondary education</Four_DigitActivity>
+			<Five_DigitActivity>85211 - General school education in the first stage of the secondary level (up to X th standard) without any special subject pre-requisite</Five_DigitActivity>
+			<Activity>Services</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>85 - Education</Two_DigitActivity>
+			<Four_DigitActivity>8521 - General secondary education</Four_DigitActivity>
+			<Five_DigitActivity>85212 - General school education in the second stage of the secondary level (Senior/ Higher secondary) giving, in principle, access to higher education</Five_DigitActivity>
+			<Activity>Services</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>85 - Education</Two_DigitActivity>
+			<Four_DigitActivity>8522 - Technical and vocational secondary education</Four_DigitActivity>
+			<Five_DigitActivity>85222 - Technical and vocational education for handicapped students below the level of higher education</Five_DigitActivity>
+			<Activity>Services</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>85 - Education</Two_DigitActivity>
+			<Four_DigitActivity>8530 - Higher education</Four_DigitActivity>
+			<Five_DigitActivity>85301 - Higher education in science, commerce, humanity and fine arts leading to a university degree or equivalent</Five_DigitActivity>
+			<Activity>Services</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>85 - Education</Two_DigitActivity>
+			<Four_DigitActivity>8542 - Cultural education</Four_DigitActivity>
+			<Five_DigitActivity>85420 - Cultural education</Five_DigitActivity>
+			<Activity>Services</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>85 - Education</Two_DigitActivity>
+			<Four_DigitActivity>8549 - Other education n.e.c.</Four_DigitActivity>
+			<Five_DigitActivity>85499 - Other educational services n.e.c.</Five_DigitActivity>
+			<Activity>Services</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>85 - Education</Two_DigitActivity>
+			<Four_DigitActivity>8550 - Educational support services</Four_DigitActivity>
+			<Five_DigitActivity>85500 - Educational support services</Five_DigitActivity>
+			<Activity>Services</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>26 - Manufacture of computer, electronic and optical products</Two_DigitActivity>
+			<Four_DigitActivity>2651 - Manufacture of measuring, testing, navigating and control equipment</Four_DigitActivity>
+			<Five_DigitActivity>26516 - Manufacture of laboratory analytical instruments and miscellaneous laboratory apparatus for measuring and testing such as scales, balances, incubators etc.</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			<Activities>
+			<Two_DigitActivity>28 - Manufacture of machinery and equipment n.e.c.</Two_DigitActivity>
+			<Four_DigitActivity>2829 - Manufacture of other special-purpose machinery</Four_DigitActivity>
+			<Five_DigitActivity>28292 - Manufacture of machinery for working soft rubber or plastics or for the manufacture of products of these materials</Five_DigitActivity>
+			<Activity>Manufacturing</Activity>
+			</Activities>
+			</ActivityDetail>
+			</UdyamDetail>';
+
+		return $udetails;
+	}
+
+}

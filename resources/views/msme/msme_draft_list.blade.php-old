@@ -1,0 +1,631 @@
+@extends('components.admin.content-layout')
+@section('card-content')
+
+<!-- Buttons on Top-Right -->
+<div class="d-flex justify-content-end mb-3" style="margin-top: -51px;">
+     @if(acl('bulk-create'))
+    <a href="{{ route('msme-bulk-draft-registration-udyam') }}" class="btn btn-success me-2">
+        <i class="fa fa-upload me-1"></i> MSME Bulk Upload
+    </a>
+    @endif
+    <button id="downloadErrorBtn" class="btn btn-danger me-2">
+        <i class="fa fa-download me-1"></i> Download Error
+    </button>
+    <a href="{{ route('msme-draft-list') }}" class="btn btn-primary">
+        <i class="fa fa-arrow-left me-1"></i> Back
+    </a>
+</div>
+
+<div class="card-body">
+   <div class="row mb-3">
+      <div class="col-md-3">
+         <label><b>From Date</b></label>
+        <input type="text" class="form-control filter_btn" name="from_date" id="fromDate" placeholder="From Date">
+      </div>
+
+      <div class="col-md-3">
+         <label><b>To Date</b></label>
+        <input type="text" class="form-control filter_btn" name="to_date" id="toDate" placeholder="To Date">        
+      </div>
+
+      <div class="col-md-2">
+         <label><b>Status</b></label>
+         <select id="statusFilter" class="form-select">
+            <option value="">All</option>
+            <option value="Pending">Pending</option>
+            <option value="Migrated">Migrated</option>
+            <option value="Failed">Failed</option>
+         </select>
+      </div>
+
+      <div class="col-md-2 d-flex align-items-end">
+         <button id="filterBtn" class="btn btn-primary me-2">Filter</button>
+         <button id="resetBtn" class="btn btn-secondary">Reset</button>
+      </div>
+   </div>
+
+   <div class="table-responsive">
+      <table class="table table-bordered table-striped table-hover" id="dataTable" width="100%">
+         <thead class="table-dark">
+            <tr>
+               <th width="40">
+                  <input type="checkbox" id="selectAll">
+               </th>
+               <th>SN</th>
+               <th width="120">Udyam Number</th>
+               <th>Mobile</th>
+               <th>Product Category</th>
+               <th>Current State Business</th>
+               <th>Ondc Transaction</th>
+               <th>Status</th>
+               <th>Created Date</th>
+            </tr>
+         </thead>
+      </table>
+   </div>
+</div>
+
+@endsection
+
+@section('js')
+<script>
+    // ============================================
+    // DEBOUNCE FUNCTION
+    // ============================================
+    function debounce(func, wait) {
+        var timeout;
+        return function() {
+            var context = this,
+                args = arguments;
+            clearTimeout(timeout);
+            timeout = setTimeout(function() {
+                func.apply(context, args);
+            }, wait);
+        };
+    }
+
+    // ============================================
+    // SHOW/HIDE AJAX LOADER
+    // ============================================
+    function showLoader() {
+        $('#ajax-loader').show();
+    }
+
+    function hideLoader() {
+        $('#ajax-loader').hide();
+    }
+
+    // ============================================
+    // SIMPLE ALERT FUNCTIONS
+    // ============================================
+    function showSuccess(message) {
+        alert('✅ ' + message);
+    }
+
+    function showError(message) {
+        alert('❌ ' + message);
+    }
+
+    // ============================================
+    // GET DATATABLE INSTANCE
+    // ============================================
+    function getTable() {
+        return $('#dataTable').DataTable();
+    }
+
+    // ============================================
+    // RELOAD TABLE
+    // ============================================
+    function reloadTable() {
+        var oTable = getTable();
+        oTable.ajax.reload(null, false);
+    }
+
+    // ============================================
+    // DOCUMENT READY
+    // ============================================
+    $(document).ready(function() {
+        // Show loader initially
+        showLoader();
+
+        // ============================================
+        // DATE PICKER INITIALIZATION
+        // ============================================
+        $("#fromDate").datepicker({
+            dateFormat: "dd-mm-yy",
+            changeYear: true,
+            changeMonth: true,
+            onSelect: function(selected) {
+                $("#toDate").datepicker("option", "minDate", selected);
+            }
+        });
+        
+        $("#toDate").datepicker({
+            dateFormat: "dd-mm-yy",
+            changeYear: true,
+            changeMonth: true,
+            onSelect: function(selected) {
+                $("#fromDate").datepicker("option", "maxDate", selected);
+            }
+        });
+
+        // ============================================
+        // INITIALIZE DATATABLE
+        // ============================================
+        let table = $('#dataTable').DataTable({
+            processing: true,
+            serverSide: true,
+            autoWidth: false,
+            pageLength: 10,
+
+            lengthMenu: [
+                [10, 25, 50, 100],
+                [10, 25, 50, 100]
+            ],
+
+            dom: "<'row mb-3'<'col-md-6 d-flex align-items-center'lB><'col-md-6 d-flex justify-content-end'f>>" +
+                "<'row'<'col-sm-12'tr>>" +
+                "<'row mt-2'<'col-md-5'i><'col-md-7 d-flex justify-content-end'p>>",
+
+            ajax: {
+                url: "{{ url('msme/draftDataList') }}",
+                type: "GET",
+                data: function(d) {
+                    d.from_date = $('#fromDate').val();
+                    d.to_date = $('#toDate').val();
+                    d.status = $('#statusFilter').val();
+                },
+                beforeSend: function() {
+                    showLoader();
+                },
+                complete: function() {
+                    hideLoader();
+                }
+            },
+
+            order: [
+                [8, 'desc']
+            ],
+
+            columns: [
+                {
+                    data: 'id',
+                    orderable: false,
+                    searchable: false,
+                    render: function(data) {
+                        return '<input type="checkbox" class="rowCheckbox" value="' + data + '">';
+                    }
+                },
+                {
+                    data: null,
+                    orderable: false,
+                    searchable: false,
+                    width: "60px",
+                    render: function(data, type, row, meta) {
+                        return meta.row + meta.settings._iDisplayStart + 1;
+                    }
+                },
+                {
+                    data: 'udyam_no',
+                    defaultContent: '-'
+                },
+                {
+                    data: 'mobile',
+                    defaultContent: '-'
+                },
+                {
+                    data: 'product_category_id',
+                    defaultContent: '-'
+                },
+                {
+                    data: 'current_state_business_id',
+                    defaultContent: '-'
+                },
+                {
+                    data: 'ondc_transaction_type_id',
+                    defaultContent: '-'
+                },
+                {
+                    data: 'status',
+                    render: function(data) {
+                        if (data === 'Pending') {
+                            return '<span class="badge bg-warning">Pending</span>';
+                        } else if (data === 'Migrated') {
+                            return '<span class="badge bg-success">Migrated</span>';
+                        } else if (data === 'Failed') {
+                            return '<span class="badge bg-danger">Failed</span>';
+                        }
+                        return '<span class="badge bg-secondary">-</span>';
+                    }
+                },
+                {
+                    data: 'created_at',
+                    width: "150px"
+                }
+            ],
+
+            buttons: [
+                {
+                    extend: 'excelHtml5',
+                    text: '<i class="fa fa-file-excel me-1"></i> Excel',
+                    className: 'btn btn-success btn-sm ms-3',
+                    exportOptions: {
+                        columns: [1, 2, 3, 4, 5, 6, 7, 8],
+                        rows: function(idx, data, node) {
+                            let selected = $('.rowCheckbox:checked').length;
+                            if (selected === 0) {
+                                return true;
+                            }
+                            return $(node).find('.rowCheckbox').prop('checked');
+                        }
+                    }
+                },
+                {
+                    extend: 'pdfHtml5',
+                    text: '<i class="fa fa-file-pdf me-1"></i> PDF',
+                    className: 'btn btn-danger btn-sm ms-2',
+                    orientation: 'landscape',
+                    pageSize: 'A4',
+                    exportOptions: {
+                        columns: [1, 2, 3, 4, 5, 6, 7, 8],
+                        rows: function(idx, data, node) {
+                            let selected = $('.rowCheckbox:checked').length;
+                            if (selected === 0) {
+                                return true;
+                            }
+                            return $(node).find('.rowCheckbox').prop('checked');
+                        }
+                    }
+                }
+            ]
+        });
+
+        // ============================================
+        // DATATABLE EVENTS FOR LOADER
+        // ============================================
+        $(document).on('preXhr.dt', '#dataTable', function() {
+            showLoader();
+        });
+
+        $(document).on('xhr.dt draw.dt', '#dataTable', function() {
+            hideLoader();
+        });
+
+        // ============================================
+        // SEARCH WITH DEBOUNCE
+        // ============================================
+        $(document).on('init.dt', '#dataTable', function() {
+            var oTable = getTable();
+            var searchInput = $('.dataTables_filter input');
+            
+            // Remove existing event handlers
+            searchInput.off('keyup input');
+            
+            // Apply debounced search
+            searchInput.on('keyup input', debounce(function() {
+                showLoader();
+                oTable.search(this.value).draw();
+            }, 500));
+        });
+
+        // ============================================
+        // FILTER BUTTON WITH DEBOUNCE
+        // ============================================
+        var debouncedFilter = debounce(function() {
+            reloadTable();
+        }, 300);
+
+        $('#filterBtn').on('click', function() {
+            debouncedFilter();
+        });
+
+        // ============================================
+        // STATUS FILTER CHANGE WITH DEBOUNCE
+        // ============================================
+        $('#statusFilter').on('change', debounce(function() {
+            reloadTable();
+        }, 300));
+
+        // ============================================
+        // DATE CHANGES WITH DEBOUNCE
+        // ============================================
+        $('#fromDate, #toDate').on('change', debounce(function() {
+            reloadTable();
+        }, 300));
+
+        // ============================================
+        // RESET BUTTON
+        // ============================================
+        $('#resetBtn').on('click', function() {
+            $('#fromDate').val('');
+            $('#toDate').val('');
+            $('#statusFilter').val('');
+            // Reset datepicker limits
+            $("#fromDate").datepicker("option", "maxDate", null);
+            $("#toDate").datepicker("option", "minDate", null);
+            // Clear search input
+            $('.dataTables_filter input').val('');
+            var oTable = getTable();
+            oTable.search('').draw();
+            oTable.ajax.reload(null, false);
+        });
+
+        // ============================================
+        // SELECT ALL CHECKBOX
+        // ============================================
+        $('#selectAll').on('click', function() {
+            let rows = table.rows({
+                'search': 'applied'
+            }).nodes();
+            $('input.rowCheckbox', rows).prop('checked', this.checked);
+        });
+
+        // ============================================
+        // DOWNLOAD ERROR BUTTON
+        // ============================================
+        $('#downloadErrorBtn').on('click', function(e) {
+            e.preventDefault();
+
+            const $btn = $(this);
+            const originalText = $btn.html();
+            
+            $btn.html('<span class="spinner-border spinner-border-sm me-1" role="status" aria-hidden="true"></span> Downloading...');
+            $btn.prop('disabled', true);
+
+            showLoader();
+
+            $.ajax({
+                url: "{{ route('msme.download.error') }}",
+                type: "GET",
+                xhrFields: {
+                    responseType: 'blob'
+                },
+                success: function(response, status, xhr) {
+                    hideLoader();
+                    const contentType = xhr.getResponseHeader('Content-Type');
+
+                    if (contentType && contentType.indexOf('application/json') !== -1) {
+                        const reader = new FileReader();
+                        reader.onload = function() {
+                            try {
+                                const json = JSON.parse(reader.result);
+                                showError(json.message || 'No failed records found.');
+                            } catch (e) {
+                                showError('No failed records found.');
+                            }
+                            $btn.html(originalText);
+                            $btn.prop('disabled', false);
+                        };
+                        reader.readAsText(response);
+                        return;
+                    }
+
+                    let filename = 'msme_failed_records.xlsx';
+                    const disposition = xhr.getResponseHeader('Content-Disposition');
+                    if (disposition) {
+                        const matches = /filename="?([^"]+)"?/i.exec(disposition);
+                        if (matches && matches[1]) {
+                            filename = matches[1];
+                        }
+                    }
+
+                    const blob = new Blob([response], {
+                        type: contentType || 'application/octet-stream'
+                    });
+
+                    const downloadUrl = window.URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = downloadUrl;
+                    a.download = filename;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    window.URL.revokeObjectURL(downloadUrl);
+                    
+                    showSuccess('File downloaded successfully!');
+                    
+                    $btn.html(originalText);
+                    $btn.prop('disabled', false);
+                },
+                error: function(xhr) {
+                    hideLoader();
+                    $btn.html(originalText);
+                    $btn.prop('disabled', false);
+
+                    try {
+                        const response = JSON.parse(xhr.responseText);
+                        showError(response.message || 'No failed records found.');
+                    } catch (e) {
+                        showError('No failed records found.');
+                    }
+                }
+            });
+        });
+
+        // ============================================
+        // KEYBOARD SHORTCUTS
+        // ============================================
+        $(document).on('keydown', function(e) {
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                $('#filterBtn').click();
+            }
+            if (e.key === 'Escape') {
+                $('#resetBtn').click();
+            }
+        });
+
+        // ============================================
+        // HIDE LOADER AFTER INITIAL LOAD
+        // ============================================
+        setTimeout(function() {
+            hideLoader();
+        }, 1500);
+
+    }); // END DOCUMENT READY
+</script>
+
+<style>
+    /* Button Styles */
+    .btn-success {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+        border: none;
+        padding: 8px 18px;
+        font-weight: 500;
+        box-shadow: 0 2px 8px rgba(40, 167, 69, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-success:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(40, 167, 69, 0.4);
+        background: linear-gradient(135deg, #218838 0%, #1aa179 100%);
+    }
+    
+    .btn-danger {
+        background: linear-gradient(135deg, #dc3545 0%, #e74c3c 100%);
+        border: none;
+        padding: 8px 18px;
+        font-weight: 500;
+        box-shadow: 0 2px 8px rgba(220, 53, 69, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-danger:hover:not(:disabled) {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(220, 53, 69, 0.4);
+        background: linear-gradient(135deg, #c82333 0%, #d62c1a 100%);
+    }
+    
+    .btn-danger:disabled {
+        opacity: 0.6;
+        cursor: not-allowed;
+        transform: none !important;
+    }
+    
+    .btn-primary {
+        background: linear-gradient(135deg, #007bff 0%, #0056b3 100%);
+        border: none;
+        padding: 8px 18px;
+        font-weight: 500;
+        box-shadow: 0 2px 8px rgba(0, 123, 255, 0.3);
+        transition: all 0.3s ease;
+    }
+    
+    .btn-primary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(0, 123, 255, 0.4);
+        background: linear-gradient(135deg, #0069d9 0%, #004494 100%);
+    }
+
+    .btn-secondary {
+        background: linear-gradient(135deg, #6c757d 0%, #5a6268 100%);
+        border: none;
+        padding: 8px 18px;
+        font-weight: 500;
+        transition: all 0.3s ease;
+    }
+    
+    .btn-secondary:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 15px rgba(108, 117, 125, 0.4);
+        background: linear-gradient(135deg, #5a6268 0%, #4e555b 100%);
+    }
+
+    /* Status Badge Styles */
+    .badge {
+        padding: 6px 12px;
+        font-weight: 500;
+        border-radius: 20px;
+    }
+    
+    .badge.bg-warning {
+        background: linear-gradient(135deg, #ffc107 0%, #e0a800 100%) !important;
+        color: #000;
+    }
+    
+    .badge.bg-success {
+        background: linear-gradient(135deg, #28a745 0%, #1e7e34 100%) !important;
+    }
+    
+    .badge.bg-danger {
+        background: linear-gradient(135deg, #dc3545 0%, #bd2130 100%) !important;
+    }
+
+    /* Table Styles */
+    .table-hover tbody tr:hover {
+        background-color: rgba(0, 123, 255, 0.05);
+        transition: background-color 0.2s ease;
+    }
+    
+    .table-dark th {
+        background: linear-gradient(135deg, #343a40 0%, #23272b 100%);
+        border-color: #454d55;
+        font-weight: 600;
+        text-transform: uppercase;
+        font-size: 13px;
+        letter-spacing: 0.5px;
+    }
+
+    /* Search Input Styles */
+    #dataTable_filter input {
+        border-radius: 20px;
+        padding: 8px 20px;
+        border: 2px solid #e9ecef;
+        transition: all 0.3s ease;
+        min-width: 250px;
+    }
+    
+    #dataTable_filter input:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        outline: none;
+    }
+
+    /* Responsive Adjustments */
+    @media (max-width: 768px) {
+        .d-flex.justify-content-end {
+            flex-wrap: wrap;
+            gap: 8px;
+            margin-top: -30px !important;
+        }
+        .d-flex.justify-content-end .btn {
+            font-size: 12px;
+            padding: 6px 12px;
+        }
+        #dataTable_filter input {
+            min-width: 150px;
+            font-size: 12px;
+        }
+    }
+
+    /* Form Select Styles */
+    .form-select {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        padding: 8px 12px;
+        transition: all 0.3s ease;
+    }
+    
+    .form-select:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        outline: none;
+    }
+
+    /* Date Input Styles */
+    .filter_btn {
+        border-radius: 8px;
+        border: 2px solid #e9ecef;
+        padding: 8px 12px;
+        transition: all 0.3s ease;
+    }
+    
+    .filter_btn:focus {
+        border-color: #007bff;
+        box-shadow: 0 0 0 0.2rem rgba(0, 123, 255, 0.25);
+        outline: none;
+    }
+</style>
+
+@endsection

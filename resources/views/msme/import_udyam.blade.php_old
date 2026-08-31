@@ -1,0 +1,109 @@
+@extends('components.admin.content-layout')
+
+@section('card-content')
+   
+
+    <div class="card-body">
+
+    <div class="text-center mb-3">
+        <a href="{{ url('storage/app/download_format/MSME-Bulk-Registration-Udyam.xlsx') }}"
+           class="btn btn-sm btn-outline-primary float-end" style="margin-top: -47px;">
+           Download Sample Format
+        </a>
+    </div>
+
+    <form id="bulk-upload" enctype="multipart/form-data" method="POST">
+        @csrf
+        <div class="mb-3">
+            <input type="file" name="file" id="file" accept=".xls,.xlsx" class="form-control">
+            <small class="text-primary">
+                Please ensure the file is in the correct format by downloading the sample format.
+            </small>
+        </div>
+
+        <div id="csv-errors" class="text-danger mb-3" style="font-family: Arial; padding: 10px;"></div>
+
+        <div class="text-end">
+            <button type="submit" class="btn btn-success">Submit</button>
+        </div>
+    </form>
+
+</div>
+
+@section('js')
+ <script>
+	$(document).on('change', '#bulk-upload', function(e) {
+		e.preventDefault();
+		let fileName = e.target.files[0]?.name; // get selected file name
+		if (fileName) {
+			let ext = fileName.split('.').pop().toLowerCase();
+			if (ext !== 'xls' && ext !== 'xlsx') {
+				alert("Only .xls and .xlsx files are allowed!");
+				 $('#file').val('');
+			}
+		}
+	});
+
+	$(document).on('submit', '#bulk-upload', function(e) {
+		e.preventDefault();
+		document.getElementById('csv-errors').innerHTML = '';
+
+		var form = document.getElementById('bulk-upload');
+		var formData = new FormData(form);
+		
+
+		var fileInput = document.getElementById('file');
+		if (!fileInput.files.length) {
+			toastr.error("Please select a file to upload.");
+			return;
+		}
+
+		$.ajax({
+			url: "{{ route('msme-bulk-import-udyam') }}",
+			type: "POST",
+			data: formData,
+			processData: false,
+			contentType: false,
+			beforeSend: function() {
+				$("#ajax-loader").show();
+			},
+			success: function(res) {
+				toastr.success(res.message);
+				$("#csv-errors").html('');
+				setTimeout(function() {
+					window.location.href = "{{ url('msme-bulk-registration-udyam') }}";
+				}, 2000);
+			},
+			error: function(xhr) {
+				if (xhr.responseJSON && xhr.responseJSON.message) {
+					toastr.error(xhr.responseJSON.message);
+					displayCsvErrors(xhr.responseJSON);
+				} else {
+					toastr.error("Something went wrong.");
+					document.getElementById('csv-errors').innerHTML = '';
+				}
+			},
+			complete: function() {
+				$("#ajax-loader").hide();
+			}
+		});
+	});
+
+	// Function to format and display errors
+	function displayCsvErrors(data) {
+		let errorHtml = `<strong>${data.message}</strong><ul>`;
+
+		for (let cell in data.errors) {
+			data.errors[cell].forEach(msg => {
+				errorHtml += `<li><strong>Row ${cell}</strong>: ${msg}</li>`;
+			});
+		}
+
+		errorHtml += `</ul>`;
+		document.getElementById('csv-errors').innerHTML = errorHtml;
+	}
+
+
+    </script>
+@endsection
+@endsection

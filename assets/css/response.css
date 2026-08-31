@@ -1,0 +1,189 @@
+
+/* 
+  ##Device = Desktops
+  ##Screen = 1281px to higher resolution desktops
+*/
+
+@media (min-width: 1281px) {
+  
+    /* CSS */
+    
+}
+  
+  /* 
+    ##Device = Laptops, Desktops
+    ##Screen = B/w 1025px to 1280px
+  */
+  
+  @media (min-width: 1025px) and (max-width: 1280px) {
+    
+    /* CSS */
+    
+  }
+  
+  /* 
+    ##Device = Tablets, Ipads (portrait)
+    ##Screen = B/w 768px to 1024px
+  */
+  
+  @media (min-width: 768px) and (max-width: 1024px) {
+    
+    .applications-tabs .card{min-height: auto !important; margin-bottom: 8px;}
+    .filter-bar{flex-wrap: wrap;}
+    #dataTable_wrapper .dt-buttons.btn-group{flex-wrap: nowrap !important;}
+    .foreign_coproducer_details{
+      overflow: auto;
+      position: relative;
+      border: 0px;
+      width: 100%;}
+
+  .navbar-expand .navbar-nav{
+    flex-wrap: nowrap !important;
+}
+.project-switch{padding: 0 !important;}
+ul.application-progress-bar.asi-progress li:after{width: 24rem !important;}
+#layoutSidenav_content .card.container-main-card{min-width: 765px;}
+.project-switch{width: 295px;}
+}
+  /* 
+    ##Device = Tablets, Ipads (landscape)
+    ##Screen = B/w 768px to 1024px
+  */
+  
+  @media (min-width: 768px) and (max-width: 1024px) and (orientation: landscape) {
+    
+  
+
+    
+  }
+  
+  /* 
+    ##Device = Low Resolution Tablets, Mobiles (Landscape)
+    ##Screen = B/w 481px to 767px
+  */
+  
+  @media (min-width: 481px) and (max-width: 767px) {
+    .navbar-expand .navbar-nav{
+        flex-wrap: nowrap !important;
+    }
+    .applications-tabs .card{min-height: auto; margin-bottom: 8px;}
+  }
+  .foreign_coproducer_details{
+    overflow: auto;
+    position: relative;
+    border: 0px;
+    width: 100%;}
+    .multistep-form .application-progress-bar{flex-wrap: wrap;}
+    
+  /* 
+    ##Device = Most of the Smartphones Mobiles (Portrait)
+    ##Screen = B/w 320px to 479px
+  */
+  
+  @media (min-width: 481px) and (max-width: 667px){
+    .project-switch{
+      position: absolute;
+      top: 84px;
+      background: #b3b3b3 !important;
+      left: 5px;
+      /* right: 5px; */
+      margin-right: 0 !important;
+    padding: 0 !important;}
+    #layoutSidenav_content .container-main-card{margin-top: 28px;}
+  }
+
+
+  @media (min-width: 320px) and (max-width: 480px) {
+    
+    .navbar-expand .navbar-nav{
+        flex-wrap: nowrap !important;
+    }
+    .navbar-expand .navbar-nav .btn-group .noti-bell{
+        margin-left:8px;
+      }
+      .noti-bell, .nav-item a img{width: 38px !important; height: 38px !important;}
+      .noti-bell > .badge{top: 12px !important; right: unset !important;}
+
+      #layoutSidenav_content .dashboard-card-ffo{margin-bottom: 10px;}
+      .applications-tabs .card{min-height: auto !important; margin-bottom: 8px;}
+      .header-user-name h5{display: none;}
+      .btn-group{    position: static !important;}
+
+      .view-application-tabs {
+        justify-content: center;
+    }
+    .view-application-tabs .nav-link{margin-bottom: 6px !important;} 
+    .filter-bar{flex-direction: column;}
+    .filter-bar .form-select, .filter-bar .form-control{min-width: 250px !important;}
+    .table-responsive .buttons-excel{margin-bottom: 6px;}
+    .foreign_coproducer_details{
+      overflow: auto;
+      position: relative;
+      border: 0px;
+      width: 100%;}
+
+      .sb-topnav .project-switch{
+        position: absolute;
+        top: 84px;
+        background: #b3b3b3;
+        left: 5px;
+        /* right: 5px; */
+        margin-right: 0 !important;
+      padding: 0 !important;}
+      #layoutSidenav_content .card{margin-top: 32px;}
+      /* #layoutSidenav_content .card.container-main-card{min-width: 352px;} */
+      ul.application-progress-bar.asi-progress li:after{width: auto !important;}
+      ul.application-progress-bar li:after{display: none !important;}
+      .action-header .drop-btn .btn{    width: 150px; font-size: 12px !important; padding: 4px;}
+      /* .multistep-form .application-progress-bar{flex-wrap: wrap;} */
+      .form-action {display: flex;}
+.form-action a{margin-right: 4px;}
+ .form-action a,
+ .form-action .save-draft-button,
+ .form-action .next-button{ font-size: 12px !important;}
+ .action-header .drop-btn .btn.dropdown-toggle.show{width: 16px;}
+ #layoutSidenav_content .container-main-card .card-header.card-header{flex-wrap: wrap;}
+      /* #layoutSidenav_content .card.slick-slide{width: 15% !important;} */
+
+  .signup-wrapper.card form .form-label{white-space: nowrap;   width: calc(100% - 10%);text-overflow: ellipsis;overflow: hidden;} 
+  }
+
+
+
+
+  @media (max-width: 991px) {
+    .new_login_page .login-form-page{max-width: calc(100% - 10%); min-width: calc(100% - 10%);}
+    .login-page .login-wrapper.card .card-text{width: 100%; padding: 10px !important;}
+    .login_img_bg, .login_img_bg_2{min-height: 200px; background-repeat: no-repeat;}
+    .login-form-page .card-header img{width: calc(100% - 0%);}
+    .login-form-page .ps-0{padding-left: 0 !important; padding-right: 0 !important;}
+    .new_login_page .login-wrapper.card{min-height: auto;}
+    .login-page .login-wrapper.card .card-text p > a{display: block; font-size: 12px;}
+    .sb-nav-fixed .sb-topnav .navbar-nav li.dropdown{display: flex;  align-items: center; column-gap: 5px;}
+    .login-form-page .row > .col-md-12{padding: 0;} 
+    .signup-wrapper.card .signup-role-selection >.selection-one > .mb-0, .selection-two > div{flex-direction: column;}
+    .signup-wrapper.card .selection-two{width: 100%;}
+    .signup-wrapper.card .card-header{padding: 0;}
+    .signup-wrapper.card .card-header img{width: 100%;}
+  }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

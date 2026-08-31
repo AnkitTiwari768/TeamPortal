@@ -1,0 +1,691 @@
+@extends('components.front.auth-layout-v2')
+
+@section('auth-form')
+    <style>
+        /* Option 2: Import via CSS */
+        @import url("https://cdn.jsdelivr.net/npm/bootstrap-icons@1.3.0/font/bootstrap-icons.css");
+        .show-password{
+            right:10px !important;
+            top:4px !important;
+        }
+        .show-password i{font-size:18px;}
+        .btn-primary-custom:disabled {
+            background-color: #1e2a78 !important;
+            border-color: #1e2a78 !important;
+            color: #fff !important;
+            opacity: 1 !important;
+            cursor: not-allowed;
+        }
+        
+        /* Loader Styles */
+        .loader-overlay {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(255, 255, 255, 0.8);
+            z-index: 9999;
+            justify-content: center;
+            align-items: center;
+        }
+        
+        .loader-overlay.active {
+            display: flex;
+        }
+        
+        .loader {
+            width: 50px;
+            height: 50px;
+            border: 5px solid #f3f3f3;
+            border-top: 5px solid #1e2a78;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+    
+    <!-- Loader Overlay -->
+    <div id="page-loader" class="loader-overlay">
+        <div class="loader"></div>
+    </div>
+    
+    <div id="login-box">
+        <div class="d-flex align-items-center mb-4">
+            <img src="{{ asset('assets/img/msme-logo.png') }}" loading="lazy" class="img-fluid" style="max-width: 250px;">
+
+        </div>
+
+        <h3 class="fw-bold fs-4 text-dark mb-3">Sign In</h3>
+
+        <ul class="nav nav-tabs mb-2" id="loginTab" role="tablist">
+            <li class="nav-item" role="presentation">
+                <button class="nav-link active" id="msme-tab" data-bs-toggle="tab" data-bs-target="#msme-content"
+                    type="button" role="tab" aria-selected="true">MSME</button>
+            </li>
+            <li class="nav-item" role="presentation">
+                <button class="nav-link" id="others-tab" data-bs-toggle="tab" data-bs-target="#others-content"
+                    type="button" role="tab" aria-selected="false" tabindex="-1">Others</button>
+            </li>
+        </ul>
+
+        <div class="tab-content" id="loginTabContent">
+
+            <div class="tab-pane fade show active" id="msme-content" role="tabpanel" aria-labelledby="msme-tab">
+                <p class="text-muted small mb-4">To Login as a MSME user, a valid Udyam Registration
+                    Number is required.</p>
+                <form>
+                    <div class="mb-3">
+                        <label class="form-label  ">Enter UDYAM Registration Number <span
+                                class="text-danger">*</span></label>
+                        <input type="text" name="udyam_number" id="udyam_number" class="form-control"
+                            placeholder="UDYAM-XX-00-0000000">
+                        <span class="text-danger form-error" id="udyam_number_error"></span>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="form-label  ">Enter Captcha Code <span class="text-danger">*</span></label>
+                        <div class="d-flex align-items-center gap-2">
+                            <span class="captcha-img2"></span>
+                            <a class="c-reload reload" id="reload2">
+                                <i class="fa fa-refresh" aria-hidden="true"></i>
+                            </a>
+                            {{-- <button type="button" class="btn btn-light border">🔄</button> --}}
+                            <input type="text" name="captcha" id="captcha2" class="form-control"
+                                placeholder="Enter captcha code">
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary-custom w-100 text-white" id="sendOtpButton">Send
+                        OTP</button>
+                </form>
+            </div>
+
+            <div class="tab-pane fade" id="others-content" role="tabpanel" aria-labelledby="others-tab">
+                {{-- <div class="alert alert-info">
+                <h4 class="fw-bold">Hello Deepak!</h4>
+                <p>Welcome to the Administrator and Partner login section. Please enter your
+                    credentials to continue.</p>
+            </div> --}}
+                <div class="mb-3">
+                    <label class="form-label  ">Username</label>
+                    <input type="text" name="username" id="email_username" class="form-control"
+                        placeholder="Enter your username">
+                    <span class="text-danger form-error" id="username_error"></span>
+                </div>
+                <div class="mb-3">
+                    <label class="form-label ">Password</label>
+                    <div class="position-relative">
+                        <input type="password" class="form-control" name="password" id="password"
+                        placeholder="Enter your password" maxlength="255">
+                        <div class="position-absolute show-password">
+                             <span class="position-absolute show-password" id="togglePassword">
+                                <i class="bi bi-eye"></i>
+                            </span>
+                        </div>
+
+                    <span class="text-danger form-error" id="password_error"></span>
+                    </div>
+
+                </div>
+                <div class="mb-4">
+                    <label class="form-label  ">Enter Captcha Code <span class="text-danger">*</span></label>
+                    <div class="d-flex align-items-center gap-2">
+                        <span class="captcha-img"></span>
+                        <a class="c-reload reload" id="reload">
+                            <i class="fa fa-refresh" aria-hidden="true"></i>
+                        </a>
+                        {{-- <button type="button" class="btn btn-light border">🔄</button> --}}
+                        <input type="text" name="captcha" id="captcha" class="form-control"
+                            placeholder="Enter captcha code">
+                    </div>
+                </div>
+                <button type="submit" class="btn btn-primary-custom w-100 text-white" id="login-button">Login</button>
+                <div class="text-center mt-3">
+                    <a href="{{ route('forgot-password-otp') }}" class="text-decoration-none" style="color:#1e2a78;font-size:14px;">Forgot Password?</a>
+                </div>
+            </div>
+
+        </div>
+    </div>
+    <div id="verify-otp-box" style="display: none;">
+        <div class="otp-screen">
+            <div class="d-flex align-items-center mb-4">
+                <img src="{{ asset('assets/img/msme-logo.png') }}" loading="lazy" class="img-fluid"
+                    style="max-width: 250px;">
+
+            </div>
+            <h3 id="otp-heading">Forgot Udyam Registeration Number We have Got You !</h3>
+
+            <h4>Verfiy OTP</h4>
+            <p>Enter the OTP received on the registered mobile number
+                <strong id="otp-mobile">XXXXXXXXXX</strong>
+            </p>
+
+            <div class="otp-inputs">
+                <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+                <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+                <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+                <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+                <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+                <input type="text" maxlength="1" class="otp-box" inputmode="numeric">
+            </div>
+
+
+            <div class="resend-text">
+                <p class="resend-message">
+                    You can resend OTP in
+                    <span id="otp_timer" class="otp-timer text-primary text-bold">02:00</span>
+                </p>
+
+                <a class="resend-otp m-3 pb-2" id="resend-otp" style="cursor:pointer; display:none;">Resend
+                    OTP</a>
+
+                <input type="hidden" id="res_username" />
+
+                <button class="verify-btn" id="verifyOtpButton">Verify</button>
+
+            </div>
+        </div>
+    @endsection
+
+
+    @section('js')
+<script>
+toastr.options = {
+"closeButton": true,
+"progressBar": true,
+"positionClass": "toast-top-right",
+"timeOut": "5000"
+};
+
+// Loader Functions
+function showLoader() {
+    document.getElementById('page-loader').classList.add('active');
+}
+
+function hideLoader() {
+    document.getElementById('page-loader').classList.remove('active');
+}
+
+// Show loader on page load
+document.addEventListener('DOMContentLoaded', function() {
+    hideLoader();
+});
+
+// ==================================================== FIX cryptoJS() FUNCTION ONLY ================================================================================
+    function cryptoJS(secret) {
+        if (secret.length > 0) {
+            var salt = CryptoJS.enc.Hex.parse("{{ $crypto_salt }}");
+            var iv = CryptoJS.enc.Hex.parse("{{ $crypto_iv }}");
+            var key = CryptoJS.PBKDF2(
+                "{{ $crypto_key }}",
+                salt, {
+                    hasher: CryptoJS.algo.SHA512,
+                    keySize: {{ $crypto_key_size }},
+                    iterations: {{ $crypto_iterations }}
+                }
+            );
+            var encrypted = CryptoJS.AES.encrypt(secret, key, {
+                iv: iv
+            });
+            var encryptedData = {
+                ciphertext: CryptoJS.enc.Base64.stringify(encrypted.ciphertext),
+                salt: CryptoJS.enc.Hex.stringify(salt),
+                iv: CryptoJS.enc.Hex.stringify(iv)
+            };
+            return encryptedData;
+        }
+    }
+
+// ==================================================== FIX authenticate() FUNCTION ONLY ================================================================================
+
+          function authenticate({
+    username,
+    password,
+    captcha,
+    passwordElement,
+    route,
+    submitElement,
+}) {
+
+    let originalPassword = password;
+    let encryptedPassword = '';
+
+    if (password) {
+        encryptedPassword = cryptoJS(password);
+    }
+
+    $.ajax({
+        url: route,
+        type: 'POST',
+        data: {
+            "_token": $('meta[name="csrf-token"]').attr('content'),
+            "username": username,
+            "password": encryptedPassword.ciphertext,
+            "captcha": captcha,
+        },
+
+        beforeSend: function () {
+            $(submitElement)
+                .prop("disabled", true)
+                .addClass("disabled")
+                .html("<i class='fa fa-spinner fa-spin' style='margin-right: 5px;'></i>Processing...");
+            showLoader();
+        },
+
+        success: function (data) {
+
+            $(passwordElement).val(originalPassword);
+
+            if (data.status) {
+
+                toastr.success(data.message ? data.message : "Login Success");
+
+                setTimeout(function () {
+                    window.location.href = data.url;
+                }, 1000);
+
+            } else {
+
+                $('#reload').click();
+
+                if (data.errors) {
+                    if (typeof data.errors === 'string') {
+                        toastr.error(data.errors);
+                    } else if (data.errors.captcha) {
+                        toastr.error(data.errors.captcha[0]);
+                    } else if ('These credentials do not match our records.') {
+                        toastr.error(data.errors.login[0]);
+                    } else {
+                        $.each(data.errors, function(key, value) {
+                            toastr.error(value[0]);
+                        });
+                    }
+                } else if (data.message) {
+                    toastr.error(data.message);
+                } else {
+                    toastr.error("Something went wrong");
+                }
+
+                $(submitElement)
+                    .prop("disabled", false)
+                    .removeClass("disabled")
+                    .attr("class", "btn btn-primary-custom w-100 text-white")
+                    .html("Login");
+                
+                hideLoader();
+            }
+        },
+
+        error: function (xhr) {
+
+            $(passwordElement).val(originalPassword);
+
+            $('#reload').click();
+
+            if (xhr.responseJSON && xhr.responseJSON.errors) {
+                if (xhr.responseJSON.errors.captcha) {
+                    toastr.error(xhr.responseJSON.errors.captcha[0]);
+                } else if (xhr.responseJSON.errors.login) {
+                    toastr.error('These credentials do not match our records.');
+                } else {
+                    $.each(xhr.responseJSON.errors, function(key, value) {
+                        toastr.error(value[0]);
+                    });
+                }
+            } else if (xhr.responseJSON && xhr.responseJSON.message) {
+                toastr.error(xhr.responseJSON.message);
+            } else {
+                toastr.error("Something went wrong");
+            }
+
+            $(submitElement)
+                .prop("disabled", false)
+                .removeClass("disabled")
+                .attr("class", "btn btn-primary-custom w-100 text-white")
+                .html("Login");
+            
+            hideLoader();
+        }
+    });
+}
+// ==================================================== FIX sendOtp() FUNCTION ONLY ================================================================================
+            function sendOtp({
+            username,
+            route,
+            submitElement,
+            captcha
+        }) {
+
+            $("#cover-spin").show();
+
+            $.ajax({
+                url: route,
+                type: 'POST',
+                data: {
+                    "username": username,
+                    "_token": $('meta[name="csrf-token"]').attr('content'),
+                    captcha: captcha
+                },
+
+                beforeSend: function() {
+                    showLoader();
+                },
+
+                success: function(data) {
+
+                    if (data.status) {
+
+                        startTimer();
+                        timerInterval();
+
+                        $("#otp_div").show();
+                        $('#div_send_otp').hide();
+                        $('#div_verify_otp').show();
+
+                        $("#cover-spin").hide();
+
+                        $(submitElement).html('Send OTP');
+                        $(submitElement).attr("class", "btn btn-primary-custom w-100 text-white");
+
+                        toastr.success(data.message);
+
+                        $("#otp-mobile").text(maskMobileNumber(data.data.mobile));
+                        $("#res_username").val(data.data.mobile);
+
+                        $("#login-box").hide();
+                        $("#verify-otp-box").show();
+
+                    } else {
+
+                        $("#cover-spin").hide();
+
+                        $(submitElement).html('Send OTP');
+                        $(submitElement).attr("class", "btn btn-primary-custom w-100 text-white");
+
+                        if (data.errors) {
+
+                            $.each(data.errors, function(key, value) {
+                                toastr.error(value[0]);
+                            });
+
+                        } else {
+
+                            toastr.error(data.message);
+                        }
+
+                        // captcha auto refresh after wrong captcha
+                        $('#reload2').click();
+                        $("#captcha2").val('').focus();
+                    }
+                    
+                    hideLoader();
+                },
+
+                error: function(xhr) {
+
+                    $("#cover-spin").hide();
+
+                    $(submitElement).html('Send OTP');
+                    $(submitElement).attr("class", "btn btn-primary-custom w-100 text-white");
+
+                    if (xhr.responseJSON && xhr.responseJSON.errors) {
+
+                        if (xhr.responseJSON.errors.captcha) {
+                            toastr.error(xhr.responseJSON.errors.captcha[0]);
+                        } else if (xhr.responseJSON.errors.login) {
+                            toastr.error(xhr.responseJSON.errors.login[0]);
+                        } else {
+                            $.each(xhr.responseJSON.errors, function(key, value) {
+                                toastr.error(value[0]);
+                            });
+                        }
+
+                    } else if (xhr.responseJSON && xhr.responseJSON.message) {
+
+                        toastr.error(xhr.responseJSON.message);
+
+                    } else {
+
+                        toastr.error("Something went wrong");
+                    }
+
+                    // captcha auto refresh after validation error
+                    $('#reload2').click();
+                    $("#captcha2").val('').focus();
+                    
+                    hideLoader();
+                }
+            });
+
+            }
+
+
+// ==================================================== FIX verifyOtp() FUNCTION ONLY ================================================================================
+
+            function verifyOtp({
+                username,
+                otp,
+                route,
+                submitElement,
+            }) {
+                $("#cover-spin").show();
+                let encryptedOtp = '';
+                if (otp) {
+                    encryptedOtp = cryptoJS(otp);
+                }
+                $.ajax({
+                    url: route,
+                    type: 'POST',
+                    data: {
+                        "username": username,
+                        otp: encryptedOtp.ciphertext,
+                        "_token": $('meta[name="csrf-token"]').attr('content'),
+                    },
+                    
+                    beforeSend: function() {
+                        showLoader();
+                    },
+                    
+                    success: function(data) {
+                        if (data.status) {
+                            $("#cover-spin").hide();
+                            toastr.success(data.message);
+                            setTimeout(() => location.href = "{{ url('/dashboard') }}", 500);
+
+                        } else {
+                            $(submitElement).prop("disabled", false).removeClass("disabled");
+                            $(submitElement).html('Verify OTP');
+                            $(submitElement).attr("class", "btn btn-primary-custom w-100 text-white");
+                            toastr.error(data.message);
+                        }
+                        $("#cover-spin").hide();
+                        hideLoader();
+                    },
+                    error: function(xhr, status, error) {
+                        $("#cover-spin").hide();
+                        $(submitElement).prop("disabled", false).removeClass("disabled");
+                        $(submitElement).html('Verify OTP');
+                        $(submitElement).attr("class", "btn btn-primary-custom w-100 text-white");
+                        toastr.error(xhr.responseJSON.message);
+                        hideLoader();
+                    }
+                });
+            }
+
+// ==================================================== LOGIN BUTTON ================================================================================
+
+            $("#login-button").on("click", function(e) {
+                e.preventDefault();
+
+                let username = $("#email_username").val().trim();
+                let password = $("#password").val().trim();
+                let captcha = $("#captcha").val().trim();
+
+                $(".form-error").html("");
+
+                if (username == "") {
+                    toastr.error("Enter Username *");
+                    $("#email_username").focus();
+                    return false;
+                }
+
+                if (password == "") {
+                    toastr.error("Enter Password *");
+                    $("#password").focus();
+                    return false;
+                }
+
+                if (captcha == "") {
+                    toastr.error("Enter Captcha Code *");
+                    $("#captcha").focus();
+                    return false;
+                }
+
+                $("#login-button").prop("disabled", true).addClass("disabled");
+                $("#login-button").html("<i class='fa fa-spinner fa-spin' style='margin-right: 5px;'></i>Processing...");
+
+                authenticate({
+                    username: username,
+                    password: password,
+                    captcha: captcha,
+                    passwordElement: "#password",
+                    route: "{{ url('login-attempt') }}",
+                    submitElement: "#login-button",
+                });
+            });
+
+// ====================================================================  SEND OTP BUTTON ================================================================================
+
+        $("#sendOtpButton").on("click", function(e) {
+            e.preventDefault();
+
+            let udyam_number = $("#udyam_number").val().trim();
+            let captcha = $("#captcha2").val().trim();
+
+            $(".form-error").html("");
+
+            if (udyam_number == "") {
+                toastr.error("Enter UDYAM Registration Number");
+                $("#udyam_number").focus();
+                return false;
+            }
+
+            if (captcha == "") {
+                toastr.error("Enter Captcha Code *");
+                $("#captcha2").focus();
+                return false;
+            }
+
+            $("#sendOtpButton").prop("disabled", true).addClass("disabled");
+            $("#sendOtpButton").html("<i class='fa fa-spinner fa-spin' style='margin-right: 5px;'></i>Processing...");
+
+            sendOtp({
+                username: udyam_number,
+                route: "{{ url('msme-send-otp') }}",
+                submitElement: "#sendOtpButton",
+                captcha: captcha
+            });
+        });
+
+// ====================================================================  verify OTP BUTTON ==============================================================================
+            $("#verifyOtpButton").on("click", function(e) {
+                e.preventDefault();
+                $("#verifyOtpButton").prop("disabled", true).addClass("disabled");
+                $("#verifyOtpButton").html("<i class='fa fa-spinner fa-spin' style='margin-right: 5px;'></i>Processing...");
+
+
+                const inputs = document.querySelectorAll('.otp-box');
+                const otp = Array.from(inputs)
+                    .map(input => input.value)
+                    .join('');
+
+                verifyOtp({
+                    username: $("#res_username").val(),
+                    otp: otp,
+                    route: "{{ url('msme-verify-otp') }}",
+                    submitElement: "#verifyOtpButton",
+                });
+            });
+
+            $('#reload').click(function() {
+                reloadCaptcha({
+                    captchaImageElement: ".captcha-img"
+                });
+            });
+
+            $('#reload2').click(function() {
+                reloadCaptcha({
+                    captchaImageElement: ".captcha-img2"
+                });
+            });
+
+            $("#msme-tab").click(function() {
+                reloadCaptcha({
+                    captchaImageElement: ".captcha-img2"
+                });
+            });
+
+            $("#others-tab").click(function() {
+                reloadCaptcha({
+                    captchaImageElement: ".captcha-img"
+                });
+            });
+
+// ====================================================================  resend OTP BUTTON ==============================================================================
+            $("#resend-otp").click(function() {
+                $.ajax({
+                    url: "{{ url('msme-send-otp?resend=true') }}",
+                    type: 'POST',
+                    data: {
+                        "username": $("#res_username").val(),
+                        "_token": $('meta[name="csrf-token"]').attr('content'),
+                    },
+                    
+                    beforeSend: function() {
+                        showLoader();
+                    },
+                    
+                    success: function(data) {
+                        if (data.status) {
+                            startTimer();
+                            timerInterval();
+                            $("#cover-spin").hide();
+                            toastr.success(data.message);
+                            $("#otp-mobile").text(maskMobileNumber(data.data.mobile));
+                        } else {
+                            toastr.error(data.message);
+                        }
+                        $("#cover-spin").hide();
+                        hideLoader();
+                    },
+                    error: function(xhr, status, error) {
+                        $("#cover-spin").hide();
+                        toastr.error(xhr.responseJSON.message);
+                        hideLoader();
+                    }
+                });
+            });
+
+            $(document).ready(function() {
+                $('#reload2').click();
+            });
+
+            const togglePassword = document.getElementById('togglePassword');
+            const password = document.getElementById('password');
+            const icon = togglePassword.querySelector('i');
+
+            togglePassword.addEventListener('click', function () {
+                const type = password.getAttribute('type') === 'password' ? 'text' : 'password';
+                password.setAttribute('type', type);
+
+                icon.classList.toggle('bi-eye');
+                icon.classList.toggle('bi-eye-slash');
+            });
+        </script>
+    @endsection

@@ -1,0 +1,586 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no" />
+    <meta name="description" content="" />
+    <meta name="author" content="" />
+    <title>Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/4.7.0/css/font-awesome.css"
+        referrerpolicy="no-referrer" />
+    <link href="css/styles.css" rel="stylesheet" />
+    <link href="//cdn.datatables.net/1.13.7/css/jquery.dataTables.min.css" rel="stylesheet">
+
+</head>
+
+<body class="sb-nav-fixed">
+
+    <nav class="sb-topnav navbar navbar-expand navbar-dark bg-dark">
+        <!-- Navbar Brand-->
+        <a class="navbar-brand ps-3" href="index.html"> <img src="./img/logo-white.png"> </a>
+        <!-- Sidebar Toggle-->
+        <button class="btn btn-link btn-sm order-1 order-lg-0 me-4 me-lg-0" id="sidebarToggle" href="#!"><i
+                class="fas fa-bars"></i></button>
+        <div class="header-user-name">
+            <h5 class="text-white">Welcome User</h5>
+        </div>
+
+        <div class="project-switch ms-auto me-2">
+            <button class="btn active"> <img src="./img/interntaional.png"> International Paroject</button>
+            <button class="btn"> <img src="./img/domestic.png"> Indian Paroject</button>
+        </div>
+
+        <!-- Navbar-->
+        <ul class="navbar-nav ms-auto ms-md-0 me-3 me-lg-4">
+            <li class="nav-item dropdown">
+                <a class="nav-link dropdown-toggle" id="navbarDropdown" href="#" role="button" data-bs-toggle="dropdown"
+                    aria-expanded="false">
+                    <img src="./img/user-icon.png"></a>
+                <ul class="dropdown-menu dropdown-menu-end" aria-labelledby="navbarDropdown">
+                    <li><a class="dropdown-item" href="#!">Settings</a></li>
+                    <li><a class="dropdown-item" href="#!">Activity Log</a></li>
+                    <li>
+                        <hr class="dropdown-divider" />
+                    </li>
+                    <li><a class="dropdown-item" href="#!">Logout</a></li>
+                </ul>
+            </li>
+        </ul>
+    </nav>
+
+    <div id="layoutSidenav">
+
+        <div id="layoutSidenav_nav">
+            <nav class="sb-sidenav accordion sb-sidenav-dark" id="sidenavAccordion">
+                <div class="sb-sidenav-menu">
+                    <div class="nav">
+                        <a class="nav-link" href="index.html">
+                            <div class="nav-link-icon"> <img src="./img/home.svg"></div>
+                            Dashboard
+                        </a>
+                        <a class="nav-link active" href="./application-listing.html">
+                            <div class="nav-link-icon"> <img src="./img/document.svg"> </div>
+                            New Application
+                        </a>
+                        <a class="nav-link" href="index.html">
+                            <div class="nav-link-icon"> <img src="./img/incentive.svg"> </div>
+                            Incentive Tracking
+                        </a>
+                        <a class="nav-link" href="index.html">
+                            <div class="nav-link-icon"> <img src="./img/incentive.svg"> </div>
+                            Resolution/Redressal
+                        </a>
+
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#resource"
+                            aria-expanded="false" aria-controls="collapseLayouts">
+                            <div class="nav-link-icon"><img src="./img/resources.svg"> </div>
+                            Resources
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="resource" aria-labelledby="headingOne"
+                            data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="layout-static.html">Static Navigation</a>
+                                <a class="nav-link" href="layout-sidenav-light.html">Light Sidenav</a>
+                            </nav>
+                        </div>
+
+                        <a class="nav-link collapsed" href="#" data-bs-toggle="collapse" data-bs-target="#support"
+                            aria-expanded="false" aria-controls="collapseLayouts">
+                            <div class="nav-link-icon"> <img src="./img/support.svg"> </div>
+                            Support
+                            <div class="sb-sidenav-collapse-arrow"><i class="fas fa-angle-down"></i></div>
+                        </a>
+                        <div class="collapse" id="support" aria-labelledby="headingOne"
+                            data-bs-parent="#sidenavAccordion">
+                            <nav class="sb-sidenav-menu-nested nav">
+                                <a class="nav-link" href="layout-static.html">Static Navigation</a>
+                                <a class="nav-link" href="layout-sidenav-light.html">Light Sidenav</a>
+                            </nav>
+                        </div>
+
+                    </div>
+                </div>
+            </nav>
+        </div>
+
+        <div id="layoutSidenav_content">
+            <main>
+                <div class="container-fluid px-4 py-4">
+                    <div class="row">
+                        <div class="col-lg-12 col-md-12">
+                            <div class="card container-main-card">
+                                <div class="card-header d-flex">
+                                    <div class="heading">
+                                        <h1>Filming Permissions for live action shoot</h1>
+                                        <nav aria-label="breadcrumb">
+                                            <ol class="breadcrumb">
+                                                <li class="breadcrumb-item"><a href="#">Home</a></li>
+                                                <li class="breadcrumb-item"><a href="#">Filming Permissions for live
+                                                        action shoot</a></li>
+                                            </ol>
+                                        </nav>
+                                    </div>
+                                    <!-- <div class="action-header ms-auto">
+                                       
+                                        <div class="btn-group drop-btn">
+
+                                            <button type="button" class="btn btn-danger"> <img src="./img/add.svg">
+                                                Action</button>
+                                            <button type="button"
+                                                class="btn btn-danger dropdown-toggle dropdown-toggle-split"
+                                                data-bs-toggle="dropdown" aria-expanded="false">
+                                                <span class="visually-hidden">Toggle Dropdown</span>
+                                            </button>
+
+                                            <ul class="dropdown-menu">
+                                                <li><a class="dropdown-item" href="#">Filming permissions for live
+                                                        action shoot</a></li>
+                                                <li><a class="dropdown-item" href="#">Official coproduction live
+                                                        action</a></li>
+                                                <li><a class="dropdown-item" href="#">Official coproduction live
+                                                        animation only</a></li>
+                                            </ul>
+                                        </div>
+                                    </div> -->
+                                </div>
+                                <div class="card-body pt-1">
+
+                                    <div class="multistep-form mb-3">
+                                        <!-- form stepper start-->
+                                        <div class="d-flex form-stepper justify-content-between mb-4">
+                                            <div class="d-flex step-item align-items-center">
+                                                <div class="counter">1</div>
+                                                <p>International production details</p>
+                                            </div>
+                                            <div class="d-flex step-item align-items-center">
+                                                <div class="counter">2</div>
+                                                <p>Location details</p>
+                                            </div>
+                                            <div class="d-flex step-item align-items-center">
+                                                <div class="counter">3</div>
+                                                <p>Equipments & Crew Details</p>
+                                            </div>
+                                            <div class="d-flex step-item align-items-center">
+                                                <div class="counter">4</div>
+                                                <p>Local Representative</p>
+                                            </div>
+                                        </div>
+
+                                        <form action="">
+
+                                            <h4 class="form-sub-heading mt-2 mb-3">International Production company
+                                                details
+                                            </h4>
+
+                                            <div class="row">
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">INTERNATIONAL PRODUCTION COMPANY
+                                                            NAME</label>
+                                                        <input type="text" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">COMPANY REPRESENTATIVE NAME</label>
+                                                        <input type="text" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">PASSPORT COPY</label>
+                                                        <input type="file" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">EMAIL</label>
+                                                        <input type="text" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">CONTACT NO</label>
+                                                        <input type="text" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">COUNTRY</label>
+                                                        <select class="form-select" aria-label="Default select example">
+                                                            <option selected>Please select</option>
+                                                            <option value="1">One</option>
+                                                            <option value="2">Two</option>
+                                                            <option value="3">Three</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">ADDRESS LINE</label>
+                                                        <input type="text" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">STATE</label>
+                                                        <select class="form-select" aria-label="Default select example">
+                                                            <option selected>Please select</option>
+                                                            <option value="1">One</option>
+                                                            <option value="2">Two</option>
+                                                            <option value="3">Three</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">TOWN/CITY</label>
+                                                        <select class="form-select" aria-label="Default select example">
+                                                            <option selected>Please select</option>
+                                                            <option value="1">One</option>
+                                                            <option value="2">Two</option>
+                                                            <option value="3">Three</option>
+                                                        </select>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">POSTAL CODE</label>
+                                                        <input type="text" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+
+                                                <h4 class="form-sub-heading mt-3 mb-3">Film/Movie Details</h4>
+
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">PRODUCTION CATEGORY</label>
+                                                        <input type="text" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">TITLE/WORKING TITLE</label>
+                                                        <input type="text" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">Language</label>
+                                                        <input type="text" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">SCRIPT (IN ENGLISH)</label>
+                                                        <input type="file" class="form-control" placeholder="">
+                                                        <span class="description">Max file size : 5MB, pdf</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">SYNOPSIS</label>
+                                                        <input type="file" class="form-control" placeholder="">
+                                                        <span class="description">Max file size : 5MB, pdf</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">COVER LETTER</label>
+                                                        <input type="file" class="form-control" placeholder="">
+                                                        <span class="description"> (TO BE PRINTED ON INTERNATIONAL
+                                                            COMPANY LETTER HEAD) <br /> Max file size : 5MB, pdf</span>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">IS IT BASED ON SOME LIVING / DECEASED
+                                                            PERSONALITY ?</label>
+                                                        <div class="form-radio d-flex">
+                                                            <div class="form-check me-3">
+                                                                <input class="form-check-input" type="radio">
+                                                                <label class="form-check-label">
+                                                                    Yes
+                                                                </label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="radio" checked>
+                                                                <label class="form-check-label">
+                                                                    No
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">IS IT A CO-PRODUCTION ?</label>
+                                                        <div class="form-radio d-flex">
+                                                            <div class="form-check me-3">
+                                                                <input class="form-check-input" type="radio">
+                                                                <label class="form-check-label">
+                                                                    Yes
+                                                                </label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="radio" checked>
+                                                                <label class="form-check-label">
+                                                                    No
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4"></div>
+                                                <div class="col-lg-8 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">WHICH OF THE SERVICES BELOW DO YOU
+                                                            WANT TO AVAIL?</label>
+                                                        <div class="form-radio d-flex">
+                                                            <div class="form-check me-3">
+                                                                <input class="form-check-input" type="radio">
+                                                                <label class="form-check-label">
+                                                                    Shoot in India
+                                                                </label>
+                                                            </div>
+                                                            <div class="form-check me-3">
+                                                                <input class="form-check-input" type="radio" checked>
+                                                                <label class="form-check-label">
+                                                                    Post - Production in India
+                                                                </label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="radio" checked>
+                                                                <label class="form-check-label">
+                                                                    Both
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-action mt-3 mb-3">
+                                                    <a href="#" class="save-draft-button me-1">Save draft</a>
+                                                    <a href="#" class="next-button">Next</a>
+                                                </div>
+
+
+                                            </div>
+                                        </form>
+                                    </div>
+
+                                    <hr />
+
+                                    <div class="multistep-form mb-3">
+
+                                        <!-- form stepper start-->
+                                        <div class="d-flex form-stepper justify-content-between mb-4">
+                                            <div class="d-flex step-item align-items-center complete">
+                                                <div class="counter">1</div>
+                                                <p>International production details</p>
+                                            </div>
+                                            <div class="d-flex step-item align-items-center">
+                                                <div class="counter">2</div>
+                                                <p>Location details</p>
+                                            </div>
+                                            <div class="d-flex step-item align-items-center">
+                                                <div class="counter">3</div>
+                                                <p>Equipments & Crew Details</p>
+                                            </div>
+                                            <div class="d-flex step-item align-items-center">
+                                                <div class="counter">4</div>
+                                                <p>Local Representative</p>
+                                            </div>
+                                        </div>
+
+                                        <form action="">
+
+                                            <h4 class="form-sub-heading mt-2 mb-3">SHOOTING LOCATION DETAILS</h4>
+
+                                            <div class="row">
+                                                <div class="col-lg-12">
+                                                    <table class="table table-themed table-striped table-bordered">
+                                                        <thead>
+                                                            <th>State</th>
+                                                            <th>City</th>
+                                                            <th>Place (Optional)</th>
+                                                            <th class="text-center">Add/Remove</th>
+                                                        </thead>
+                                                        <tbody>
+                                                        <tr>
+                                                            <td><select class="form-select" aria-label="Default select example">
+                                                                <option selected>Please select</option>
+                                                                <option value="1">One</option>
+                                                                <option value="2">Two</option>
+                                                                <option value="3">Three</option>
+                                                            </select>
+                                                            </td>
+                                                            <td><select class="form-select" aria-label="Default select example">
+                                                                <option selected>Please select</option>
+                                                                <option value="1">One</option>
+                                                                <option value="2">Two</option>
+                                                                <option value="3">Three</option>
+                                                            </select>
+                                                            </td>
+                                                            <td> <input type="text" class="form-control" placeholder=""></td>
+                                                            <td class="text-center"> <a href="#"> <img src="./img/add-btn.svg"> </a> </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><select class="form-select" aria-label="Default select example">
+                                                                <option selected>Please select</option>
+                                                                <option value="1">One</option>
+                                                                <option value="2">Two</option>
+                                                                <option value="3">Three</option>
+                                                            </select>
+                                                            </td>
+                                                            <td><select class="form-select" aria-label="Default select example">
+                                                                <option selected>Please select</option>
+                                                                <option value="1">One</option>
+                                                                <option value="2">Two</option>
+                                                                <option value="3">Three</option>
+                                                            </select>
+                                                            </td>
+                                                            <td> <input type="text" class="form-control" placeholder=""></td>
+                                                            <td class="text-center"> <a href="#"> <img src="./img/dlt-btn.svg"> </a> </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><select class="form-select" aria-label="Default select example">
+                                                                <option selected>Please select</option>
+                                                                <option value="1">One</option>
+                                                                <option value="2">Two</option>
+                                                                <option value="3">Three</option>
+                                                            </select>
+                                                            </td>
+                                                            <td><select class="form-select" aria-label="Default select example">
+                                                                <option selected>Please select</option>
+                                                                <option value="1">One</option>
+                                                                <option value="2">Two</option>
+                                                                <option value="3">Three</option>
+                                                            </select>
+                                                            </td>
+                                                            <td> <input type="text" class="form-control" placeholder=""></td>
+                                                            <td class="text-center"> <a href="#"> <img src="./img/dlt-btn.svg"> </a> </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><select class="form-select" aria-label="Default select example">
+                                                                <option selected>Please select</option>
+                                                                <option value="1">One</option>
+                                                                <option value="2">Two</option>
+                                                                <option value="3">Three</option>
+                                                            </select>
+                                                            </td>
+                                                            <td><select class="form-select" aria-label="Default select example">
+                                                                <option selected>Please select</option>
+                                                                <option value="1">One</option>
+                                                                <option value="2">Two</option>
+                                                                <option value="3">Three</option>
+                                                            </select>
+                                                            </td>
+                                                            <td> <input type="text" class="form-control" placeholder=""></td>
+                                                            <td class="text-center"> <a href="#"> <img src="./img/dlt-btn.svg"> </a> </td>
+                                                        </tr>
+                                                        <tr>
+                                                            <td><select class="form-select" aria-label="Default select example">
+                                                                <option selected>Please select</option>
+                                                                <option value="1">One</option>
+                                                                <option value="2">Two</option>
+                                                                <option value="3">Three</option>
+                                                            </select>
+                                                            </td>
+                                                            <td><select class="form-select" aria-label="Default select example">
+                                                                <option selected>Please select</option>
+                                                                <option value="1">One</option>
+                                                                <option value="2">Two</option>
+                                                                <option value="3">Three</option>
+                                                            </select>
+                                                            </td>
+                                                            <td> <input type="text" class="form-control" placeholder=""></td>
+                                                            <td class="text-center"> <a href="#"> <img src="./img/dlt-btn.svg"> </a> </td>
+                                                        </tr>
+                                                        </tbody>
+                                                    </table>
+                                                </div>
+
+                                                <h4 class="form-sub-heading mt-3 mb-3">PERIOD OF SHOOTING</h4>
+
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">Shooting start date</label>
+                                                        <input type="date" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">Shooting end date</label>
+                                                        <input type="date" class="form-control" placeholder="">
+                                                    </div>
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    
+                                                </div>
+                                                <div class="col-lg-4 mb-3">
+                                                    <div class="input-box">
+                                                        <label class="form-label">Are you planning to shoot in restricted area ?</label>
+                                                        <div class="form-radio d-flex">
+                                                            <div class="form-check me-3">
+                                                                <input class="form-check-input" type="radio">
+                                                                <label class="form-check-label">
+                                                                    Yes
+                                                                </label>
+                                                            </div>
+                                                            <div class="form-check">
+                                                                <input class="form-check-input" type="radio" checked>
+                                                                <label class="form-check-label">
+                                                                    No
+                                                                </label>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                <div class="form-action mt-3 mb-3">
+                                                    <a href="#" class="save-draft-button me-1">Save draft</a>
+                                                    <a href="#" class="next-button">Next</a>
+                                                </div>
+
+
+                                            </div>
+                                        </form>
+                                    </div>
+
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </main>
+
+            <footer class="py-2 bg-light mt-auto">
+                <div class="container-fluid px-4">
+                    <div class="d-flex align-items-center justify-content-between small">
+                        <div class="text-muted">Copyright &copy; Your Website 2024</div>
+                        <div>
+                            <a href="#">Privacy Policy</a>
+                            &middot;
+                            <a href="#">Terms &amp; Conditions</a>
+                        </div>
+                    </div>
+                </div>
+            </footer>
+        </div>
+    </div>
+    <script src="./js/jquery-3.7.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.2.3/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="js/scripts.js"></script>
+    <script src="//cdn.datatables.net/1.13.7/js/jquery.dataTables.min.js"></script>
+    <script>
+        let table = new DataTable('#myTable');
+    </script>
+</body>
+
+</html>

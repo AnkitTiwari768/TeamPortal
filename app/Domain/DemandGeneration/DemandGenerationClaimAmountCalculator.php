@@ -1,0 +1,380 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\DemandGeneration;
+
+use Illuminate\Support\Facades\DB;
+use Carbon\Carbon;
+
+class DemandGenerationClaimAmountCalculator
+{
+    public function calculateClaimAmount(string $claimId, string $claimTypeId, string $npId, Carbon $cycleStart, Carbon $cycleEnd)
+    {
+        // Current uploaded data
+        $rows = DB::table('temporary_claim_orders')
+            ->where('claim_id', $claimId)
+            ->orderBy('order_creation_timestamp')
+            ->get();
+
+
+
+        // 🔥 NEW: Get globally used MSEs (across ALL previous cycles)
+        $usedMsesGlobal = $this->getUsedMsesAcrossCycles($claimTypeId, $npId)->flip(); // ⚡ optimize lookup
+
+        // 🔥 NEW: Remove ALL rows of already used MSEs
+        $filteredRows = $rows->reject(function ($row) use ($usedMsesGlobal) {
+            return isset($usedMsesGlobal[$row->team_id]);
+        });
+
+        // Group AFTER filtering
+        $grouped = $filteredRows->groupBy('aov_grouping_type');
+
+        // Fetch slabs once
+        $slabs = DB::table('incentive_slab_masters')
+            ->where('is_active', 1)
+            ->orderBy('slab_order', 'asc')
+            ->get()
+            ->groupBy('aov_type');
+
+        // Existing cycle data
+        $existingCycleData = $this->getExistingCycleData(
+            $claimTypeId,
+            $npId,
+            $cycleStart,
+            $cycleEnd
+        );
+
+        $result = [];
+
+        foreach ($grouped as $aovType => $transactions) {
+
+            // Existing data for this AOV
+            $existingData = $existingCycleData[$aovType] ?? collect();
+
+            // ✅ MSE count (ONLY from filtered data + existing cycle)
+            $mergedMseIds = collect()
+                ->merge($transactions->pluck('team_id'))
+                ->merge($existingData->pluck('team_id'))
+                ->filter()
+                ->unique();
+
+            $totalUniqueMses = $mergedMseIds->count();
+
+            // ✅ Transaction count (ONLY filtered rows)
+            $mergedTxnIds = collect()
+                ->merge($transactions->pluck('network_transaction_id'))
+                ->merge($existingData->pluck('network_transaction_id'))
+                ->filter()
+                ->unique();
+
+            $totalUniqueTransactions = $mergedTxnIds->count();
+            // Cycle calculation
+            $calculation = $this->calculateCycleBasedAmount(
+                $aovType,
+                $totalUniqueTransactions,
+                $totalUniqueMses,
+                $slabs,
+                $claimTypeId,
+                $npId,
+                $cycleStart,
+                $cycleEnd
+            );
+
+            $result[$aovType] = [
+                'total_unique_mses' => $totalUniqueMses,
+                'total_unique_transactions' => $totalUniqueTransactions,
+                'claim_amount' => $calculation['amount'],
+                'cycle_actions' => $calculation['cycle_actions']
+            ];
+        }
+
+        return $result;
+    }
+
+    /**
+     * ✅ NEW: Cycle-based calculation
+     */
+    private function calculateCycleBasedAmount(
+        $aovType,
+        $transactions,
+        $mses,
+        $slabs,
+        $claimTypeId,
+        $npId,
+        $cycleStart,
+        $cycleEnd
+    ) {
+        $aovKey = strtoupper(str_replace(' AOV', '', $aovType));
+        $cycleActions = [];
+
+        if (!isset($slabs[$aovKey])) {
+            return ['amount' => 0, 'cycle_actions' => []];
+        }
+
+        $slabCollection = collect($slabs[$aovKey]);
+
+        $highestSlab = $slabCollection->firstWhere('is_highest_slab', 1);
+
+        if (!$highestSlab) {
+            return ['amount' => 0, 'cycle_actions' => []];
+        }
+
+        $maxTxn = $highestSlab->min_transaction_count;
+        $maxMse = $highestSlab->min_unique_mse_count;
+
+        // 🔥 STEP 1: Get current active cycle
+        $cycle = DB::table('cycle_usages')
+            ->where('snp_id', $npId)
+            ->where('claim_type_id', $claimTypeId)
+            ->where('aov_type', $aovKey)
+            ->where('is_cycle_completed', 0)
+            ->orderByDesc('cycle_number')
+            ->first();
+
+        if ($cycle) {
+            $lastClaimDate = DB::table('claims')
+                ->where('snp_id', $npId)
+                ->where('claim_type_id', $claimTypeId)
+                ->latest('created_at')
+                ->value('created_at');
+
+            $daysSincePreviousClaim = $lastClaimDate
+                ? Carbon::parse($lastClaimDate)->diffInDays(now())
+                : 0;
+            // dd($daysSincePreviousClaim);
+
+            if ($daysSincePreviousClaim >= 60) {
+                $cycleActions[] = [
+                    'action' => 'update_cycle',
+                    'id' => $cycle->id,
+                    'data' => ['is_cycle_completed' => 1, 'updated_at' => now()]
+                ];
+                $cycle = null; // force a new cycle
+            }
+        }
+
+        $historicalAmount = 0;
+
+        if (!$cycle) {
+            // Find max cycle number to continue incrementing cleanly
+            $lastCycleNumber = DB::table('cycle_usages')
+                ->where('snp_id', $npId)
+                ->where('claim_type_id', $claimTypeId)
+                ->where('aov_type', $aovKey)
+                ->max('cycle_number') ?? 0;
+
+            $cycleNumber = $lastCycleNumber + 1;
+            $consumedTxn = 0;
+            $consumedMse = 0;
+        } else {
+            $cycleNumber = $cycle->cycle_number;
+            $consumedTxn = $cycle->consumed_transactions;
+            $consumedMse = $cycle->consumed_mse_count;
+
+            $historicalAmount = $this->resolveSlabAmount(
+                $aovType,
+                $consumedTxn,
+                $consumedMse,
+                $slabs
+            );
+        }
+
+        // 🔥 STEP 2: Add new data to cycle (Case 1: Cumulative threshold check)
+        $totalTxn = $consumedTxn + $transactions;
+        $totalMse = $consumedMse + $mses;
+
+        $totalAmount = 0;
+
+        // 🔥 STEP 3: Process full cycles
+        while ($totalTxn >= $maxTxn && $totalMse >= $maxMse) {
+
+            $totalAmount += $highestSlab->slab_amount;
+
+            $totalTxn -= $maxTxn;
+            $totalMse -= $maxMse;
+
+            // mark cycle completed
+            $cycleActions[] = [
+                'action' => 'insert_cycle',
+                'data' => [
+                    'snp_id' => $npId,
+                    'claim_type_id' => $claimTypeId,
+                    'aov_type' => $aovKey,
+                    'cycle_number' => $cycleNumber,
+                    'consumed_transactions' => $maxTxn,
+                    'consumed_mse_count' => $maxMse,
+                    'is_cycle_completed' => 1,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            ];
+
+            $cycleNumber++;
+        }
+
+        // 🔥 STEP 4: Partial cycle
+        if ($totalTxn > 0 && $totalMse > 0) {
+
+            $partialAmount = $this->resolveSlabAmount(
+                $aovType,
+                $totalTxn,
+                $totalMse,
+                $slabs
+            );
+
+            $totalAmount += $partialAmount;
+        }
+
+        // 🔥 STEP 5: Save remaining usage (ACTIVE cycle)
+        // IMPORTANT: Make sure we insert dynamically to avoid bugs with updateOrInsert changing old cycles.
+        $activeCycle = DB::table('cycle_usages')
+            ->where('snp_id', $npId)
+            ->where('claim_type_id', $claimTypeId)
+            ->where('aov_type', $aovKey)
+            ->where('cycle_number', $cycleNumber)
+            ->first();
+
+        if ($activeCycle) {
+            $cycleActions[] = [
+                'action' => 'update_cycle',
+                'id' => $activeCycle->id,
+                'data' => [
+                    'consumed_transactions' => $totalTxn,
+                    'consumed_mse_count' => $totalMse,
+                    'updated_at' => now(),
+                ]
+            ];
+        } else {
+            $cycleActions[] = [
+                'action' => 'insert_cycle',
+                'data' => [
+                    'snp_id' => $npId,
+                    'claim_type_id' => $claimTypeId,
+                    'aov_type' => $aovKey,
+                    'cycle_number' => $cycleNumber,
+                    'consumed_transactions' => $totalTxn,
+                    'consumed_mse_count' => $totalMse,
+                    'is_cycle_completed' => 0,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]
+            ];
+        }
+
+        // New calculated payout difference! 
+
+        $payableAmount = $totalAmount - $historicalAmount;
+
+
+        // Prevent negative anomaly just in case
+        return [
+            'amount' => max(0, $payableAmount),
+            'cycle_actions' => $cycleActions
+        ];
+    }
+
+    /**
+     * ✅ OLD FUNCTION (UNCHANGED LOGIC)
+     * Used for partial cycle
+     */
+    private function resolveSlabAmount(
+        $aovType,
+        $transactions,
+        $mses,
+        $slabs
+    ) {
+        $aovKey = strtoupper(str_replace(' AOV', '', $aovType));
+
+        if (!isset($slabs[$aovKey])) {
+            return 0;
+        }
+
+        $eligibleSlabs = [];
+
+        foreach ($slabs[$aovKey] as $slab) {
+            if (
+                $transactions >= $slab->min_transaction_count &&
+                $mses >= $slab->min_unique_mse_count
+            ) {
+                $eligibleSlabs[] = $slab;
+            }
+        }
+
+        if (empty($eligibleSlabs)) {
+            return 0;
+        }
+
+        usort($eligibleSlabs, fn($a, $b) => $a->slab_order <=> $b->slab_order);
+
+        $totalEligible = 0;
+        $previousAmount = 0;
+
+        foreach ($eligibleSlabs as $slab) {
+            $increment = $slab->slab_amount - $previousAmount;
+            $totalEligible += $increment;
+            $previousAmount = $slab->slab_amount;
+        }
+
+        return $totalEligible;
+    }
+
+    private function getAlreadyPaidAmount($claimTypeId, $npId, $cycleStart, $cycleEnd, $aovType)
+    {
+        $query = DB::table('claims')
+            ->where('claim_type_id', $claimTypeId)
+            ->where('snp_id', $npId)
+            ->whereBetween('claim_period_start_date', [$cycleStart, $cycleEnd]);
+
+        if ($aovType === 'Low AOV') {
+            return $query->sum('low_aov_amount');
+        }
+
+        if ($aovType === 'High AOV') {
+            return $query->sum('high_aov_amount');
+        }
+
+        return 0;
+    }
+
+    private function getExistingCycleData($claimTypeId, $npId, $cycleStart, $cycleEnd)
+    {
+        return DB::table('claim_orders as co')
+            ->join('claims as c', 'c.id', '=', 'co.claim_id')
+            ->where('c.claim_type_id', $claimTypeId)
+            ->where('c.snp_id', $npId)
+            ->whereBetween('c.claim_period_start_date', [$cycleStart, $cycleEnd])
+            ->select(
+                'co.team_id',
+                'co.network_transaction_id',
+                'co.aov_grouping_type'
+            )
+            ->get()
+            ->groupBy('aov_grouping_type');
+    }
+
+    private function getUsedMsesAcrossCycles($claimTypeId, $npId)
+    {
+        return DB::table('claim_orders as co')
+            ->join('claims as c', 'c.id', '=', 'co.claim_id')
+            ->where('c.claim_type_id', $claimTypeId)
+            ->where('c.snp_id', $npId) // 🔒 BNP scoped
+            ->whereNotNull('co.team_id') // ✅ safety
+            ->distinct() // ✅ better than unique in PHP
+            ->pluck('co.team_id');
+    }
+
+    public function prepareClaimSummary(array $result): array
+    {
+        return [
+            'low_aov_eligible_records' => $result['Low AOV']['total_unique_transactions'] ?? 0,
+            'high_aov_eligible_records' => $result['High AOV']['total_unique_transactions'] ?? 0,
+
+            'low_aov_unique_mse_count' => $result['Low AOV']['total_unique_mses'] ?? 0,
+            'high_aov_unique_mse_count' => $result['High AOV']['total_unique_mses'] ?? 0,
+
+            'low_aov_amount' => $result['Low AOV']['claim_amount'] ?? 0,
+            'high_aov_amount' => $result['High AOV']['claim_amount'] ?? 0,
+        ];
+    }
+}

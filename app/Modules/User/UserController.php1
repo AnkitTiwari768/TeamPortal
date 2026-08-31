@@ -1,0 +1,227 @@
+<?php 
+declare(strict_types=1);
+namespace App\Modules\User;
+use App\Http\Api\V1\User\{UserService,UserDTO}; 
+use App\Http\Api\V1\Common\{SearchService, SearchRepository}; 
+use App\Http\Controllers\ClientController;
+use App\Http\Api\V1\User\UserValidation as Validation;
+use Illuminate\Http\Request;
+use Illuminate\View\View;
+use App\Http\Services\VerificationService;
+use App\Http\Services\CommonService; 
+use Session;
+
+final class UserController extends ClientController
+{
+    private static $module = 'users.index';
+    protected $commonService;
+    
+    public function __construct(private UserService $service,CommonService $commonService)
+    {
+        $this->service = $service;
+        $this->commonService = $commonService;
+    } 
+
+    public function index(): View
+    {
+        return view('users.index')
+            ->with('title', __('message.user_list'))            
+            ->with('details', $this->service->getDetails());
+    }
+
+    public function datalist(): mixed
+    {
+        try{            
+            $result= $this->service->getUsers();  
+            return $this->success($result);
+        }catch(\Throwable $e){
+            return $this->handleException($e);
+        }
+    } 
+
+    public function create(): View
+    {
+        return view('users.form')
+            ->with('title', __('message.add_user'))
+            ->with('module_url', self::$module)
+            ->with('details', $this->service->getDetails())
+			->with('crypto_salt', session('crypto_salt'))
+            ->with('crypto_iv', session('crypto_iv'))
+            ->with('crypto_key', session('crypto_key'))
+            ->with('crypto_key_size', session('crypto_key_size'))
+            ->with('crypto_iterations', session('crypto_iterations'));
+    }
+
+    public function store(Request $request): mixed 
+    {   
+	    //print_r($request->all());exit;
+		
+        try{        
+			
+			$request->merge([
+                'password' => crypto_decrypt($request->password),
+                'password_confirmation' => crypto_decrypt($request->password_confirmation),
+            ]);
+			
+            $validator = Validation::validate($request->all());
+            
+            if ($validator->fails()) 
+            {
+                return $this->error($validator->errors());
+            }
+            //For verification
+            $is_Mobile_Verified=Session::get('mobile'); 
+            $is_Amobile_Verified=Session::get('alternate_mobile');
+            $is_email_Verified=Session::get('email');
+            $is_Aemail_Verified=Session::get('alternate_email');
+            
+            if($is_Mobile_Verified==null || $is_Amobile_Verified==null || $is_email_Verified==null || $is_Aemail_Verified==null)
+            {  
+                 return $this->error([],__('message.vefircation_fields_error'));
+            }
+			 
+			 $data=$validator->validated();
+			 $data['is_role_mapped']=1;
+			 
+			 $userDTO = UserDTO::create($data);
+             $result = $this->service->save($userDTO);
+
+            Session::forget('mobile'); 
+            Session::forget('alternate_mobile'); 
+            Session::forget('email'); 
+            Session::forget('alternate_email');
+
+            return $this->created($result);
+        }catch(\Throwable $e){
+            return $this->handleException($e);
+        } 
+    }
+
+    public function edit(string $id): View
+    {
+		//dd($this->service->findById($id));
+        return view('users.form')
+            ->with('title', __('message.user_state'))
+            ->with('module_url', self::$module)
+            ->with('id', $id)
+            ->with('row',(array)$this->service->getUser($id))
+            ->with('details', $this->service->getDetails($id))
+			->with('title', __('message.edit_user'))
+            ->with('crypto_salt', session('crypto_salt'))
+            ->with('crypto_iv', session('crypto_iv'))
+            ->with('crypto_key', session('crypto_key'))
+            ->with('crypto_key_size', session('crypto_key_size'))
+            ->with('crypto_iterations', session('crypto_iterations'));	
+    }
+
+    public function show($id)
+    {
+        try 
+        {			
+			$module_url=self::$module;
+            $row = $this->service->findById($id);
+            return view('users.details', compact('id', 'row','module_url'))
+            ->with('title', __('message.user_details'));
+        }
+        catch (\Throwable $e) 
+        {
+            return $this->handleException($e);
+        }
+    }
+
+    public function update(Request $request, string $id): mixed
+    {   
+        try{
+            
+            $ifExistResult=$this->checkIfExistData($request->all()); 
+
+            //For verification
+            $is_Mobile_Verified=Session::get('mobile'); 
+            $is_Amobile_Verified=Session::get('alternate_mobile');
+            $is_email_Verified=Session::get('email');
+            $is_Aemail_Verified=Session::get('alternate_email');
+
+            //dd(session()->all());
+            
+            if($is_Mobile_Verified==null || $is_Amobile_Verified==null || $is_email_Verified==null || $is_Aemail_Verified==null)
+            {  
+                return $this->error([],__('message.vefircation_fields_error'));
+            }
+			
+			$validator = Validation::validate($request->all(), $id);
+            
+            if ($validator->fails()) 
+            {
+                return $this->error($validator->errors());
+            }
+			
+			 $data=$validator->validated();
+			 $data['is_role_mapped']=1;
+			 $userDTO = UserDTO::create($data,$id);
+             $result = $this->service->save($userDTO,$id);
+
+            //$this->service->update($validator->validated(), $id); 
+            Session::forget('mobile'); 
+            Session::forget('alternate_mobile'); 
+            Session::forget('email'); 
+            Session::forget('alternate_email');
+            return $this->updated();
+        }catch(\Throwable $e){
+            return $this->handleException($e);
+        }
+    }
+
+    public function checkIfExistData($payload)
+    {
+        if($payload['mobile']){
+           $result1=$this->commonService->getExistData('users','mobile',$payload['mobile']); 
+           if($result1){
+                Session::put('mobile', "1");
+            }else{
+                if(Session::get('mobile') != 1)
+                    Session::put('mobile', "");
+            }
+          
+        }
+        if($payload['alternate_mobile']){
+           $result2=$this->commonService->getExistData('users','alternate_mobile',$payload['alternate_mobile']); 
+           if($result2){
+            Session::put('alternate_mobile', "1");
+            }else{
+                if(Session::get('alternate_mobile') != 1)
+                    Session::put('alternate_mobile', "");
+            }
+        }
+
+        if($payload['email']){
+            $result2=$this->commonService->getExistData('users','email',$payload['email']); 
+            if($result2){
+             Session::put('email', "1");
+             }else{
+                if(Session::get('email') != 1)
+                    Session::put('email', "");
+             }
+         }
+
+         if($payload['alternate_email']){
+            $result2=$this->commonService->getExistData('users','alternate_email',$payload['alternate_email']); 
+            if($result2){
+             Session::put('alternate_email', "1");
+             }else{
+                if(Session::get('alternate_email') != 1)
+                    Session::put('alternate_email', "");
+             }
+         }
+  
+    }
+	
+	public function getSearchRoles(Request $request)
+    {
+		if ($request->has('search')) 
+		{
+			$searchService=new SearchService(new SearchRepository());
+			return $searchService->getSearchList('roles',$request->query('search'));
+		}
+    }
+	
+}

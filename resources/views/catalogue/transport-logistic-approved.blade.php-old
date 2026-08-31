@@ -1,0 +1,871 @@
+@extends('components.admin.content-layout')
+
+@section('card-content')
+
+
+
+    <div class="align-items-end border-bottom card-body d-flex justify-content-between">
+        <!-- <form id="search_form" autocomplete="off">
+                  <div class="filter-bar d-flex px-3 py-2 gap-3 align-items-center">
+                    <div class="select-box">
+                      <label class="form-label">From date</label>
+                      <input type="text" class="form-control filter_btn" name="from_date" id="from_date" placeholder="From Date">
+                    </div>
+                    <div class="select-box">
+                      <label class="form-label">To date</label>
+                      <input type="text" class="form-control filter_btn" name="to_date " id="to_date" placeholder="To Date">
+                    </div>
+
+                    <a href="javascript:void(0)" class="clear-action" id="reset_btn" style="display: none;"> <img
+                        src="{{ asset('assets/ffo-admin/img/close-blue.svg') }}">Clear all</a>
+                  </div>
+                </form> -->
+
+        @if (hasRole('lsp'))
+            <div class="card-header d-flex w-100 p-0">
+                <div class="row w-100">
+                    <div class="col-md-6">
+                        <button id="downloadSelected" class="btn btn-success block-btn-custom">
+                            <img src="{{ asset('assets/img-new/download-file.svg') }}"> Download Predefined File
+                        </button>
+                    </div>
+                    <div class="col-md-6">
+                        <button type="button" class="btn btn-danger block-btn-custom" data-bs-toggle="modal"
+                            data-bs-target="#myCSVModal">
+                            <img src="{{ asset('assets/img-new/add-claim.svg') }}">
+                            Add Bulk Claim
+                        </button>
+                    </div>
+                </div>
+            </div>
+        @endif
+    </div>
+
+    <div class="p-3">
+        <div class="accordion" id="whoCanApplyAccordion">
+            <div class="accordion-item">
+                <h2 class="accordion-header" id="headingOne">
+                    <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse"
+                        data-bs-target="#collapseOne" aria-expanded="false" aria-controls="collapseOne">
+                        <img class="img-fluid accordian-img" src="{{ asset('assets/ffo-admin/img/eligibility-.svg') }}">
+                        Claim
+                        Eligibility Criteria
+                    </button>
+                </h2>
+                <div id="collapseOne" class="accordion-collapse collapse" aria-labelledby="headingOne"
+                    data-bs-parent="#whoCanApplyAccordion">
+                    <div class="accordion-body">
+                        <div class="row">
+
+                            <!-- Left Column -->
+                            <div class="col-md-6">
+                                <div class="custom-card-apply eligibility-card-1">
+                                    <h5><span> <i class="bi bi-check-circle"></i> </span> Eligibility criteria for a SNP to
+                                        process claims
+                                        for MSEs</h5>
+                                    <ol>
+                                        <li>MSE must be either a Micro or Small enterprise.</li>
+                                        <li>The Major activity for MSE should be either “Manufacturing” or “Services”.</li>
+                                        <li>The MSE should be live on ONDC Network.</li>
+                                        <li>The claim for catalogue creation for the MSE must have been claimed, approved
+                                            and completed.</li>
+                                    </ol>
+                                </div>
+                            </div>
+
+                            <!-- Right Column -->
+                            <div class="col-md-6">
+                                <div class="custom-card-apply eligibility-card-2">
+                                    <h5> <span> <i class="bi bi-file-earmark-text"></i> </span> Documents Required</h5>
+                                    <ol>
+                                        <li>Transaction Logs (PDF).</li>
+                                        <li>CA Certificate. <a style="color:#fff"
+                                                href="{{ url('storage/app/download_format/Annexure-Statutory-Auditor-Certificate.docx') }}">Download
+                                                option for downloading the predefined format.</a></li>
+                                        <li>Expense Details with Supporting Documents (Invoice, Date).</li>
+                                        <li>Self-Declaration to be checked. </li>
+                                    </ol>
+                                </div>
+                            </div>
+
+                            <!--Left Column -->
+                            <div class="col-md-6 pt-3">
+                                <div class="custom-card-apply eligibility-card-3">
+                                    <h5> <span> <i class="bi bi-file-earmark-text"></i> </span> For Accounts Management</h5>
+                                    <ol>
+
+                                        <li>The incentives structure for the SNPs for ‘Account Management Support’ is as
+                                            following-
+                                            <ol type="a">
+                                                <li>For B2C MSEs: 5% of net sales* on the network - (*net sales - to be
+                                                    calculated as invoice
+                                                    value minus taxes and logistics costs).  </li>
+                                                <li>For B2B MSEs: Rs. 250 per transaction on the ONDC network </li>
+                                                <li> The incentive for Accounts Management will be capped up to Rs. 5,000
+                                                    per MSE </li>
+                                            </ol>
+                                        </li>
+
+                                    </ol>
+                                </div>
+                            </div>
+
+
+                            <!-- Right Column -->
+                            <div class="col-md-6 pt-3">
+                                <div class="custom-card-apply eligibility-card-4">
+                                    <h5> <span> <i class="bi bi-file-earmark-text"></i> </span>For Logistics and
+                                        Transportation </h5>
+                                    <ol>
+
+                                        <li>For B2C orders: Rs. 50 per order for up to 10 orders per MSE </li>
+                                        <li>For B2B orders: Rs. 200 per order for up to 10 orders per MSE </li>
+                                        <li>The incentive for Logistics & Transportation will be capped up to Rs. 500 per
+                                            MSE for B2C MSE.
+                                        </li>
+                                        <li>The incentive for Logistics & Transportation will be capped up to Rs. 2000 per
+                                            MSE for B2B MSE.
+                                        </li>
+
+
+                                    </ol>
+                                </div>
+                            </div>
+
+
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </div>
+
+    <!-- <div class="card-body">
+                  <div class="table-responsive">
+                    <table class="table table-bordered table-striped table-hover" id="dataTable" width="100%" cellspacing="0">
+                      <thead>
+                        <tr>
+                          <th>{{ __('message.sn') }}</th>
+                          <th>TEAMID</th>
+                          <th>Udyam</th>
+                          <th>Mobile</th>
+                          <th>Email</th>
+                          <th>State</th>
+                          <th>Name of enterprise</th>
+                          <th>Enterprise Type </th>
+                          <th>Date of Registration</th>
+                          <th class="actions">{{ __('message.action') }}</th>
+                        </tr>
+                      </thead>
+                    </table>
+                  </div>
+                </div>
+             -->
+
+
+    <!-- Modal CSV -->
+    <div class="modal fade" id="myCSVModal" tabindex="-1" aria-hidden="true">
+        <div class="modal-dialog modal-lg">
+            <div class="modal-content">
+                <div class="modal-header d-flex justify-content-between align-items-center">
+                    <div class="flex-grow-1">
+                        <h5 class="modal-title mb-0">Add Bulk Claim</h5>
+                    </div>
+
+                    @php
+                        /*
+                    <div class="text-center flex-grow-1">
+                        <a href="{{ url('storage/app/download_format/claim_bulk_import.zip') }}"
+                            class="btn btn-sm btn-outline-primary">Download Sample Format</a>
+                    </div>
+                    */
+                    @endphp
+
+                    <div class="flex-grow-1 text-end">
+                        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+                    </div>
+                </div>
+
+                <form id="bulk-upload">
+                    @csrf
+                    <div class="modal-body">
+                        <p>
+                            <select class="form-select" name="claim_type_id" id="claim_type_id">
+                                <option value="">Select Claim Type</option>
+                                @foreach ($claim_types ?? [] as $claim_type_id => $claim_type_name)
+                                    <option value="{{ $claim_type_id }}" @if (($claimTypeIdValue ?? null) == $claim_type_id || (!isset($claimTypeIdValue) && $loop->first)) selected @endif>
+                                        {{ $claim_type_name }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        </p>
+
+                        <p>
+                            <input type="number" min="0" max="100" step="any" class="form-control" name="gst_percentage" id="gst_percentage" placeholder="Enter GST Percentage (%)" required>
+                        </p>
+
+
+                        {{-- <p>Select File : <input type="file" name="file" id="file" accept=".zip"></p> --}}
+                        <p>Select File : <input type="file" name="file" id="file" accept=".xlsx"></p>
+                        <span class="text-primary">Please ensure the file is in the correct format by downloading the
+                            predefined
+                            format.</span>
+
+                        <div id="csv-errors" style="color: red; font-family: Arial; padding: 10px;"></div>
+
+                        <div class="form-group col-md-12 form-check mt-2">
+                            <input class="form-check-input" type="checkbox" name="declaration" id="declaration"
+                                value="1" required />
+                            <strong>Declaration:</strong>
+                            <label class="form-check-label" for="declaration">
+                                <div class="declaration-container">
+                                    <!-- First part - always visible -->
+                                    <div class="declaration-preview">
+                                        <em>
+                                            <strong>No Dual-Incentive Claim</strong><br>
+                                            “We affirm that we have not claimed, and shall not claim, incentives for the
+                                            same set of MSEs or transactions under multiple ONDC-related programmes.
+                                            Specifically, if incentives have already been claimed or are claimable for the
+                                            same logistics transactions for a particular MSE under any other ONDC initiative
+                                            or scheme, we shall not submit a duplicate claim for those transactions under
+                                            the TEAM Initiative.”
+                                        </em>
+                                    </div>
+
+                                    <!-- Read more button -->
+                                    <a href="javascript:void(0)" class="read-more-link" onclick="toggleDeclaration(this)"
+                                        style="font-size: 0.9rem; text-decoration: underline; color: #0d6efd; display: inline-block; margin: 5px 0;">Read
+                                        more...</a>
+
+                                    <!-- Full declaration - hidden initially -->
+                                    <div class="declaration-full" style="display: none;">
+                                        <em>
+                                            <br><br>
+                                            <strong>Eligibility of MSE</strong><br>
+                                            “We confirm that incentives are being claimed only for eligible MSEs and
+                                            eligible digital on-network (ONDC) logistics transactions, in accordance with
+                                            the SOP of the TEAM Initiative. We acknowledge and accept responsibility for
+                                            ensuring that the claims pertain only to valid and complete transactions, as
+                                            defined under the TEAM Initiative, and for any duplication, ineligibility, or
+                                            discrepancies arising in this regard.”
+                                            <br><br>
+                                            <strong>Declaration</strong><br>
+                                            “I / We hereby declare that the details furnished above in relation to logistics
+                                            transactions and incentive claims are true and correct to the best of my / our
+                                            knowledge and belief. If the above information is found to be incorrect /
+                                            misleading / false, appropriate action as per applicable laws may be taken
+                                            against me / us.
+                                            <br><br>
+                                            I / We hereby authorize NSIC / ONDC to use, verify, and share the relevant
+                                            details, including transaction data, for the purpose of scheme administration,
+                                            verification, and support, in compliance with applicable laws.
+                                            <br><br>
+                                            I / We hereby declare that I / We have read the Privacy Policy, Terms and
+                                            Conditions, Disclaimer, Data Sharing Policy, Operating Guidelines and SOPs of
+                                            the TEAM Initiative and agree to abide by the same. NSIC reserves the right to
+                                            change / amend the SOPs with the approval of the Ministry of MSME as per the
+                                            policy & procedural requirement, as and when warranted, and without giving any
+                                            notice.”
+                                        </em>
+                                    </div>
+                                </div>
+                            </label>
+                        </div>
+
+                        <style>
+                            .declaration-container {
+                                line-height: 1.5;
+                            }
+
+                            .declaration-preview {
+                                margin-bottom: 5px;
+                            }
+
+                            .read-more-link {
+                                cursor: pointer;
+                                transition: color 0.3s ease;
+                            }
+
+                            .read-more-link:hover {
+                                color: #0a58ca !important;
+                            }
+                        </style>
+
+                        <script>
+                            function toggleDeclaration(element) {
+                                const container = element.closest('.declaration-container');
+                                const fullDeclaration = container.querySelector('.declaration-full');
+                                const isHidden = fullDeclaration.style.display === 'none';
+
+                                if (isHidden) {
+                                    fullDeclaration.style.display = 'block';
+                                    element.textContent = 'Read less...';
+                                } else {
+                                    fullDeclaration.style.display = 'none';
+                                    element.textContent = 'Read more...';
+                                }
+                            }
+                        </script>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="sbumit" class="btn btn-success">Upload</button>
+                        <button type="submit" id="final-submit" class="btn btn-primary" style="display: none;">Save
+                            &amp;
+                            Confirm</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+
+
+
+@section('js')
+    ;
+    <script>
+        $('#myCSVModal').on('hidden.bs.modal', function() {
+            $('#csv-errors').html(''); // clear the error messages
+            $('#file').val('');
+            $('#gst_percentage').val('');
+
+            // Enable all disabled form controls inside the modal
+            $('#myCSVModal').find(':input:disabled').prop('disabled', false);
+            $("#final-submit").hide();
+        });
+
+        $(document).on('change', '#file', function(e) {
+            let fileName = this.files[0]?.name; // get selected file name
+            if (fileName) {
+                let ext = fileName.split('.').pop().toLowerCase();
+                if (!['xlsx', 'xls'].includes(ext)) {
+                    alert("Only .xlsx, .xls files are allowed!");
+                    $('#file').val('');
+                    return;
+                }
+                toastr.success(`File "${fileName}" selected successfully!`, 'File Selected');
+            }
+        });
+
+        $(document).on('submit', '#bulk-upload', function(e) {
+            e.preventDefault();
+
+            document.getElementById('csv-errors').innerHTML = '';
+            var claimTypeId = document.getElementById('claim_type_id').value;
+            var gstPercentage = document.getElementById('gst_percentage').value;
+
+            var form = document.getElementById('bulk-upload');
+            var formData = new FormData(form);
+            formData.append('claim_type_id', claimTypeId);
+            if (claimTypeId == '') {
+                toastr.error("Please select claim type.");
+                return;
+            }
+
+            if (gstPercentage === '') {
+                toastr.error("Please enter GST percentage.");
+                return;
+            }
+
+            var gstNum = parseFloat(gstPercentage);
+            if (isNaN(gstNum) || gstNum < 0 || gstNum > 100) {
+                toastr.error("GST percentage must be between 0 and 100.");
+                return;
+            }
+
+            var fileInput = document.getElementById('file');
+            if (!fileInput.files.length) {
+                toastr.error("Please select a file to upload.");
+                return;
+            }
+
+            $.ajax({
+                url: "{{ url('logistic-claims/bulk-import') }}",
+                type: "POST",
+                data: formData,
+                processData: false,
+                contentType: false,
+                beforeSend: function() {
+                    $("#ajax-loader").show();
+                },
+                success: function(res) {
+
+                    // ✅ ALL ROWS SUCCESS
+                    if (res.summary.inserted >= 1) {
+
+                        toastr.success(res.message);
+
+                        // ✅ LOCK FIRST FORM
+                        $('#bulk-upload input, #bulk-upload select').prop('disabled',
+                            true);
+
+                        // ✅ SHOW FINAL SUBMIT
+                        $('#final-submit').show();
+
+
+                    }
+
+                    if (res.summary.failed > 0) {
+
+                        // Some rows failed
+                        toastr.error('Some rows failed validation. Please check errors below.');
+                        displayCsvErrors(res);
+                    }
+                },
+                error: function(err) {
+                    toastr.error(err?.responseJSON?.message ||
+                        "Server error while processing the file.");
+                },
+                complete: function() {
+                    $("#ajax-loader").hide();
+                }
+            });
+        });
+
+        $(document).on('click', '#final-submit', function(e) {
+            e.preventDefault();
+
+            // ✅ Declaration check again (safety)
+            if (!$('#declaration').is(':checked')) {
+                toastr.error('Please accept the declaration to proceed.');
+                return;
+            }
+
+            $.ajax({
+                url: "{{ url('/save-uploaded-logistic-claims') }}",
+                type: "POST",
+                data: {
+                    _token: "{{ csrf_token() }}",
+                    claim_type_id: "f47a6dae-67f3-4331-899c-e83c19aff14a"
+                },
+                beforeSend() {
+                    $("#ajax-loader").show();
+                },
+                success(res) {
+                    toastr.success(res.message || 'Claims saved successfully.');
+                    setTimeout(() => {
+                        window.location.href = "{{ url('/logistics-transportation-claim') }}";
+                    }, 1500);
+                },
+                error(xhr) {
+                    toastr.error(
+                        xhr.responseJSON?.message ||
+                        'Failed to save uploaded claims.'
+                    );
+                },
+                complete() {
+                    $("#ajax-loader").hide();
+                }
+            });
+        });
+
+
+        // Function to format and display errors
+        function displayCsvErrors(response) {
+
+            let html = `
+                  <div class="alert alert-danger">
+                      <strong>Import Summary</strong><br>
+                      Total Rows: ${response.summary.total_rows} <br>
+                      Inserted: ${response.summary.inserted} <br>
+                      Failed: ${response.summary.failed}
+                  </div>
+              `;
+
+            // ✅ ADD THIS BLOCK
+            if (response.error_token) {
+                html += `
+              <a href="{{ url('/logistic-claims/import-error-report') }}/${response.error_token}"
+                 class="btn btn-danger btn-sm mb-3">
+                 ⬇ Download Error Report
+              </a>
+          `;
+            }
+
+
+            response.failed_rows.forEach(row => {
+
+                const teamId = row.data.team_id ? row.data.team_id : 'TEAM ID not provided';
+
+                html += `
+                      <div class="card mb-2 border-danger">
+                          <div class="card-header bg-danger text-white">
+                              Row ${row.row_number} (${teamId})
+                          </div>
+                          <div class="card-body">
+                              <ul class="mb-0">
+                  `;
+
+                Object.keys(row.errors).forEach(field => {
+                    row.errors[field].forEach(message => {
+                        html += `<li><strong>${field}</strong>: ${message}</li>`;
+                    });
+                });
+
+                html += `
+                      </ul>
+                  </div>
+              </div>
+          `;
+            });
+
+            $("#csv-errors").html(html);
+        }
+
+
+        // dataTableInit({
+        //   id: "#dataTable",
+        // showExcelExport: true,
+        //   order: {
+        //     column: 1,
+        //     direction: "asc"
+        //   },
+        //   url: "{{ url('transacted-live/datalist') }}",
+        //   columns: [
+        //     {
+        //       "orderable": false,
+        //       "render": function(data, type, full, meta) {
+        //         return serialNumber("#dataTable", meta.row);
+        //       }
+        //     },
+        //     {
+        //       "orderable": true,
+        //       "render": function(data, type, row) {
+        //           return row.team_id;
+        //       }
+        //     },
+        //     {
+        //       "orderable": true,
+        //       "render": function(data, type, row) {
+        //           return row.udyam_no;
+        //       }
+        //     },
+
+        //     {
+        //       "orderable": true,
+        //       "render": function(data, type, row) {
+        //           return row.mobile;
+        //       }
+        //     },
+        //   {
+        //       "orderable": true,
+        //       "render": function(data, type, row) {
+        //           return row.email;
+        //       }
+        //     },
+        //   {
+        //       "orderable": true,
+        //       "render": function(data, type, row) {
+        //           return row.entrepreneur_name;
+        //       }
+        //     },
+        //   {
+        //       "orderable": true,
+        //       "render": function(data, type, row) {
+        //           return row.enterprise_name;
+        //       }
+        //     },
+
+        //    {
+        //       "orderable": true,
+        //       "render": function(data, type, row) {
+        //           return row.msme_classification;
+        //       }
+        //     },
+
+
+        //   {
+        //       "orderable": true,
+        //       "render": function(data, type, row) {
+        //           return row.created_at;
+        //       }
+        //     },
+
+        //   { 
+        //       "orderable": false,
+        // 		"render": function (data, type, row) {
+        // 			let actions = '';
+
+        // 			@if (hasRole('snp'))
+        // 				actions = `
+    // 				<div class="dropdown">
+    // 					<button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    // 						<i class="bi bi-three-dots-vertical"></i>
+    // 					</button>
+    // 					<ul class="dropdown-menu dropdown-menu-end shadow-sm">
+    // 						<li>
+    // 							<a class="dropdown-item" href="{{ url('accounts-and-management') }}/${row.id}">
+    // 								Claim For Accounts & Management
+    // 							</a>
+    // 						</li>
+    // 						<li>
+    // 							<a class="dropdown-item" href="{{ url('transport-and-logistic-creation') }}/${row.id}">
+    // 								Claim For Logistics & Transport
+    // 							</a>
+    // 						</li>
+    // 					</ul>
+    // 				</div>`;
+        // 			@endif
+
+        // 			@if (hasRole('bnp'))
+        // 				actions = `
+    // 				<div class="dropdown">
+    // 					<button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    // 						<i class="bi bi-three-dots-vertical"></i>
+    // 					</button>
+    // 					<ul class="dropdown-menu dropdown-menu-end shadow-sm">
+    // 						<li>
+    // 							<a class="dropdown-item" href="{{ url('demand-generation') }}/${row.id}">
+    // 								Claim For Demand Generation
+    // 							</a>
+    // 						</li>
+    // 					</ul>
+    // 				</div>`;
+        // 			@endif
+
+        //       @if (hasRole('iip'))
+        // 				actions = `
+    // 				<div class="dropdown">
+    // 					<button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    // 						<i class="bi bi-three-dots-vertical"></i>
+    // 					</button>
+    // 					<ul class="dropdown-menu dropdown-menu-end shadow-sm">
+    // 						<li>
+    // 							<a class="dropdown-item" href="{{ url('packaging-claim') }}/${row.id}">
+    // 								Claim For Packaging
+    // 							</a>
+    // 						</li>
+    // 					</ul>
+    // 				</div>`;
+        // 			@endif
+
+        // 			return actions;
+
+        // 			 /* @if (hasRole('snp'))
+        // 					var accounts_claim = '<a href="{{ url('accounts-and-management') }}/' + row.id + '">Claim For Accounts & Management</a>';
+        // 					var transport_claim = '<a href="{{ url('transport-and-logistic-creation') }}/' + row.id + '">Claim For Logistics & Transport</a>';
+        // 					var actions = createActionButtons([accounts_claim, transport_claim]);
+        // 			  @endif
+
+
+        // 			  @if (hasRole('bnp'))
+        // 					var demand_genration = '<a href="{{ url('demand-generation') }}/' + row.id + '">Claim For Demand Generation</a>';
+        // 					var actions = createActionButtons([demand_genration]);
+        // 			  @endif
+
+        //               return actions;*/
+        // 		}
+        //       }
+
+        //   ],
+        // filters: ["from_date","to_date"]
+        // });
+
+
+        window.customExportUrl = "{{ url('custom-export-by-ids') }}";
+        window.csrfToken = "{{ csrf_token() }}";
+        var selectedRows = {};
+        // dataTableInit({
+        //   id: "#dataTable",
+        //   showExcelExport: true,
+        //   showCustomExportOption: true,
+        //   order: {
+        //     column: 1,
+        //     direction: "asc"
+        //   },
+        //   url: "{{ url('transacted-live/datalist') }}",
+        //   columns: [
+        //     //   {
+        //     //     "orderable": false,
+        //     //     "className": "noExport",
+        //     //     "render": function(data, type, row) {
+        //     //         var checked = selectedRows[row.id] ? 'checked' : '';
+        //     //         return '<input type="checkbox" class="row-checkbox" value="' + row.id + '" ' +
+        //     //             checked + '>';
+        //     //     }
+        //     // },
+        //     {
+        //       "orderable": false,
+        //       "render": function (data, type, full, meta) {
+        //         return serialNumber("#dataTable", meta.row);
+        //       }
+        //     },
+        //     {
+        //       "orderable": true,
+        //       "render": function (data, type, row) {
+        //         return row.team_id;
+        //       }
+        //     },
+        //     {
+        //       "orderable": true,
+        //       "render": function (data, type, row) {
+        //         return row.udyam_no;
+        //       }
+        //     },
+
+        //     {
+        //       "orderable": true,
+        //       "render": function (data, type, row) {
+        //         return row.mobile;
+        //       }
+        //     },
+        //     {
+        //       "orderable": true,
+        //       "render": function (data, type, row) {
+        //         return row.email;
+        //       }
+        //     },
+        //     {
+        //       "orderable": true,
+        //       "render": function (data, type, row) {
+        //         return row.state_name;
+        //       }
+        //     },
+        //     {
+        //       "orderable": true,
+        //       "render": function (data, type, row) {
+        //         return row.enterprise_name;
+        //       }
+        //     },
+
+        //     {
+        //       "orderable": true,
+        //       "render": function (data, type, row) {
+        //         return row.msme_classification;
+        //       }
+        //     },
+
+
+        //     {
+        //       "orderable": true,
+        //       "render": function (data, type, row) {
+        //         return row.created_at;
+        //       }
+        //     },
+        //     {
+        //       "orderable": false,
+        //       "render": function (data, type, row) {
+        //         let actions = '';
+
+
+        //         actions = `
+    //             <div class="dropdown">
+    //               <button class="btn btn-light btn-sm" type="button" data-bs-toggle="dropdown" aria-expanded="false">
+    //                 <i class="bi bi-three-dots-vertical"></i>
+    //               </button>
+    //               <ul class="dropdown-menu dropdown-menu-end shadow-sm">
+    //                 <li>
+    //                      <a class="dropdown-item" href="{{ url('transport-and-logistic-creation') }}/${row.id}">
+    //                     Claim For Transportation & Logistic 
+    //                       </a>
+    //                 </li>
+    //               </ul>
+    //             </div>`;
+
+
+
+
+
+
+        //         return actions;
+
+        //         /* @if (hasRole('snp'))
+        //           var accounts_claim = '<a href="{{ url('accounts-and-management') }}/' + row.id + '">Claim For Accounts & Management</a>';
+        //           var transport_claim = '<a href="{{ url('transport-and-logistic-creation') }}/' + row.id + '">Claim For Logistics & Transport</a>';
+        //           var actions = createActionButtons([accounts_claim, transport_claim]);
+        //         @endif
+
+
+        //           @if (hasRole('bnp'))
+        //             var demand_genration = '<a href="{{ url('demand-generation') }}/' + row.id + '">Claim For Demand Generation</a>';
+        //             var actions = createActionButtons([demand_genration]);
+        //           @endif
+
+        //                   return actions;*/
+        //       }
+        //     }
+
+        //   ],
+        //   filters: ["from_date", "to_date"]
+        // });
+
+
+        // $(document).on("change", ".row-checkbox", function () {
+        //   var id = $(this).val();
+        //   selectedRows[id] = $(this).prop("checked");
+
+        //   var allChecked = $(".row-checkbox").length && $(".row-checkbox:checked").length === $(".row-checkbox")
+        //     .length;
+        //   $("#selectAll").prop("checked", allChecked);
+        // });
+
+        // $(document).on("change", "#selectAll", function () {
+        //   var checked = $(this).prop("checked");
+        //   $(".row-checkbox").each(function () {
+        //     $(this).prop("checked", checked);
+        //     selectedRows[$(this).val()] = checked;
+        //   });
+        // });
+        // $('#dataTable').on('draw.dt', function () {
+        //   $(".row-checkbox").each(function () {
+        //     var id = $(this).val();
+        //     $(this).prop("checked", selectedRows[id] ? true : false);
+        //   });
+        //   var allChecked = $(".row-checkbox").length && $(".row-checkbox:checked").length === $(".row-checkbox")
+        //     .length;
+        //   $("#selectAll").prop("checked", allChecked);
+        // });
+
+        $('#downloadSelected').on('click', function() {
+
+            const selectedIds = Object.keys(selectedRows)
+                .filter(id => selectedRows[id]);
+
+            // if (selectedIds.length === 0) {
+            //     alert('Please select at least one row');
+            //     return;
+            // }
+
+            $.ajax({
+                url: '{{ url('export-selected-excel') }}',
+                method: 'POST',
+                data: {
+                    _token: csrfToken,
+                    ids: selectedIds,
+                    type: 'logistic'
+                },
+                xhrFields: {
+                    responseType: 'blob' // ⭐ REQUIRED
+                },
+                success: function(blob, status, xhr) {
+
+                    // Get filename from header (optional)
+                    let filename = 'selected_rows.xlsx';
+                    const disposition = xhr.getResponseHeader('Content-Disposition');
+
+                    if (disposition && disposition.indexOf('filename=') !== -1) {
+                        filename = disposition
+                            .split('filename=')[1]
+                            .replace(/"/g, '');
+                    }
+
+                    // Create download
+                    const link = document.createElement('a');
+                    const url = window.URL.createObjectURL(blob);
+
+                    link.href = url;
+                    link.download = filename;
+                    document.body.appendChild(link);
+                    link.click();
+
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(url);
+                },
+                error: function() {
+                    alert('Download failed');
+                }
+            });
+        });
+    </script>
+@endsection
+@endsection

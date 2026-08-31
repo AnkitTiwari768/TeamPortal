@@ -1,0 +1,59 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Web\RoleType;
+
+use Illuminate\Support\Facades\DB;
+
+class SyncRoleTypePermissionsAction
+{
+    /**
+     * Replaces a role type's permission set with exactly the ids supplied.
+     *
+     * Runs inside the caller's transaction (StoreRoleTypeAction) so a failure here rolls
+     * the role_types row back as well. Deleting only what was removed and inserting only
+     * what is new keeps the pivot free of duplicates and leaves untouched rows alone,
+     * which matters because role_type_permissions has a composite primary key.
+     */
+    public function execute(string $roleTypeId, array $permissionIds): bool
+    {
+        $permissionIds = array_values(array_unique(array_filter($permissionIds)));
+
+        $existing = $this->getAssignedPermissionIds($roleTypeId);
+
+        $toRemove = array_diff($existing, $permissionIds);
+        $toAdd = array_diff($permissionIds, $existing);
+
+        if ($toRemove) {
+            DB::table('role_type_permissions')
+                ->where('role_type_id', $roleTypeId)
+                ->whereIn('permission_id', $toRemove)
+                ->delete();
+        }
+
+        if ($toAdd) {
+            $rows = array_map(
+                fn(string $permissionId) => [
+                    'role_type_id' => $roleTypeId,
+                    'permission_id' => $permissionId
+                ],
+                array_values($toAdd)
+            );
+
+            foreach (array_chunk($rows, 1000) as $chunk) {
+                DB::table('role_type_permissions')->insert($chunk);
+            }
+        }
+
+        return true;
+    }
+
+    public function getAssignedPermissionIds(string $roleTypeId): array
+    {
+        return DB::table('role_type_permissions')
+            ->where('role_type_id', $roleTypeId)
+            ->pluck('permission_id')
+            ->toArray();
+    }
+}

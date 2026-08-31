@@ -1,0 +1,688 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\Batch;
+
+use App\Domain\Workflow\WorkflowService;
+use Illuminate\Support\Facades\DB;
+use App\Web\BatchWorkflow\HasTimeline;
+
+
+class ProcessBatchAction
+{
+	use HasTimeline;
+	use Notify;
+
+	public function execute(array $data)
+	{
+
+		DB::transaction(function () use ($data) {
+			$batchId = $data['batch_id'];
+			$batchRepository = app(BatchRepository::class);
+			$pendingClaims = -1;
+
+			$workflowService = app(WorkflowService::class);
+			$workflowTypeId = $workflowService->getWorkflowTypeIdBySlug($data['claim_type']);
+
+			$batchClaims = DB::table('dy_batch_claims')->where('batch_id', $batchId)->get();
+
+
+			$approvedClaims = $rejectedClaims = [];
+
+			if (hasRole('ondc-admin')) {
+				$pendingClaims = $batchRepository->getPendingClaimsForOndc($batchId);
+
+				$approvedClaims = DB::table('claims')
+					->whereIn('id', $batchClaims->pluck('claim_id')->toArray())
+					->where('claim_status', BatchStatus::APPROVED_BY_ONDC->value)
+					->pluck('id')
+					->toArray();
+
+				$rejectedClaims = DB::table('claims')
+					->whereIn('id', $batchClaims->pluck('claim_id')->toArray())
+					->where('claim_status', BatchStatus::REJECTED_BY_ONDC->value)
+					->pluck('id')
+					->toArray();
+			}
+
+			if (hasRole('nsic')) {
+
+				if ($data['action'] == 'proceed-batch-workflow-sent-to-finance') {
+					$pendingClaims = 0;
+					$approvedClaims = DB::table('claims')
+						->whereIn('id', $batchClaims->pluck('claim_id')->toArray())
+						->where('claim_status', BatchStatus::SENT_TO_NSIC_BY_SNP->value)
+						->pluck('id')
+						->toArray();
+					$rejectedClaims = 0;
+				} else {
+					$pendingClaims = $batchRepository->getPendingClaimsForNsic($batchId);
+
+					$approvedClaims = DB::table('claims')
+						->whereIn('id', $batchClaims->pluck('claim_id')->toArray())
+						->whereIn('claim_status', [
+							BatchStatus::APPROVED_BY_NSIC->value,
+							BatchStatus::SENT_TO_SNP_FOR_INVOICE->value
+						])
+						->pluck('id')
+						->toArray();
+
+					$rejectedClaims = DB::table('claims')
+						->whereIn('id', $batchClaims->pluck('claim_id')->toArray())
+						->where('claim_status', BatchStatus::REJECTED_BY_NSIC->value)
+						->pluck('id')
+						->toArray();
+				}
+			}
+
+			if (hasRole('ca')) { //priya
+				$pendingClaims = 0;
+
+				$approvedClaims = DB::table('claims')
+					->whereIn('id', $batchClaims->pluck('claim_id')->toArray())
+					->where('claim_status', BatchStatus::SENT_TO_CA->value)
+					->pluck('id')
+					->toArray();
+			}
+
+			if (hasRole('snp') || hasRole('lsp') || hasRole('bnp')) { //priya
+				$pendingClaims = 0;
+				$approvedClaims = DB::table('claims')
+					->whereIn('id', $batchClaims->pluck('claim_id')->toArray())
+					->where(function ($query) {
+						return $query
+							->where('claim_status', BatchStatus::SENT_TO_SNP_FOR_INVOICE->value)
+							->orWhere('claim_status', BatchStatus::SENT_TO_SNP->value);
+					})
+					->pluck('id')
+					->toArray();
+			}
+
+			$finalApproved = null;
+
+			if (hasRole('nsic-finance') || hasRole('nsic-checker')) {
+				if (hasRole('nsic-checker')) {
+					$pendingClaims = $batchRepository->getPendingClaimsForNsicChecker($batchId);
+				} else {
+					$pendingClaims = $batchRepository->getPendingClaimsForNSICFinance($batchId);
+				}
+
+				$approvedClaims = DB::table('claims')
+					->whereIn('id', $batchClaims->pluck('claim_id')->toArray())
+					->where('claim_status', BatchStatus::APPROVED->value)
+					->pluck('id')
+					->toArray();
+
+
+				if (!empty($approvedClaims)) {
+					$finalApproved = true;
+
+					$totalClaimedAmount = (float) DB::table('claims')
+						->whereIn('id', $approvedClaims)
+						->sum('total_claimed_amount');
+
+					if ($totalClaimedAmount > 0) {
+						$totalTdsAmount = (float) ($data['tds'] ?? 0)
+							+ (float) ($data['sgst'] ?? 0)
+							+ (float) ($data['cgst'] ?? 0)
+							+ (float) ($data['igst'] ?? 0);
+
+						if ($totalTdsAmount > $totalClaimedAmount) {
+							throw new \Exception('Total TDS amount (' . number_format($totalTdsAmount, 2) . ') cannot be greater than Base Amount + GST Amount (' . number_format($totalClaimedAmount, 2) . ').');
+						}
+
+
+
+						DB::table('dy_batches')
+							->where('id', $batchId)
+							->update([
+								'igst_tds_amount'      => (float) ($data['igst'] ?? 0),
+								'sgst_tds_amount'      => (float) ($data['sgst'] ?? 0),
+								'cgst_tds_amount'      => (float) ($data['cgst'] ?? 0),
+								'tds_amount'           => (float) ($data['tds'] ?? 0),
+								'sanction_order_number' => $data['sanction_order_number'] ?? null,
+								'sanction_order_date'  => $data['sanction_order_date'] ?? null,
+							]);
+					}
+				}
+
+				$rejectedClaims = DB::table('claims')
+					->whereIn('id', $batchClaims->pluck('claim_id')->toArray())
+					->where('claim_status', BatchStatus::REJECTED_NSIC_FINANCE->value)
+					->pluck('id')
+					->toArray();
+			}
+
+			if ($pendingClaims > 0) {
+				throw new \Exception("Pending claims found...");
+			}
+
+			if (hasRole('ca')) { //priya
+				// start from here
+				$workflowService->transition(
+					workflowTypeId: $workflowTypeId,
+					entityType: EntityType::BATCH->value,
+					entityId: $batchId,
+					action: 'upload_certificate',
+					userRole: authRoleName()
+				);
+				//entry into attachments
+				DB::table('dy_attachments')->insert([
+					'id' => DB::raw('UUID()'),
+					'entity_type' => EntityType::BATCH->value,
+					'entity_id' => $batchId,
+					'attachment_type_id' => $data['document_category_id'],
+					'file_path' => $data['file_upload_id'],
+					'uploaded_by' => authId(),
+					'created_at' => now(),
+				]);
+			}
+
+
+
+			if ((hasRole('snp') || hasRole('lsp') || hasRole('bnp')) && $data['action'] != 'proceed-batch-workflow-to-ca') { //priya
+				// start from here
+				$batch = DB::table('dy_batches')->where('id', $batchId)->first();
+
+				if (!$batch->is_invoice_reupload_requested) {
+					$workflowService->transition(
+						workflowTypeId: $workflowTypeId,
+						entityType: EntityType::BATCH->value,
+						entityId: $batchId,
+						action: 'upload_invoice',
+						userRole: authRoleName()
+					);
+				}
+
+				//entry into attachments
+				DB::table('dy_attachments')->insert([
+					'id' => DB::raw('UUID()'),
+					'entity_type' => EntityType::BATCH->value,
+					'entity_id' => $batchId,
+					'attachment_type_id' => $data['document_category_id'],
+					'file_path' => $data['file_upload_id'],
+					'uploaded_by' => authId(),
+					'created_at' => now(),
+				]);
+
+				if ($batch->is_invoice_reupload_requested) {
+					$claimIds = DB::table('dy_batch_claims AS dbc')
+						->join('claims AS c', 'dbc.claim_id', '=', 'c.id')
+						->whereNotIn('c.status', [
+							BatchStatus::REJECTED_BY_ONDC->value,
+							BatchStatus::REJECTED_BY_NSIC->value,
+							BatchStatus::REJECTED_NSIC_FINANCE->value
+						])
+						->where('dbc.batch_id', $batchId)
+						->pluck('dbc.claim_id')
+						->toArray();
+				} else {
+					$claimIds = DB::table('dy_batch_claims')
+						->where('batch_id', $batchId)
+						->whereNotIn('status', [
+							BatchStatus::REJECTED_BY_ONDC->value,
+							BatchStatus::REJECTED_BY_NSIC->value,
+							BatchStatus::REJECTED_NSIC_FINANCE->value
+						])
+						->pluck('claim_id')
+						->toArray();
+				}
+
+				$batchTotalClaimedAmount = (float) DB::table('claims')
+					->whereIn('id', $claimIds)
+					->sum('total_claimed_amount');
+
+				$gstType = $data['gst_type'] ?? '1';
+				$gstPercentage = (float)($data['gst_percentage'] ?? 0);
+				$cgstPercentage = (float)($data['cgst_percentage'] ?? 0);
+				$sgstPercentage = (float)($data['sgst_percentage'] ?? 0);
+
+				$batchGstPercentage = 0.0;
+				$batchCgstPercentage = 0.0;
+				$batchSgstPercentage = 0.0;
+
+				$batchGstAmount = 0.0;
+				$batchCgstAmount = 0.0;
+				$batchSgstAmount = 0.0;
+				$batchTotalBaseAmount = 0.0;
+
+				if ($gstType === '2') {
+					$batchCgstPercentage = $cgstPercentage;
+					$batchSgstPercentage = $sgstPercentage;
+					$totalGstRate = $batchCgstPercentage + $batchSgstPercentage;
+
+					$batchTotalBaseAmount = round($batchTotalClaimedAmount / (1 + $totalGstRate / 100), 2);
+					$batchCgstAmount = round($batchTotalBaseAmount * ($batchCgstPercentage / 100), 2);
+					$batchSgstAmount = round($batchTotalBaseAmount * ($batchSgstPercentage / 100), 2);
+
+					$diff = round($batchTotalClaimedAmount - ($batchTotalBaseAmount + $batchCgstAmount + $batchSgstAmount), 2);
+					if ($diff !== 0.0) {
+						$batchSgstAmount = round($batchSgstAmount + $diff, 2);
+					}
+					$batchGstAmount = round($batchCgstAmount + $batchSgstAmount, 2);
+				} else {
+					$batchGstPercentage = $gstPercentage;
+
+					$batchTotalBaseAmount = round($batchTotalClaimedAmount / (1 + $batchGstPercentage / 100), 2);
+					$batchGstAmount = round($batchTotalClaimedAmount - $batchTotalBaseAmount, 2);
+				}
+
+				DB::table('dy_batches')
+					->where('id', $batchId)
+					->update([
+						'gst_type' => $gstType,
+						'batch_gst_percentage' => $batchGstPercentage,
+						'batch_gst_amount' => $batchGstAmount,
+						'batch_cgst_percentage' => $batchCgstPercentage,
+						'batch_cgst_amount' => $batchCgstAmount,
+						'batch_sgst_percentage' => $batchSgstPercentage,
+						'batch_sgst_amount' => $batchSgstAmount,
+						'batch_total_base_amount' => $batchTotalBaseAmount,
+						'batch_total_claimed_amount' => $batchTotalClaimedAmount,
+					]);
+
+				// Automatically close invoice query if it was open
+
+				if ($batch && ($batch->is_invoice_query_open || $batch->is_invoice_reupload_requested)) {
+					DB::table('dy_batches')->where('id', $batchId)->update([
+						'is_invoice_query_open' => false,
+						'is_invoice_reupload_requested' => false,
+						'is_invoice_uploaded' => true,
+					]);
+
+					// Close the QMS query
+					$queryRecord = DB::table('dy_queries')
+						->where('batch_id', $batchId)
+						->orderBy('created_at', 'desc')
+						->first();
+
+					if ($queryRecord) {
+						DB::table('qms_queries')
+							->where('id', $queryRecord->query_id)
+							->update(['status' => 'closed']);
+					}
+
+					return true;
+				} else {
+					DB::table('dy_batches')->where('id', $batchId)->update([
+						'is_invoice_uploaded' => true,
+					]);
+				}
+			}
+
+
+			if (hasRole('ondc-admin') || hasRole('nsic') || hasRole('nsic-finance') || hasRole('nsic-checker')) { //priya only if condition
+				if ($data['action'] != 'proceed-batch-workflow-sent-to-finance') {
+
+					if (hasRole('nsic-finance') || hasRole('nsic-checker')) {
+						if ($approvedClaims) {
+							$workflowService->transition(
+								workflowTypeId: $workflowTypeId,
+								entityType: EntityType::BATCH->value,
+								entityId: $batchId,
+								action: 'approve',
+								userRole: authRoleName()
+							);
+						}
+					} else {
+						$workflowService->transition(
+							workflowTypeId: $workflowTypeId,
+							entityType: EntityType::BATCH->value,
+							entityId: $batchId,
+							action: 'approve',
+							userRole: authRoleName()
+						);
+					}
+				}
+			}
+
+
+			//if (!hasRole('nsic-finance')) { //priya only if condition
+			if (hasRole('ondc-admin') || hasRole('nsic') || hasRole('snp') || hasRole('lsp') || hasRole('bnp') || hasRole('ca')) {
+				// if (count($approvedClaims) > 0) { 
+				if (hasRole('ondc-admin') || hasRole('nsic')) {
+					// dd($approvedClaims);
+					if (count($approvedClaims) > 0) {
+						$workflowService->transition(
+							workflowTypeId: $workflowTypeId,
+							entityType: EntityType::BATCH->value,
+							entityId: $batchId,
+							action: 'send',
+							userRole: authRoleName()
+							// dump: true
+						);
+					}
+				} else {
+					$workflowService->transition(
+						workflowTypeId: $workflowTypeId,
+						entityType: EntityType::BATCH->value,
+						entityId: $batchId,
+						action: 'send',
+						userRole: authRoleName()
+					);
+				}
+
+
+				// }
+			}
+
+			foreach ($approvedClaims as $claimId) {
+				if (hasRole('ca')) //priya
+				{
+					$workflowService->transition(
+						workflowTypeId: $workflowTypeId,
+						entityType: EntityType::CLAIM->value,
+						entityId: $claimId,
+						action: 'upload_certificate',
+						userRole: authRoleName()
+					);
+				}
+
+				if ((hasRole('snp') || hasRole('bnp') || hasRole('lsp')) && $data['action'] != 'proceed-batch-workflow-to-ca') //priya
+				{
+					$workflowService->transition(
+						workflowTypeId: $workflowTypeId,
+						entityType: EntityType::CLAIM->value,
+						entityId: $claimId,
+						action: 'upload_invoice',
+						userRole: authRoleName()
+					);
+				}
+
+
+
+				//if (!hasRole('nsic-finance')) { //priya only if condition
+				if (hasRole('ondc-admin') || hasRole('nsic') || hasRole('snp') || hasRole('bnp') || hasRole('lsp') || hasRole('ca')) {
+					$workflowService->transition(
+						workflowTypeId: $workflowTypeId,
+						entityType: EntityType::CLAIM->value,
+						entityId: $claimId,
+						action: 'send',
+						userRole: authRoleName()
+					);
+				}
+			}
+
+
+			$currentInstance = $workflowService->getWorkflowInstance(
+				workflowTypeId: $workflowTypeId,
+				entityType: EntityType::BATCH->value,
+				entityId: $batchId,
+			);
+
+			$workflowState = $workflowService->getWorkflowStateById($currentInstance->current_state_id);
+
+			$is_query = NULL;
+			if (hasRole('nsic-finance')) {
+				if (count($rejectedClaims) > 0) {
+					$is_query = 1;
+				}
+			}
+
+
+			if ((hasRole('nsic-finance') && count($approvedClaims) === 0)) {
+				DB::table('dy_batches')->where('id', $batchId)->update([
+					'status' => BatchStatus::REJECTED_NSIC_FINANCE->value,
+					'current_status' => 'rejected_by_nsic_finance',
+					'updated_at' => now(),
+				]);
+			} else if ((hasRole('nsic-checker') && count($approvedClaims) === 0)) {
+				DB::table('dy_batches')->where('id', $batchId)->update([
+					'status' => BatchStatus::REJECTED_NSIC_FINANCE->value,
+					'current_status' => 'rejected_by_nsic_checker',
+					'updated_at' => now(),
+				]);
+			} else {
+				DB::table('dy_batches')->where('id', $batchId)->update([
+					'status' => BatchStatus::getStatusByKey($workflowState->state_key),
+					'current_status' => $workflowState->state_key,
+					'updated_at' => now(),
+					'is_query' => $is_query,
+				]);
+			}
+
+
+
+
+			if ($approvedClaims) {
+
+				DB::table('dy_batch_claims')
+					->where('batch_id', $batchId)
+					->whereIn('claim_id', $approvedClaims)
+					->update([
+						'status' => BatchStatus::getStatusByKey($workflowState->state_key),
+						'updated_at' => now()
+					]);
+
+
+				DB::table('claims')
+					->whereIn('id', $approvedClaims)
+					->update([
+						'claim_status' => BatchStatus::getStatusByKey($workflowState->state_key),
+					]);
+
+
+				if ($finalApproved) {
+					$mseTeamIds = DB::table('claims')
+						->whereIn('id', $approvedClaims)
+						->pluck('team_registration_id')
+						->toArray();
+
+					DB::table('team_msme_schemes')
+						->whereIn('team_id', $mseTeamIds)
+						->update([
+							'is_catalogue_claim_approved' => true
+						]);
+				}
+			}
+
+			if ($rejectedClaims) { // added by priya
+
+				//get status of rejected claims
+				if (hasRole('ondc-admin')) {
+					$rejectStatus = BatchStatus::REJECTED_BY_ONDC->value;
+				}
+
+				if (hasRole('nsic')) {
+					$rejectStatus = BatchStatus::REJECTED_BY_NSIC->value;
+				}
+
+				if (hasRole('nsic-finance')) {
+					$rejectStatus = BatchStatus::REJECTED_NSIC_FINANCE->value;
+				}
+
+				if (hasRole('nsic-checker')) {
+					$rejectStatus = BatchStatus::REJECTED_NSIC_FINANCE->value;
+				}
+
+				//update in batch_claims table
+				DB::table('dy_batch_claims')
+					->where('batch_id', $batchId)
+					->whereIn('claim_id', $rejectedClaims)
+					->update([
+						'status' => $rejectStatus,
+						'updated_at' => now(),
+						'is_deleted' => 1,
+						'deleted_at' => now(),
+						'deleted_by' => AuthId(),
+					]);
+			}
+
+			if (hasRole('snp') || hasRole('bnp') || hasRole('lsp') || $this->isCurrentState($currentInstance->current_state_id, 'sent_to_nsic_finance')) {
+				$batchClaims = DB::table('dy_batch_claims')->where('batch_id', $batchId)
+					->whereNotIn('status', [
+						BatchStatus::REJECTED_BY_ONDC->value,
+						BatchStatus::REJECTED_BY_NSIC->value
+					])->pluck('claim_id')->toArray();
+				// dd($batchClaims);
+			} else {
+				$batchClaims = DB::table('dy_batch_claims')->where('batch_id', $batchId)->pluck('claim_id')->toArray();
+			}
+
+			$status = DB::table('dy_workflow_states')->where('id', $currentInstance->current_state_id)->value('state_value');
+
+			DB::table('claims')->whereIn('id', $batchClaims)->update(['temporary_state' => 0]);
+
+			$this->createTimeline([
+				'batch_id' => $batchId,
+				'comments' => request('comments'),
+				'status' => BatchStatus::getLabelByValue($status),
+				'claims' => $this->createBatchClaimTimelineDetails(
+					batchId: $batchId,
+					claimIds: $batchClaims
+				)
+			]);
+
+			$batch = DB::table('dy_batches')
+				->where('id', $batchId)
+				->first();
+
+			if (
+				acl('demand-generation-view')
+				|| acl('transport-and-logistic-view')
+				|| acl('claim-packaging-view')
+				|| acl('claim-account-view')
+				|| acl('packaging-claim-view')
+				|| acl('demand-generation-claim-view')
+				|| acl('catalogue-created-claim-view')
+				|| acl('logistic-transportation-claim-view')
+				|| acl('account-management-claim-view')
+				|| acl('claim-view')
+			) {
+
+				if (hasRole('ondc-admin')) {
+					$this->sendRejectedClaimsNotification($batch, $rejectedClaims);
+					$this->sendOndcAdminApprovedClaimsNotification($batch, $approvedClaims);
+				}
+
+				if (hasRole('nsic')) {
+					if ($batch->current_status === 'sent_to_nsic_finance') {
+						$this->sendNsicToFinanceNotification($batch);
+					} else {
+						$this->sendRejectedClaimsNotification($batch, $rejectedClaims);
+						$this->sendNsicApprovedClaimsNotification($batch, $approvedClaims);
+					}
+				}
+
+				if (hasRole('nsic-finance') || hasRole('nsic-checker')) {
+
+					$this->sendRejectedClaimsNotification($batch, $rejectedClaims);
+					$this->sendFinanceApprovedClaimsNotification($batch, $approvedClaims);
+				}
+
+				if (hasRole('snp') || hasRole('bnp') || hasRole('lsp')) {
+					$this->sendNpClaimsNotification($batch);
+				}
+			}
+		});
+	}
+
+	private function sendRejectedClaimsNotification($batch, array $claims)
+	{
+		if (count($claims) > 0) {
+			$batchNumber = $batch->batch_number;
+			$toUserId = $batch->created_by;
+
+			$applicationNumbers = DB::table('claims')
+				->whereIn('id', $claims)
+				->pluck('application_number', 'id')
+				->toArray();
+
+			foreach ($claims as $claimId) {
+				$applicationNumber = $applicationNumbers[$claimId];
+				$this->notify(
+					toUserId: $toUserId,
+					templateKey: 'any-stage-rejection',
+					type: 1,
+					message: [
+						'CLAIM_ID' => $applicationNumber,
+						'BATCH_NUMBER' => $batchNumber
+					]
+				);
+			}
+		}
+	}
+
+	private function sendOndcAdminApprovedClaimsNotification($batch, array $claims)
+	{
+		if (count($claims) > 0) {
+			$batchNumber = $batch->batch_number;
+			$this->notify(
+				toRoleSlug: 'nsic',
+				templateKey: 'batch-claim-received-for-verification',
+				type: 2,
+				message: [
+					'BATCH_NUMBER' => $batchNumber
+				]
+			);
+		}
+	}
+
+	private function sendNsicApprovedClaimsNotification($batch, array $claims)
+	{
+		if (count($claims) > 0) {
+			$batchNumber = $batch->batch_number;
+			$toUserId = $batch->created_by;
+			$this->notify(
+				toUserId: $toUserId,
+				templateKey: 'nsic-proceed-batch',
+				type: 1,
+				message: [
+					'BATCH_NUMBER' => $batchNumber
+				]
+			);
+		}
+	}
+
+	private function sendNpClaimsNotification($batch)
+	{
+		$batchNumber = $batch->batch_number;
+		$this->notify(
+			toRoleSlug: 'nsic',
+			templateKey: 'claim-proceed-by-nsic',
+			type: 2,
+			message: [
+				'BATCH_NUMBER' => $batchNumber
+			]
+		);
+	}
+
+	private function sendNsicToFinanceNotification($batch)
+	{
+		$batchNumber = $batch->batch_number;
+		$this->notify(
+			toRoleSlug: 'nsic-finance',
+			templateKey: 'claim-proceed-by-nsic2',
+			type: 2,
+			message: [
+				'BATCH_NUMBER' => $batchNumber
+			]
+		);
+	}
+
+	private function sendFinanceApprovedClaimsNotification($batch, array $claims)
+	{
+		if (count($claims) > 0) {
+			$batchNumber = $batch->batch_number;
+			$toUserId = $batch->created_by;
+			$this->notify(
+				toUserId: $toUserId,
+				templateKey: 'batch-approved-by-nsic-finance',
+				type: 1,
+				message: [
+					'BATCH_NUMBER' => $batchNumber
+				]
+			);
+		}
+	}
+
+
+
+
+	public function isCurrentState($currentStateId, $stateKey)
+	{
+		// dd(DB::table('dy_workflow_states')->where('id', $currentStateId)->value('state_key') === $stateKey);
+		return DB::table('dy_workflow_states')->where('id', $currentStateId)->value('state_key') === $stateKey;
+	}
+}

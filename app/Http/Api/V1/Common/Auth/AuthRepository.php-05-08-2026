@@ -1,0 +1,160 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Http\Api\V1\Auth;
+
+use Illuminate\Support\Facades\DB;
+
+class AuthRepository
+{
+    private function checkIsSubUser(string $userId): array
+    {
+        $row = DB::table('users')->where('id', $userId)->first();
+        $parentUserId = $row->parent_user_id ?? null;
+        $isSubUser = $row->is_sub_user ?? false;
+        return [$isSubUser, $parentUserId];
+    }
+  
+
+    public function getAllUserPermissions(string $userId, ?string $roleSlug = null): array
+    {
+        [$isSubUser, $parentUserId] = $this->checkIsSubUser($userId);
+        
+        // ============================================================
+        // CASE 1: Sub User - Direct permissions se le rahe hain
+        // ============================================================
+        if ($isSubUser) 
+        { 
+            $userAuthPermissions = DB::table('users')
+                ->select('permissions.slug')
+                ->join('user_permissions', 'users.id', '=', 'user_permissions.user_id')
+                ->join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+                ->where('user_permissions.user_id', $userId)
+                ->pluck('slug')
+                ->toArray();
+
+            return array_values(array_unique($userAuthPermissions));
+        }
+        
+        // ============================================================
+        // CASE 2: Normal User (Not Sub User)
+        // ============================================================
+        else {    
+            // Step 1: Determine role slug (session fallback, then priority fallback)
+            if ($roleSlug === null) {
+                $roleSlug = session('active_role');
+            }
+        
+            if ($roleSlug === null) {
+                $userRoleSlugs = DB::table('user_roles')
+                    ->join('roles', 'user_roles.role_id', '=', 'roles.id')
+                    ->where('user_roles.user_id', $userId)
+                    ->pluck('roles.slug')
+                    ->toArray();
+
+                $roleSlug = app(AuthService::class)->resolveDefaultRole($userRoleSlugs);
+                \Log::info('Resolved role slug: ' . $roleSlug);
+            }
+
+            // Check if user has parent
+            $hasParent = DB::table('users')->where('id', $userId)->value('parent_user_id');
+
+            // ============================================================
+            // CASE 2A: Role Slug Available
+            // ============================================================
+            if ($roleSlug !== null) {
+                
+                // ============================================================
+                // SUB CASE: User has parent - Try parent first, then child
+                // ============================================================
+                if ($hasParent) {
+                    // Get the parent user ID
+                    $parentUserId = DB::table('users')->where('id', $userId)->value('parent_user_id');
+                    
+                    // Step 1: Check if parent has this role
+                    $parentRoleId = DB::table('user_roles as ur')
+                        ->join('roles as r', 'ur.role_id', '=', 'r.id')
+                        ->where('ur.user_id', $parentUserId)
+                        ->where('r.slug', $roleSlug)
+                        ->value('ur.role_id');
+                    
+                    // Step 2: If parent doesn't have role, check child's own role
+                    if (!$parentRoleId) {
+                        $childRoleId = DB::table('user_roles as ur')
+                            ->join('roles as r', 'ur.role_id', '=', 'r.id')
+                            ->where('ur.user_id', $userId)
+                            ->where('r.slug', $roleSlug)
+                            ->value('ur.role_id');
+                        
+                        // If child also doesn't have the role, return empty
+                        if (!$childRoleId) {
+                            \Log::warning('Role not found for user: ' . $userId . ' with slug: ' . $roleSlug);
+                            return [];
+                        }
+                        
+                        // Get permissions from child's role
+                        $rolePermissions = DB::table('role_permissions as rp')
+                            ->join('permissions as p', 'rp.permission_id', '=', 'p.id')
+                            ->where('rp.role_id', $childRoleId)
+                            ->pluck('p.slug')
+                            ->toArray();
+                        
+                        return array_values(array_unique($rolePermissions));
+                    }
+                    
+                    // Step 3: Parent has the role - get permissions from parent
+                    $rolePermissions = DB::table('role_permissions as rp')
+                        ->join('permissions as p', 'rp.permission_id', '=', 'p.id')
+                        ->where('rp.role_id', $parentRoleId)
+                        ->pluck('p.slug')
+                        ->toArray();
+
+                    return array_values(array_unique($rolePermissions));
+                }
+
+                // ============================================================
+                // SUB CASE: User has NO parent - Direct role se permissions
+                // ============================================================
+                $rolePermissions = DB::table('role_permissions as rp')
+                    ->select('p.slug')
+                    ->join('permissions as p', 'rp.permission_id', '=', 'p.id')
+                    ->whereIn('rp.role_id', function ($query) use ($userId, $roleSlug) {
+                        $query->select('ur.role_id')
+                            ->from('user_roles as ur')
+                            ->join('roles as r', 'ur.role_id', '=', 'r.id')
+                            ->where('ur.user_id', $userId)
+                            ->where('r.slug', $roleSlug);
+                    })
+                    ->pluck('slug')
+                    ->toArray();
+
+                return array_values(array_unique($rolePermissions));
+            }
+
+            // ============================================================
+            // CASE 2B: No Role Slug - All roles + user explicit permissions
+            // ============================================================
+            $userPermissions = DB::table('users')
+                ->select('permissions.slug')
+                ->join('user_permissions', 'users.id', '=', 'user_permissions.user_id')
+                ->join('permissions', 'user_permissions.permission_id', '=', 'permissions.id')
+                ->where('user_permissions.user_id', $userId);
+
+            if (!$hasParent) {
+                $rolePermissions = DB::table('role_permissions as rp')
+                    ->select('p.slug')
+                    ->join('permissions as p', 'rp.permission_id', '=', 'p.id')
+                    ->whereIn('rp.role_id', function ($query) use ($userId) {
+                        $query->select('ur.role_id')
+                            ->from('user_roles as ur')
+                            ->where('ur.user_id', $userId);
+                    });
+
+                $userPermissions->union($rolePermissions);
+            }
+
+            return $userPermissions->pluck('slug')->toArray();
+        }
+    }
+}

@@ -1,0 +1,16 @@
+
+
+@media (max-width:990px) {
+    .modal.right.show .modal-dialog {width: calc(100% - 10%);}
+    .timeline{left: 100px;}
+    .timeline .timeline-item h4{padding-right: 45px;}
+    .timeline_custom .timeline-container .timeline-body p{font-size: 14px;}
+    .timeline_custom:before{height: calc(100% - 125px);}
+    .timeline_custom .timeline-container .timeline-body .timeline-title{column-gap: 10px;}
+    .timeline_custom .timeline-container .timeline-body{padding: 12px; box-sizing: border-box;}
+}
+
+@media (max-width:1024px) {
+.modal.right.show .modal-dialog{width: calc(100% - 5%);}
+
+}

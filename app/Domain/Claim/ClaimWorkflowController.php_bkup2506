@@ -1,0 +1,89 @@
+<?php
+
+declare(strict_type=1);
+
+namespace App\Domain\Claim;
+
+use App\Traits\Respond;
+use Illuminate\Http\Request;
+
+final readonly class ClaimWorkflowController
+{
+    use Respond;
+
+    public function approve(Request $request, ApproveClaimAction $action)
+    {
+        $validated = $request->validate([
+            'batch_id' => ['required', 'uuid', 'exists:dy_batches,id'],
+            'claim_id' => ['required'],
+            'claim_type' => ['required', 'exists:claim_types,slug'],
+            'comments' => 'nullable|max:1000',
+            'tds' => 'nullable|numeric|min:0|max:100'
+        ]);
+
+        if (is_string($validated['claim_id'])) {
+            $validated['claim_id'] = explode(',', $validated['claim_id']);
+        }
+
+        foreach ($validated['claim_id'] as $cid) {
+            if (!\Illuminate\Support\Str::isUuid($cid) || !\Illuminate\Support\Facades\DB::table('claims')->where('id', $cid)->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'claim_id' => ['The selected claim_id is invalid.']
+                ]);
+            }
+        }
+
+        $result = $action->execute($validated);
+        return $this->success($result, 'Claims have been approved successfully');
+    }
+
+    public function reject(Request $request, RejectClaimAction $action)
+    {
+        $validated = $request->validate([
+            'batch_id' => ['required', 'uuid', 'exists:dy_batches,id'],
+            'claim_id' => ['required'],
+            'claim_type' => ['required', 'exists:claim_types,slug'],
+            'comments' => 'nullable|max:1000'
+        ]);
+
+        if (is_string($validated['claim_id'])) {
+            $validated['claim_id'] = explode(',', $validated['claim_id']);
+        }
+
+        foreach ($validated['claim_id'] as $cid) {
+            if (!\Illuminate\Support\Str::isUuid($cid) || !\Illuminate\Support\Facades\DB::table('claims')->where('id', $cid)->exists()) {
+                throw \Illuminate\Validation\ValidationException::withMessages([
+                    'claim_id' => ['The selected claim_id is invalid.']
+                ]);
+            }
+        }
+
+        $result = $action->execute($validated);
+        return $this->success($result, 'Claims have been rejected successfully');
+    }
+
+    public function sendQuery(Request $request, SendClaimQueryAction $action)
+    {
+        $validated = $request->validate([
+            'batch_id' => ['required', 'uuid', 'exists:dy_batches,id'],
+            'claim_id' => ['required', 'uuid', 'exists:claims,id'],
+            'claim_type' => ['required', 'exists:claim_types,slug'],
+            'comments' => 'nullable|max:1000'
+        ]);
+
+        $result = $action->execute($validated);
+        return $this->success($result, 'Query has been raised successfully');
+    }
+
+    public function invoiceReuploadRequest(Request $request, InvoiceReuploadRequestAction $action)
+    {
+        $validated = $request->validate([
+            'batch_id' => ['required', 'uuid', 'exists:dy_batches,id'],
+            'claim_type' => ['required', 'exists:claim_types,slug'],
+            'comments' => 'nullable|max:1000'
+        ]);
+
+        $result = $action->execute($validated);
+        return $this->success($result, 'Request for invoice re-upload has been sent successfully');
+    }
+}

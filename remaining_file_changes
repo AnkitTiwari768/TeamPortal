@@ -1,0 +1,1071 @@
+FILE CHANGES — EXCLUDING FOCUSED-AREA MODULES (last 30 days)
+Project: c:\xampp\htdocs\team47
+Window: 2026-07-26 to 2026-08-25 (generated 2026-08-25)
+
+SCOPE
+Excluded keywords (files containing these are omitted entirely, no path/name shown for them):
+Workshop, Fundflow / fund_flow / fund-flow, Component Utilization, FundAllocation, AICataloguingClaim, Fund Distribution.
+244 files matched those keywords and are NOT listed below (see the separate file_changes report for those).
+
+METHODOLOGY / CAVEATS
+- No version control (no .git/.svn) exists in this project, so there is no commit history for authorship or diffs.
+- "Changed" = file modification time (mtime) in the last 30 days.
+- Every file on this filesystem is owned by the single Windows account "ankit.tiwari" (confirmed project-wide) — no per-developer attribution is available on disk.
+- On 2026-08-12 (13:48-13:49), a large batch of files across app/ and resources/ had their mtime reset in a bulk copy/sync event (not individual edits) — many entries below fall in that cluster.
+- Excluded from scanning: vendor/, node_modules/, .git/, storage/logs/, storage/framework/, bootstrap/cache/.
+- Only the containing folder and file name are listed below (no full paths), per the request.
+
+===============================================================================
+REMAINING CHANGED FILES, GROUPED BY FOLDER (Folder (count): filenames)
+===============================================================================
+Total: 1947 files across 350 folders
+
+(root) (14):
+  .env, .phpunit.result.cache, check_columns.php, check_db.php, check_modules.php, fetch_quarters.php, get_schema.php, insert_last_1_month.sql, select_last_1_month.sql, test_controller.php, test_counts.php, test_counts2.php, test_counts3.php, test_counts4.php
+
+app/Console (1):
+  Kernel.php
+
+app/Contracts (6):
+  CoreController.php, CoreModel.php, CoreService.php, Expirable.php, GrantType.php, Labelable.php
+
+app/Core (6):
+  AssignmentType.php, BaseController.php, BaseModel.php, BaseRequest.php, BaseService.php, CoreRepository.php
+
+app/Domain (1):
+  SNP.zip
+
+app/Domain/Audit (2):
+  Audit.php, Auditable.php
+
+app/Domain/Auth (1):
+  ForgotPasswordOtpController.php
+
+app/Domain/Batch (34):
+  BatchClaimController.php, BatchClaimListQuery.php, BatchClaimResource.php, BatchClaimsExport.php, BatchController.php, BatchListQuery.php, BatchListQuery.php_bkup0904, BatchListQuery_bkup0904.php, BatchNumber.php, BatchPaymentAction.php, BatchRepository.php, BatchResource.php, BatchStatus.php, BatchWorkflowStrategy.php, BatchWorkflowStrategyResolver.php, CAWorkflowStrategy.php, ClaimDistribution.php, CreateBatchAction.php, CreateBatchDto.php, CreateBatchRequest.php, EntityType.php, Notify.php, NsicFinanceWorkflowStrategy.php, NsicWorkflowStrategy.php, OndcWorkflowStrategy.php, ProcessBatchAction.php, ProcessBatchAction.php_bkup01106, ProcessBatchAction.php_bkupnew, ProcessBatchActionNew.php, ProcessBatchHelper.php, RollbackBatch.php, SnpWorkflowStrategy.php, ValidateMonthlyBatch.php, WorkFlowNotification.php
+
+app/Domain/Claim (9):
+  ApproveClaimAction.php, ApproveClaimAction.php_bkup2306, ClaimStatus.php, ClaimWorkflowController.php, ClaimWorkflowController.php_bkup2506, InvoiceReuploadRequestAction.php, RejectClaimAction.php, RejectClaimAction.php_bkup2506, SendClaimQueryAction.php
+
+app/Domain/ClaimType (5):
+  ClaimType.php, ClaimTypeController.php, ClaimTypeRepository.php, ClaimTypeResource.php, ListClaimTypeAction.php
+
+app/Domain/Claims (2):
+  MigrateLegacyClaims.php, MigrateLegacyClaims.php-old
+
+app/Domain/Declaration (1):
+  DeclarationService.php
+
+app/Domain/DemandGeneration (31):
+  CreateDemandGenerationClaimAction.php, CsvTemplateExport.php, DemandGenerationAovCategory.php, DemandGenerationClaim.php, DemandGenerationClaimAmountCalculator.php, DemandGenerationClaimAmountCalculator.php_bkup, DemandGenerationClaimAmountCalculator.php_bkup2204, DemandGenerationClaimController.php, DemandGenerationClaimImport.php, DemandGenerationClaimImportController.php, DemandGenerationClaimImportErrorExport.php, DemandGenerationClaimImportService.php, DemandGenerationClaimImport_bkup.php, DemandGenerationClaimListResource.php, DemandGenerationClaimRequest.php, DemandGenerationClaimService.php, DemandGenerationClaimTransactionModel.php, DemandGenerationConstant.php, DemandGenerationIncentiveSlab.php, DemandGenerationPhase.php, DemandGenerationTemplateController.php, DemandGenerationTemplateExport.php, DemandGenerationTransactionsImport.php, DummyTransactionExportController.php, DummyTransactionsExport.php, ListDemandGenerationClaimAction.php, Mse.php, MsePhaseExclusion.php, OrderDateWithinClaimPeriod.php, ProtocolSheet.php, ValidatesClaimPeriod.php
+
+app/Domain/DemandGeneration/Rules (1):
+  NoClaimOverlap.php
+
+app/Domain/DemandGenerationNewBackup (15):
+  CsvTemplateExport.php, DemandGenerationClaimAmountCalculator.php, DemandGenerationClaimImport.php, DemandGenerationClaimImportController.php, DemandGenerationClaimImportErrorExport.php, DemandGenerationClaimImportService.php, DemandGenerationClaimImport_bkup.php, DemandGenerationClaimListResource.php, DemandGenerationTemplateController.php, DemandGenerationTemplateExport.php, DummyTransactionExportController.php, DummyTransactionsExport.php, ListDemandGenerationClaimAction.php, OrderDateWithinClaimPeriod.php, ProtocolSheet.php
+
+app/Domain/DemandGenerationOld (14):
+  CreateDemandGenerationClaimAction.php, DemandGenerationAovCategory.php, DemandGenerationClaim.php, DemandGenerationClaimController.php, DemandGenerationClaimRequest.php, DemandGenerationClaimService.php, DemandGenerationClaimTransactionModel.php, DemandGenerationConstant.php, DemandGenerationIncentiveSlab.php, DemandGenerationPhase.php, DemandGenerationTransactionsImport.php, Mse.php, MsePhaseExclusion.php, ValidatesClaimPeriod.php
+
+app/Domain/DocumentCategory (1):
+  DocumentCategoryService.php
+
+app/Domain/Download (2):
+  DownloadAction.php, DownloadController.php
+
+app/Domain/EmailTemplate (3):
+  EmailTemplate.php, EmailTemplateService.php, EmailTemplateService.php--backup-23-04
+
+app/Domain/EventLog (4):
+  EventLog.php, EventLogController.php, EventLogResource.php, EventLogService.php
+
+app/Domain/ForgotUdyam (2):
+  ForgotUdyamAction.php, ForgotUdyamController.php
+
+app/Domain/FundCarryForward (10):
+  FundCarryForward.php, FundCarryForwardController.php, FundCarryForwardDTO.php, FundCarryForwardDetail.php, FundCarryForwardLog.php, FundCarryForwardRequest.php, FundCarryForwardResource.php, FundCarryForwardService.php, ListFundCarryForwardAction.php, StoreFundCarryForwardAction.php
+
+app/Domain/FundCarryForward-old (9):
+  FundCarryForward.php, FundCarryForwardController.php, FundCarryForwardDTO.php, FundCarryForwardDetail.php, FundCarryForwardRequest.php, FundCarryForwardResource.php, FundCarryForwardService.php, ListFundCarryForwardAction.php, StoreFundCarryForwardAction.php
+
+app/Domain/IARegistration (13):
+  ApproveIA.php, GetDashboardDetailsAction.php, IARegistrar.php, IARegistrationAction.php, IARegistrationController.php, IARegistrationRequest.php, IAStatus.php, IndustrialAssociation.php, ListIAResource.php, ListPendingIA.php, RejectIA.php, UpdateIAProfileAction.php, ViewIARegistration.php
+
+app/Domain/Language (1):
+  Language.php
+
+app/Domain/MIS (13):
+  ProductCategoryMISReportAction.php, ProductCategoryMISReportController.php, ProductCategoryMseLinkageReportAction.php, ProductCategoryMseLinkageReportController.php, ProductCategoryMseLinkageReportExport.php, SNPWiseMSMEMISReportAction.php, SNPWiseMSMEMISReportController.php, SnpWiseMISReportAction.php, SnpWiseMISReportController.php, StateWiseMISReportAction.php, StateWiseMISReportController.php, TierWiseMISReportAction.php, TierWiseMISReportController.php
+
+app/Domain/MSE (3):
+  ListOnboardedMseAction.php, MseController.php, MseResource.php
+
+app/Domain/Msme (5):
+  MsmeController.php, MsmeDetailsAction.php, MsmeJourneyAction.php, MsmeJourneyResource.php, SnpDetailsAction.php
+
+app/Domain/MsmeAuth (3):
+  MsmeAuthController.php, MsmeSendOtpAction.php, MsmeVerifyOtpAction.php
+
+app/Domain/NetworkProvider (18):
+  ApproveNetworkProviderAction.php, ApproveNetworkProviderAction.php--backup-23-04, FeeType.php, GetNetworkProviderDetailsAction.php, GetNetworkProviderListAction.php, HasGenerateNetworkProviderUsername.php, HasNetworkProviderMapper.php, NetworkProvider.php, NetworkProviderController.php, NetworkProviderListResource.php, NetworkProviderService.php, NetworkProviderStatus.php, RegisterNetworkProviderAction.php, RegisterNetworkProviderRequest.php, RejectNetworkProviderAction.php, RevertNetworkProviderAction.php, UpdateNetworkProviderAction.php, UpdateNetworkProviderRequest.php
+
+app/Domain/QMS (8):
+  Query.php, QueryAttachment.php, QueryController.php, QueryDTO.php, QueryListQuery.php, QueryListResource.php, QueryMessage.php, QueryService.php
+
+app/Domain/SNP (4):
+  BulkUpdateBppIdData.php, SNPController.php, SNPRepository.php, UpdateBulkBppIdAction.php
+
+app/Domain/SendOtpForgotUdyam (3):
+  ForgotUdyamOtpController.php, ForgotUdyamSendOtpAction.php, ForgotUdyamVerifyOtpAction.php
+
+app/Domain/Sms (5):
+  AirtelSmsProvider.php, SmsController.php, SmsProviderInterface.php, SmsService.php, TemplateName.php
+
+app/Domain/UbpIntegration (6):
+  UbpLandingController.php, UbpRegistrationController.php, UbpRegistrationRequest.php, UbpService.php, UbpTokenService.php, UbpUdyamService.php
+
+app/Domain/Udyam (2):
+  CheckUdyamCombinationAction.php, UdyamCheckController.php
+
+app/Domain/Upload (3):
+  UploadAction.php, UploadController.php, UploadRequest.php
+
+app/Domain/UrbanDesign (5):
+  UrbanDesign.php, UrbanDesignController.php, UrbanDesignDto.php, UrbanDesignRequest.php, UrbanDesignService.php
+
+app/Domain/User (12):
+  ChangePasswordAction.php, ChangePasswordRequest.php, ChangePasswordService.php, CreateUserAction.php, CreateUserDTO.php, CreateUserRequest.php, UpdateUserAction.php, UpdateUserDTO.php, UpdateUserRequest.php, UserController.php, UserService.php, UserStatus.php
+
+app/Domain/UserLog (5):
+  UserLog.php, UserLogController.php, UserLogResource.php, UserLogService.php, UserLogType.php
+
+app/Domain/UserProfile (3):
+  GetUserProfileDetailsAction.php, UserProfileController.php, UserProfileService.php
+
+app/Domain/Workflow (1):
+  WorkflowService.php
+
+app/Domain/WorkflowState (4):
+  ListWorkflowStateAction.php, WorkflowState.php, WorkflowStateController.php, WorkflowStateResource.php
+
+app/Domain/WorkflowTransition (4):
+  ListWorkflowTransitionAction.php, WorkflowTransition.php, WorkflowTransitionController.php, WorkflowTransitionResource.php
+
+app/Domain/WorkflowType (4):
+  ListWorkflowTypeAction.php, WorkflowType.php, WorkflowTypeController.php, WorkflowTypeResource.php
+
+app/Enums (4):
+  EntityType.php, NotificationType.php, PaymentStatus.php, Status.php
+
+app/Exceptions (2):
+  CustomExcelException.php, Handler.php
+
+app/Helpers (4):
+  Common.php, Common.php-05-8-26, Common_bkup, Openssl.php
+
+app/Http (1):
+  Kernel.php
+
+app/Http/Api/V1/AuditTrail (4):
+  AuditTrail.php, AuditTrailController.php, AuditTrailResource.php, AuditTrailService.php
+
+app/Http/Api/V1/Auth (11):
+  AuthController.php, AuthRepository.php, AuthRepository.php-05-08-2026, AuthRepository.php-old, AuthRepository.php-olddd, AuthService.php, AuthValidation.php, ChangePasswordController.php, ForgotPassword.php, ForgotPasswordValidation.php, OpensslController.php
+
+app/Http/Api/V1/Common (4):
+  SearchController.php, SearchRepository.php, SearchService.php, SearchUserController.php
+
+app/Http/Api/V1/Common/Contracts (2):
+  SearchRepositoryInterface.php, SearchServiceInterface.php
+
+app/Http/Api/V1/Country (6):
+  Country.php, CountryController.php, CountryRequest.php, CountryResource.php, CountryService.php, CountryValidation.php
+
+app/Http/Api/V1/Crypt (2):
+  EncryptionController.php, EncryptionService.php
+
+app/Http/Api/V1/CustomUser (11):
+  CustomUserController.php, CustomUserDto.php, CustomUserMapper.php, CustomUserRepository.php, CustomUserRepository.php-05-08-26, CustomUserRequest.php, CustomUserResource.php, CustomUserResponseDto.php, CustomUserService.php, Result.php, ValidationResult.php
+
+app/Http/Api/V1/CustomUserPermission (7):
+  CustomUserPermissionController.php, CustomUserPermissionDto.php, CustomUserPermissionMapper.php, CustomUserPermissionRepository.php, CustomUserPermissionRequest.php, CustomUserPermissionResponseDto.php, CustomUserPermissionService.php
+
+app/Http/Api/V1/Dashboard (9):
+  BarChart.php, Chart.php, DashboardController.php, DashboardRepository.php, DashboardService.php, NationalApplicationDashboardController.php, NationalApplicationDashboardRepository.php, NationalApplicationDashboardService.php, PieChart.php
+
+app/Http/Api/V1/Department (5):
+  Department.php, DepartmentController.php, DepartmentRequest.php, DepartmentResource.php, DepartmentService.php
+
+app/Http/Api/V1/Designation (5):
+  Designation.php, DesignationController.php, DesignationRequest.php, DesignationResource.php, DesignationService.php
+
+app/Http/Api/V1/District (6):
+  District.php, DistrictController.php, DistrictRequest.php, DistrictResource.php, DistrictService.php, DistrictValidation.php
+
+app/Http/Api/V1/Email (2):
+  Email.php, EmailService.php
+
+app/Http/Api/V1/FileDownloader (5):
+  FileDownloader.php, FileDownloaderController.php, FileDownloaderRequest.php, FileDownloaderResource.php, FileDownloaderService.php
+
+app/Http/Api/V1/FileUpload (2):
+  FileUpload.php, FileUploadService.php
+
+app/Http/Api/V1/MainMenu (3):
+  MainMenuController.php, MenuRepository.php, MenuRepository.php-old
+
+app/Http/Api/V1/Module (5):
+  Module.php, ModuleController.php, ModuleResource.php, ModuleService.php, ModuleValidation.php
+
+app/Http/Api/V1/ModulePermissionTree (4):
+  ModulePermissionTreeController.php, ModulePermissionTreeRepository.php, ModulePermissionTreeService.php, ModulePermissionTreeService.php-old
+
+app/Http/Api/V1/Notification (5):
+  Notification.php, NotificationController.php, NotificationRepository.php, NotificationService.php, UserNotification.php
+
+app/Http/Api/V1/PMRegistration (5):
+  PMRegistration.php, PMRegistrationController.php, PMRegistrationRequest.php, PMRegistrationResource.php, PMRegistrationService.php
+
+app/Http/Api/V1/Permission (7):
+  Permission.php, PermissionController.php, PermissionRequest.php, PermissionResource.php, PermissionRole.php, PermissionRoleResource.php, PermissionService.php
+
+app/Http/Api/V1/Registration (6):
+  Registration.php, RegistrationController.php, RegistrationRequest.php, RegistrationResource.php, RegistrationService.php, UdyamRequest.php
+
+app/Http/Api/V1/Role (5):
+  Role.php, RoleController.php, RoleRequest.php, RoleResource.php, RoleService.php
+
+app/Http/Api/V1/RolePermission (3):
+  RolePermissionController.php, RolePermissionRequest.php, RolePermissionService.php
+
+app/Http/Api/V1/Search (2):
+  SearchController.php, SearchService.php
+
+app/Http/Api/V1/Setting (4):
+  Setting.php, SettingService.php, SettingValidation.php, SettingsController.php
+
+app/Http/Api/V1/Signup (5):
+  Signup.php, SignupController.php, SignupRequest.php, SignupResource.php, SignupService.php
+
+app/Http/Api/V1/Signup_new_old (5):
+  Signup.php, SignupController.php, SignupRequest.php, SignupResource.php, SignupService.php
+
+app/Http/Api/V1/Sms (2):
+  Sms.php, SmsService.php
+
+app/Http/Api/V1/State (6):
+  State.php, StateController.php, StateRequest.php, StateResource.php, StateService.php, StateValidation.php
+
+app/Http/Api/V1/State/User (7):
+  User.php, UserController.php, UserDTO.php, UserRepository.php, UserResource.php, UserService.php, UserValidation.php
+
+app/Http/Api/V1/State/User/Contracts (2):
+  UserRepositoryInterface.php, UserServiceInterface.php
+
+app/Http/Api/V1/SubDistrict (6):
+  SubDistrict.php, SubDistrictController.php, SubDistrictRequest.php, SubDistrictResource.php, SubDistrictService.php, SubDistrictValidation.php
+
+app/Http/Api/V1/UdyamBharatPortalIntergation (1):
+  UBPController.php
+
+app/Http/Api/V1/User (10):
+  SaveUserAction.php, SaveUserAction.php-5-8-26, User.php, UserController.php, UserDTO.php, UserRepository.php, UserRepository.php-5-8-26, UserResource.php, UserService.php, UserValidation.php
+
+app/Http/Api/V1/User/Contracts (2):
+  UserRepositoryInterface.php, UserServiceInterface.php
+
+app/Http/Api/V1/UserPermission (10):
+  CreateOrUpdateUserPermissionAction.php, UserPermission.php, UserPermissionController.php, UserPermissionDTO.php, UserPermissionDTO.php-5-8-26, UserPermissionRepository.php, UserPermissionResource.php, UserPermissionService.php, UserPermissionValidation.php, UserPermissionValidation.php-5-8-26
+
+app/Http/Api/V1/UserPermission/Contracts (2):
+  UserPermissionRepositoryInterface.php, UserPermissionServiceInterface.php
+
+app/Http/Api/V1/UserProfile (3):
+  UserProfileController.php, UserProfileService.php, UserProfileValidation.php
+
+app/Http/Api/V1/Verification (2):
+  VerificationController.php, VerificationValidation.php
+
+app/Http/Controllers (4):
+  ApiController.php, ClientController.php, Controller.php, DownloadController.php
+
+app/Http/Controllers/Auth (7):
+  ApplicantProfileController.php, AuthController.php, AuthNewController.php, ChangePasswordController.php, ForgotPasswordController.php, ForgotUdyamController.php, ProfileController.php
+
+app/Http/Middleware (20):
+  ActiveRoleMiddleware.php, ActiveRoleMiddleware.php-5-8-26, Authenticate.php, AutoLogout.php, CustomAuth.php, CustomAuth__back.php, EncryptCookies.php, EnsureUserIsActivated.php, HasDomesticApplication.php, HasNationalApplication.php, PermissionMiddleware.php, PreventRequestsDuringMaintenance.php, RedirectIfAuthenticated.php, TrackDeployChanges.php, TrimStrings.php, TrustHosts.php, TrustProxies.php, ValidateSignature.php, VerifyCsrfToken.php, XssClean.php
+
+app/Http/Requests/Auth (1):
+  LoginRequest.php
+
+app/Http/Services (6):
+  ApiService.php, ClientService.php, ClientServiceFacade.php, CommonService.php, CommonService.php-old, VerificationService.php
+
+app/Imports (1):
+  CrewDetailImport.php
+
+app/Jobs (2):
+  ApplicationSubmissionNotificationJob.php, SendEmailJob.php
+
+app/Models (4):
+  Address.php, PasswordHistory.php, TeamSnpcaMapping.php, User.php
+
+app/Modules/Auth (3):
+  AuthClient.php, AuthController.php, SingleSignOnController.php
+
+app/Modules/Block (1):
+  BlockController.php
+
+app/Modules/Category (1):
+  CategoryController.php
+
+app/Modules/Country (1):
+  CountryController.php
+
+app/Modules/Dashboard (1):
+  DashboardController.php
+
+app/Modules/Department (1):
+  DepartmentController.php
+
+app/Modules/Designation (1):
+  DesignationController.php
+
+app/Modules/District (1):
+  DistrictController.php
+
+app/Modules/FileUpload (1):
+  FileUploadController.php
+
+app/Modules/Front/Signup (1):
+  SignupController.php
+
+app/Modules/Module (1):
+  ModuleController.php
+
+app/Modules/Permission (1):
+  PermissionController.php
+
+app/Modules/Role (1):
+  RoleController.php
+
+app/Modules/RolePermission (1):
+  RolePermissionController.php
+
+app/Modules/SearchUser (1):
+  SearchUserController.php
+
+app/Modules/State (1):
+  StateController.php
+
+app/Modules/User (3):
+  CustomUserController.php, UserController.php, UserController.php1
+
+app/Modules/UserPermission (1):
+  UserPermissionController.php
+
+app/Modules/Verification (1):
+  VerificationController.php
+
+app/Notifications/Email (1):
+  Signup.php
+
+app/Observers (2):
+  AuditTrailLog.php, BaseObserver.php
+
+app/Pmv (1):
+  PmvController.php
+
+app/Providers (6):
+  AppServiceProvider.php, AuthServiceProvider.php, BroadcastServiceProvider.php, ClientServiceProvider.php, EventServiceProvider.php, RouteServiceProvider.php
+
+app/Rules (14):
+  AlphaSpace.php, AlphaSpaceComma.php, EmailValidation.php, FileName.php, IsAssignableToNextEvaluator.php, IsAssignedToMib.php, IsEmailSame.php, IsPhoneSame.php, LimitValidation.php, NotInPreviousPasswords.php, PhoneNumber.php, StrongPassword.php, UniqueDistrict.php, ValidateAuthPassword.php
+
+app/Services (9):
+  CryptoService.php, OtpGenerator.php, OtpVerificationService.php, PHPMailerService.php, PHPMailerService.php--backup-23-04, PHPMailerService_OLD.php, PasswordGenerator.php, StatusService.php, UserService.php
+
+app/Shared (2):
+  Module.php, UserACL.php
+
+app/Shared/AccessControl (1):
+  UserAccessControl.php
+
+app/Traits (28):
+  DataTable.php, EnumToArray.php, HasApplicant.php, HasAttribute.php, HasClaimNetAmountPayable.php, HasCommon.php, HasCreateSubject.php, HasDraft.php, HasFileDownload.php, HasFileUpload.php, HasGeolocation.php, HasRawQuery.php, HasRecursivePermission.php, HasResponses.php, HasUserAddress.php, Mailer.php, Mutators.php, NestableModule.php, Notifiable.php, Respond.php, Scopes.php, SearchRole.php, Settings.php, SubUserTrait.php, TimelineGenerator.php, UUID.php, UserAccessControl.php, UserDetail.php
+
+app/Traits/Mutators (1):
+  Hashable.php
+
+app/Utils (2):
+  Calendar.php, UuidGenerator.php
+
+app/Web/Allocation (6):
+  AllocationController.php, AllocationRequest.php, AllocationResource.php, AllocationService.php, PoolService.php, PoolService.php_bkup
+
+app/Web/AovCategory (5):
+  AovCategory.php, AovCategoryController.php, AovCategoryRequest.php, AovCategoryResource.php, AovCategoryService.php
+
+app/Web/ApplicationStatus (16):
+  AdminLog.php, ApplicationStatusController.php, Field.php, FieldController.php, LogController.php, MsmeTracker.php, NpTracker.php, SearchLog.php, Service.php, SnpTracker.php, StatusController.php, StatusRequest.php, StatusTab.php, StatusTabController.php, Timeline.php, TimelineController.php
+
+app/Web/ApplicationWorkflow (15):
+  ApplicationWorkflowController.php, ApplicationWorkflowDto.php, ApplicationWorkflowRequest.php, ApplicationWorkflowService.php, BnpApplicationWorkflowDto.php, BnpWorkflowController.php, BnpWorkflowRequest.php, PublishApplicationAction.php, SnpApplicationWorkflowDto.php, SnpWorkflowController.php, SnpWorkflowRequest.php, StoreApplicationWorkflowAction.php, StoreBnpWorkflowAction.php, StoreSnpWorkflowAction.php, WorkflowType.php
+
+app/Web/Attributes (3):
+  Attribute.php, AttributeController.php, AttributeService.php
+
+app/Web/AuditTrail (1):
+  AuditTrailController.php
+
+app/Web/BNP (3):
+  BNPController.php, BNPResource.php, BNPService.php
+
+app/Web/BNP/LogisticImport (3):
+  LogisticClaimImport.php, LogisticClaimImportController.php, LogisticClaimImportErrorExport.php
+
+app/Web/BNPRegistration (3):
+  BnpRegistrationController.php, BnpRequest.php, BnpService.php
+
+app/Web/Batch (5):
+  BatchController.php, BatchRequest.php, BatchResource.php, BatchService.php, ListBatchClaimAction.php
+
+app/Web/BatchWorkflow (18):
+  ApproveBatchWorkflow.php, BatchClaimWorkflowController.php, BatchClaimWorkflowService.php, BatchProcessByCA.php, BatchProcessByNsic.php, BatchProcessByNsicFinance.php, BatchProcessByOndc.php, BatchProcessByOndc.php_bkup, BatchWorkflowController.php, BatchWorkflowService.php, HasBatchWorkflow.php, HasTimeline.php, HasUser.php, ProcessByNsicToFinance.php, ProcessBySnpToNsic.php, RevertBatchWorkflow.php, StoreBatchClaimWorkflow.php, StoreBatchClaimWorkflowRequest.php
+
+app/Web/BonusQuery (14):
+  ApplicationQuery.php, ApplicationQueryController.php, ApplicationQueryListAction.php, ApplicationQueryListResource.php, ApplicationQueryLogController.php, ApplicationQueryService.php, QueryStatus.php, StoreApplicationQueryAction.php, StoreApplicationQueryDto.php, StoreApplicationQueryRequest.php, StoreQueryLogAction.php, StoreQueryLogDto.php, StoreQueryLogRequest.php, UpdateApplicationQueryAction.php
+
+app/Web/BonusWorkflow (7):
+  ApplicationWorkflowController.php, ApplicationWorkflowDto.php, ApplicationWorkflowRequest.php, ApplicationWorkflowService.php, PublishApplicationAction.php, RejectApplicationAction.php, StoreApplicationWorkflowAction.php
+
+app/Web/CA (3):
+  CAController.php, CAService.php, CAValidation.php
+
+app/Web/CAold (3):
+  CAController.php, CAService.php, CAValidation.php
+
+app/Web/Category (6):
+  Category.php, CategoryController.php, CategoryRequest.php, CategoryResource.php, CategoryService.php, OndcTypeService.php
+
+app/Web/Certificate (3):
+  CertificateAction.php, CertificateController.php, CertificateService.php
+
+app/Web/Claim (32):
+  AccountManagementClaimDetails.php, BatchClaimQueryListAction.php, BatchClaimQueryListResource.php, BatchQueryListAction.php, BatchQueryListResource.php, CatalogueBulkZipRequest.php, CatalogueCreationClaimDetails.php, Claim.php, ClaimAction.php, ClaimBulkImportAction.php, ClaimBulkImportController.php, ClaimBulkImportRequest.php, ClaimBulkImportZipRequest.php, ClaimController.php, ClaimDto.php, ClaimOrderResource.php, ClaimOrdersExport.php, ClaimRequest.php, ClaimResource.php, ClaimReviewStatus.php, ClaimService.php, DeleteClaimAction.php, ListClaimAction.php, ListClaimOrderAction.php, LogisticClaimDetails.php, ProcessBatchQueryAction.php, RejectClaimResource.php, RejectListClaimAction.php, StoreClaimAction.php, UploadClaimAction.php, UploadClaimDto.php, UploadClaimRequest.php
+
+app/Web/ClaimForm (17):
+  AccountClaimDummyExport.php, AccountClaimExport.php, AccountSelectedRowsExport.php, CatalogueClaimExport.php, CatalogueController.php, CatalogueService.php, ClaimFormController.php, ClaimFormService.php, ExportController.php, LogisticClaimExport.php, LogisticSelectedRowsExport.php, LogisticTransportClaimController.php, PackagingClaimDummyExport.php, PackagingClaimExport.php, PackagingSelectedRowsExport.php, ProtocolSheet.php, SelectedRowsExport.php
+
+app/Web/Common (11):
+  CategoryMsmeController.php, CategoryMsmeService.php, CityMsmeController.php, CityMsmeService.php, SnpMsmeCountController.php, SnpMsmeExport.php, SnpMsmeWiseService.php, StateCountController.php, StateCountService.php, StateWiseCountController.php, StateWiseCountService.php
+
+app/Web/Components (5):
+  Components.php, ComponentsController.php, ComponentsRequest.php, ComponentsResource.php, ComponentsService.php
+
+app/Web/Country (1):
+  CountryController.php
+
+app/Web/CustomExport (3):
+  CatalogueExportService.php, CustomExportController.php, CustomExportService.php
+
+app/Web/Dashboard (12):
+  AdminDashboardController.php, AdminDashboardService.php, DashboardController.php, DashboardIaTrait.php, DashboardService.php, DashboardSnpTrait.php, DashboardTrait.php, DashboardTrait.php-bakcup-18-03-2026, GetClaimSummaryAction.php, NsicDashboardController.php, OndcDashboardController.php, SnpDashboardController.php
+
+app/Web/Dashboard---27-10-2025 (2):
+  DashboardController.php, DashboardService.php
+
+app/Web/Department (1):
+  DepartmentController.php
+
+app/Web/DeployTracker (3):
+  DeployTracker.php, changes.log, snapshot.json
+
+app/Web/Designation (1):
+  DesignationController.php
+
+app/Web/District (1):
+  DistrictController.php
+
+app/Web/Dropdown (1):
+  DropdownController.php
+
+app/Web/Email (1):
+  EmailController.php
+
+app/Web/EmailTemplate (5):
+  EmailTemplate.php, EmailTemplateController.php, EmailTemplateRequest.php, EmailTemplateResource.php, EmailTemplateService.php
+
+app/Web/FileDownloader (1):
+  FileDownloaderController.php
+
+app/Web/Files (2):
+  FilesController.php, FilesService.php
+
+app/Web/FlowManagement (6):
+  FlowHelperService.php, FlowManagement.php, FlowManagementController.php, FlowManagementResource.php, FlowManagementService.php, FlowManagementValidation.php
+
+app/Web/IARegistration (3):
+  IARegistrationController.php, IARequest.php, IAService.php
+
+app/Web/Ia (2):
+  IaMseController.php, IaMseService.php
+
+app/Web/Import (9):
+  AccountClaimImport.php, AccountClaimImportController.php, AccountImportErrorExport.php, CatalogueClaimImport.php, CatalogueClaimImport.php_bkup, CatalogueClaimImportController.php, CatalogueImportStore.php, ClaimImportErrorExport.php, Importable.php
+
+app/Web/Language (5):
+  Language.php, LanguageController.php, LanguageRequest.php, LanguageResource.php, LanguageService.php
+
+app/Web/LogisticImport (3):
+  LogisticClaimImport.php, LogisticClaimImportController.php, LogisticClaimImportErrorExport.php
+
+app/Web/Mail (2):
+  MailController.php, TestMail.php
+
+app/Web/MajorComponents (5):
+  MajorComponents.php, MajorComponentsController.php, MajorComponentsRequest.php, MajorComponentsResource.php, MajorComponentsService.php
+
+app/Web/Masters/AttributeValues (5):
+  AttributeValues.php, AttributeValuesController.php, AttributeValuesResource.php, AttributeValuesService.php, AttributeValuesValidation.php
+
+app/Web/Masters/Attributes (5):
+  Attributes.php, AttributesController.php, AttributesRequest.php, AttributesResource.php, AttributesService.php
+
+app/Web/Masters/ClaimTypes (5):
+  ClaimTypes.php, ClaimTypesController.php, ClaimTypesRequest.php, ClaimTypesResource.php, ClaimTypesService.php
+
+app/Web/Menu (6):
+  Menu.php, MenuHelperService.php, MenuResource.php, MenuService.php, MenuValidation.php, MenusController.php
+
+app/Web/MisReport (15):
+  AssociationListResource.php, ClaimResource.php, ClaimResourceOld.php, FinalStatus.php, FinalStatusOld.php, FinalStatus_backup.php, MisDemandGenerationController.php, MisDemandGenerationResource.php, MisDemandGenerationService.php, MisReportController.php, MisReportResource.php, MisReportService.php, MsmeBulkResource.php, NetworkProviderListResource.php, NpService.php
+
+app/Web/MisReport_old (11):
+  ClaimResource.php, FinalStatus.php, FinalStatus_backup.php, MisDemandGenerationController.php, MisDemandGenerationResource.php, MisDemandGenerationService.php, MisReportController.php, MisReportResource.php, MisReportService.php, NetworkProviderListResource.php, NpService.php
+
+app/Web/MseBulkRegistration (19):
+  FailedUdyamExport.php, MseBulkImport.php, MseBulkImportUdyam-bkp.php, MseBulkImportUdyam.php, MseBulkImportUdyam.php-new-without-one-byone, MseBulkImportUdyam.php-old_file-12-03-2026, MseBulkImportUdyam.php_ram, MseBulkRegistrationController.php, MseBulkRegistrationUdyamController-bkp.php, MseBulkRegistrationUdyamController.php, MseDownload.php, MseDownloadController.php, MseDraftBulkUpload.php, MseDraftBulkUploadController.php, MseDraftBulkUploadImport.php, MseDraftBulkUploadService.php, MseDraftBulkUploadService.php-old, MseFailedExportAll.php, index.blade.php
+
+app/Web/MseBulkRegistration/FailedMsmeList (4):
+  FailedMsmeListAction.php, FailedMsmeListController.php, FailedMsmeListResource.php, FailedMsmeListService.php
+
+app/Web/MseBulkRegistration/Logging (7):
+  MseBulkUploadLog.php, MseBulkUploadLogContext.php, MseBulkUploadLogDetail.php, MseBulkUploadLogRepository.php, MseBulkUploadLogService.php, MseBulkUploadRunType.php, MseBulkUploadStatus.php
+
+app/Web/MseBulkRegistration/old_bulk_backup (3):
+  FailedUdyamExport.php, MseBulkImport.php, MseBulkRegistrationController.php
+
+app/Web/Msme (7):
+  MsmeController.php, MsmeResource.php, MsmeService.php, MsmeSnpController.php, MsmeSnpExport.php, MsmeSnpService.php, SnpListResource.php
+
+app/Web/MsmeAllList (11):
+  CategoryWiseCountController.php, CategoryWiseCountResource.php, CategoryWiseCountService.php, MsmeAllListController.php, MsmeAllListExport.php, MsmeAllListResource.php, MsmeAllListService.php, SnpCategoryListController.php, SnpCategoryListExport.php, SnpCategoryListResource.php, SnpCategoryListService.php
+
+app/Web/MsmeDashboard (1):
+  MsmeDashboardController.php
+
+app/Web/NPRegistration (3):
+  NpRegistrationController.php, SnpRequest.php, SnpService.php
+
+app/Web/NetworkProvider (2):
+  UnverifiedNetworkProviderController.php, VerifiedNetworkProviderController.php
+
+app/Web/Notification (7):
+  Notification.php, NotificationController.php, NotificationService.php, NotificationServiceProvider.php, NotificationTemplate.php, SendNotificationEvent.php, StoreNotificationListener.php
+
+app/Web/NotificationTemplate (4):
+  NotificationTemplateController.php, NotificationTemplateRequest.php, NotificationTemplateResource.php, NotificationTemplateService.php
+
+app/Web/Notification_old (1):
+  NotificationController.php
+
+app/Web/PMRegistration (1):
+  PMRegistrationController.php
+
+app/Web/PackagingImport (3):
+  PackagingClaimImport.php, PackingClaimImportController.php, PackingClaimImportErrorExport.php
+
+app/Web/Page (5):
+  Page.php, PageController.php, PageResource.php, PageService.php, PageValidation.php
+
+app/Web/Permission (1):
+  PermissionController.php
+
+app/Web/PmvBulkRegistration (6):
+  FailedErrorsExport.php, FailedRowsExport.php, PMVBulkImport.php, PMVBulkUploadController.php, PMVBulkUploadService.php, PMVRowValidator.php
+
+app/Web/PmvProductCategory (5):
+  PmvProductCategory.php, PmvProductCategoryController.php, PmvProductCategoryRequest.php, PmvProductCategoryResource.php, PmvProductCategoryService.php
+
+app/Web/ProductDomainMapping (2):
+  ProductDomainMappingController.php, ProductDomainMappingService.php
+
+app/Web/Registration (1):
+  RegistrationController.php
+
+app/Web/Role (3):
+  RoleController.php, RoleService.php, RoleTypeScopedPermissionTreeRepository.php
+
+app/Web/RolePermission (1):
+  RolePermissionController.php
+
+app/Web/RoleType (11):
+  GetRoleTypePermissionTreeAction.php, ListRoleTypeAction.php, RoleType.php, RoleTypeController.php, RoleTypePermissionResource.php, RoleTypePermissionTreeRepository.php, RoleTypeRequest.php, RoleTypeResource.php, RoleTypeService.php, StoreRoleTypeAction.php, SyncRoleTypePermissionsAction.php
+
+app/Web/RootManager/Common (13):
+  CategoryMsmeController.php, CategoryMsmeService.php, CityMsmeController.php, CityMsmeService.php, SnpMsmeCountController.php, SnpMsmeExport.php, SnpMsmeWiseService.php, StateCountController.php, StateCountService.php, StateWiseCountController.php, StateWiseCountService.php, UserByPassController.php, UserByPassService.php
+
+app/Web/RootManager/DataCleanup (1):
+  DataCleanupController.php
+
+app/Web/RootManager/Secret (4):
+  SecretCode.php, SecretCodeRequest.php, SecretCodeService.php, SecretPageController.php
+
+app/Web/RouteList (2):
+  RouteListController.php, RouteListService.php
+
+app/Web/SNP (9):
+  MigratedSnpListResource.php, MsmeSnpMappingAction.php, MsmeSnpMappingController.php, SNPController.php, SNPMSMEController.php, SNPMSMEService.php, SNPResource.php, SNPService.php, SnpRequest.php
+
+app/Web/SNPRegistration-05-12-backup (3):
+  SnpRegistrationController.php, SnpRequest.php, SnpService.php
+
+app/Web/SNPRegistration-bkp-29-12 (3):
+  SnpRegistrationController.php, SnpRequest.php, SnpService.php
+
+app/Web/Search (1):
+  SearchController.php
+
+app/Web/SendOtp (6):
+  ApplicationStatusSendOtpController.php, SendOtpController.php, SendOtpJob.php, SendOtpMsmeRegistrationController.php, SendOtpMsmeRegistrationJob.php, SendOtpService.php
+
+app/Web/SendOtpForgotUdyam (2):
+  SendOtpForgotUdyamNumberAction.php, SendOtpForgotUdyamNumberController.php
+
+app/Web/Signup (3):
+  SendOtpController.php, SignupController.php, VerifyOtpController.php
+
+app/Web/Signup_old (3):
+  SendOtpController.php, SignupController.php, VerifyOtpController.php
+
+app/Web/Slider (6):
+  Slider.php, SliderController.php, SliderHelperService.php, SliderResource.php, SliderService.php, SliderValidation.php
+
+app/Web/Sms (4):
+  SmsHelper.php, SmsService.php, SmsTrigger.php, TemplateName.php
+
+app/Web/State (1):
+  StateController.php
+
+app/Web/SubComponents (5):
+  SubComponents.php, SubComponentsController.php, SubComponentsRequest.php, SubComponentsResource.php, SubComponentsService.php
+
+app/Web/SubDistrict (1):
+  SubDistrictController.php
+
+app/Web/SubDomain (5):
+  SubDomain.php, SubDomainController.php, SubDomainRequest.php, SubDomainResource.php, SubDomainService.php
+
+app/Web/TestCommunication (2):
+  TestCommunicationApiController.php, TestCommunicationController.php
+
+app/Web/Timeline (3):
+  HasTimeline.php, TimelineController.php, TimelineService.php
+
+app/Web/User (1):
+  UserService.php
+
+app/Web/VerifyOtp (9):
+  ApplicationStatusVerifyOtpController.php, GenericVerifyOtpRequest.php, VerifyOtpAction.php, VerifyOtpController.php, VerifyOtpDto.php, VerifyOtpMsmeMappingController.php, VerifyOtpRepository.php, VerifyOtpRequest.php, VerifyOtpStatus.php
+
+app/storage/app/formats (1):
+  RestrictedArea.pdf
+
+assets/ffo-admin/css (1):
+  styles.css
+
+assets/js (3):
+  role-form.js, role-type.js, script.js
+
+config (30):
+  allocation.php, app.php, auth.php, broadcasting.php, cache.php, captcha.php, claim_distribution_mapping.php, constant.php, cors.php, database.php, filesystems.php, hashing.php, ia_profile.php, logging.php, mail.php, openssl.php, passport.php, payment.php, permissions.php, queue.php, roles.php, route-list.php, sanctum.php, services.php, session.php, settings.php, sms.php, upload.php, url.php, view.php
+
+database/factories (1):
+  UserFactory.php
+
+database/migrations (7):
+  2026_07_27_063800_create_component_utilization_mappings_table.php, 2026_07_27_063900_create_component_utilization_mapping_details_table.php, 2026_07_30_170000_create_fund_allocation_histories_table.php, 2026_08_12_120000_create_role_types_tables.php, 2026_08_12_140000_add_role_type_id_to_roles_table.php, 2026_08_17_150000_create_user_logs_table.php, 2026_08_18_120000_create_msme_bulk_upload_logs_tables.php
+
+database/seeders (3):
+  FailedMsmeListModuleSeeder.php, RoleTypePermissionSeeder.php, UserLogPermissionSeeder.php
+
+database/sql (2):
+  fund_modules_permissions_migration.sql, role_role_type_permission_sync.sql
+
+docs (1):
+  FUND_MODULES_ANALYSIS.md
+
+resources/css (2):
+  app.css, response.css
+
+resources/js (2):
+  app.js, bootstrap.js
+
+resources/lang/en (18):
+  app.php, application.php, auth.php, dashboard.php, file_validation.php, incentive_tracking.php, media.php, menu.php, message.php, mha.php, national_application.php, page.php, profile.php, railway_permission.php, script_evaluator.php, signup.php, slider.php, validation.php
+
+resources/lang/en/modules (5):
+  utl0818.php, utl1070.php, utl1207.php, utl1245.php, utl1308.php
+
+resources/views (5):
+  404.blade.php, msme-registration.blade.php, route-list.blade.php, test_communication.blade.php, welcome.blade.php
+
+resources/views/404 (1):
+  404.blade.php
+
+resources/views/ai-cataloguing (1):
+  form.blade.php
+
+resources/views/aov-categories (3):
+  form.blade.php, index.blade.php, show.blade.php
+
+resources/views/applicant_registration (2):
+  signup.blade.php, snp-details.blade.php
+
+resources/views/applicant_signup (7):
+  profile.blade.php, signup.blade.php, signup.blade.php_old, snp-details.blade.php, udyam-details.blade.php, udyam-details.blade.php_old, udyam-details_backup-25-03.blade.php
+
+resources/views/applicant_signup_new_old (4):
+  secondstep.blade.php, signup.blade.php, snp-details.blade.php, udyam-details.blade.php
+
+resources/views/application_status (6):
+  field_index.blade.php, log_index.blade.php, public_status.blade.php, status_tab_form.blade.php, status_tab_index.blade.php, timeline_index.blade.php
+
+resources/views/audit-trail (1):
+  index.blade.php
+
+resources/views/auth (10):
+  changePassword.blade.php, forgetPassword.blade.php, forgetUdyam.blade.php, login-new.blade.php, login-new.blade.php-old, reset-password-mobile.blade.php, resetPassword.blade.php, send-otp-v2.blade.php, verify-otp-new.blade.php, verify-otp.blade.php
+
+resources/views/auth/category (3):
+  form.blade.php, index.blade.php, snp-details.blade.php
+
+resources/views/auth/forgot-password-otp (4):
+  index.blade.php, reset.blade.php, success.blade.php, verify.blade.php
+
+resources/views/batch/rollback (1):
+  index.blade.php
+
+resources/views/bnp (3):
+  details.blade.php, unverified-bnp-list.blade.php, verified-bnp-list.blade.php
+
+resources/views/bnp_registration (1):
+  registration.blade.php
+
+resources/views/bonus_query (7):
+  details.blade.php, edit.blade.php, form.blade.php, index.blade.php, norecord.blade.php, query-list.blade.php, view.blade.php
+
+resources/views/ca (3):
+  form.blade.php, formold.blade.php, index.blade.php
+
+resources/views/ca/applicant_signup_old (3):
+  signup.blade.php, snp-details.blade.php, udyam-details.blade.php
+
+resources/views/catalogue (16):
+  account-management-claim-approved.blade.php, accounts_created.blade.php, accounts_created.blade.php-23old, catalogue_claim_approved-backup-12-01.blade.php, catalogue_claim_approved.blade.php, catalogue_claim_approved.bladebkp.php, catalogue_created.blade.php, catalogue_created.blade.php23old, catalogue_ready.blade.php, catalogue_ready.bladebkp.php, claim_eligibilty_criteria.blade.php, packaging-claim-approved.blade.php, packaging-claim-approved.blade.php-old, restricted_msme.blade.php, transport-logistic-approved.blade.php, transport-logistic-approved.blade.php-old
+
+resources/views/categories (2):
+  form.blade.php, index.blade.php
+
+resources/views/claim-form (23):
+  batch_list.blade.php, batch_list.blade.php_bkup, batch_list.blade.php_bkup2506, batch_list_0604.blade.php, batch_list_bkup0604.blade.php, batch_list_demand_generation.blade.php, batch_query_list.blade.php, catalogue-creation-backup-01-12.blade.php, catalogue-creation.blade.php, catalogue-creation.blade.php_bkup, claim_list.blade.php, claim_list_ai_cataloguing.blade.php, claim_list_demand.blade.php, demand-generation.blade.php, index.blade.php, index.blade.phpbkup, packaging-claim.blade.php, query_workflow_modal.blade.php, reject_claim_list.blade.php, reject_claim_list_ai_cataloguing.blade.php, reject_claim_list_demand_generation.blade.php, show.blade.php, workflow_modal.blade.php
+
+resources/views/claim-type (2):
+  form.blade.php, index.blade.php
+
+resources/views/common (10):
+  category_wise_list.blade.php, city_msme_list.blade.php, datatables-css.blade.php, datatables-js.blade.php, libraries.blade.php, msme_snp_list.blade.php, snp_msme_wise_list.blade.php, state_count_list.balde.php, state_count_list.blade.php, state_wise_list.blade.php
+
+resources/views/components (1):
+  global-loader.blade.php
+
+resources/views/components-category (2):
+  form.blade.php, index.blade.php
+
+resources/views/components/admin (15):
+  back-button.blade.php, bootstrap-dialog.blade.php, breadcrumb.blade.php, content-layout.blade.php, dropdown-button.blade.php, file-upload.blade.php, footer.blade.php, header.blade.php, layout.blade.php, recursive_children.blade.php, side-nav-children.blade.php, side-nav.blade.php, sidebar.blade.php, timeline.blade.php, top-nav.blade.php
+
+resources/views/components/admin-old (15):
+  back-button.blade.php, bootstrap-dialog.blade.php, breadcrumb.blade.php, content-layout.blade.php, dropdown-button.blade.php, file-upload.blade.php, footer.blade.php, header.blade.php, layout.blade.php, recursive_children.blade.php, side-nav-children.blade.php, side-nav.blade.php, sidebar.blade.php, timeline.blade.php, top-nav.blade.php
+
+resources/views/components/admin-old/buttons (6):
+  back-button.blade.php, cancel-button.blade.php, msearch-button.blade.php, photo-upload-button.blade.php, search-button.blade.php, submit-button.blade.php
+
+resources/views/components/admin-old/js (1):
+  highchat-js.blade.php
+
+resources/views/components/admin-old/popup (10):
+  common-modal.blade.php, confirm-delete.blade.php, dgca-popup.blade.php, hold-resume.blade.php, htmltopdf.blade.php, logout.blade.php, remarks.blade.php, sms-email.blade.php, terms_condition.blade.php, timeline.blade.php
+
+resources/views/components/admin/buttons (6):
+  back-button.blade.php, cancel-button.blade.php, msearch-button.blade.php, photo-upload-button.blade.php, search-button.blade.php, submit-button.blade.php
+
+resources/views/components/admin/js (1):
+  highchat-js.blade.php
+
+resources/views/components/admin/popup (10):
+  common-modal.blade.php, confirm-delete.blade.php, dgca-popup.blade.php, hold-resume.blade.php, htmltopdf.blade.php, logout.blade.php, remarks.blade.php, sms-email.blade.php, terms_condition.blade.php, timeline.blade.php
+
+resources/views/components/dashboard (2):
+  fund-management-cards.blade.php, old-fund-management-cards.blade.php
+
+resources/views/components/front (6):
+  auth-layout-v2.blade.php, auth-layout.blade.php, auth-new-layout.blade.php, footer.blade.php, header.blade.php, layout.blade.php
+
+resources/views/country (4):
+  form.blade.php, form1.blade.php, index.blade.php, index1.blade.php
+
+resources/views/dashboard (28):
+  Role-swtich-tab.blade.php, access-denied.blade.php, administrator.blade.php, claim-status-card.blade.php, dashboard-js.blade.php, dashboard.php, datepicker.blade.php, default.blade.php, filter-cards.blade.php, ia.blade.php, in-progress.blade.php, msme-category-pie-chart.blade.php, msme-gender-percentage-chart.blade.php, msme-onboarded-by-month-chart.blade.php, msme-onboarding-15days-chart.blade.php, msme-state-wise-bar-chart.blade.php, msme.blade.php, np.blade.php, nsic.blade.php, ondc.blade.php, others.blade-06-01.php, others.blade.php, registered-vs-onboarded-monthly-chart.blade.php, search.blade.php, snp-new.blade.php, snp.blade-backup-06-01.php, snp.blade.php, top-performer-nps-chart.blade.php
+
+resources/views/dashboard-27-10-2025 (3):
+  in-progress.blade.php, others.blade.php, snp.blade.php
+
+resources/views/dashboard/components (6):
+  claims-dashboard-cards.blade.php, claims_dashboard.blade.php, mse-stat-card.blade.php, np-registration-card.blade.php, role-dashboard-layout.blade.php, shared-filters-js.blade.php
+
+resources/views/demand-generation (2):
+  form.blade.php, form_old.blade.php
+
+resources/views/department (4):
+  form.blade.php, form1.blade.php, index.blade.php, index1.blade.php
+
+resources/views/designation (2):
+  form1.blade.php, index1.blade.php
+
+resources/views/district (2):
+  form.blade.php, index.blade.php
+
+resources/views/email_template (2):
+  form.blade.php, index.blade.php
+
+resources/views/emails (17):
+  bnp_approval_mail.blade.php, bnp_revert_reject_mail.blade.php, change-password.blade.php, claim_approve_reject_mail.blade.php, curl-error-mail.blade.php, emailVerify.blade.php, error-mail.blade.php, forgetPassword.blade.php, forgot_password_otp.blade.php, msme_mapping_email.blade.php, msme_registraion_email.blade.php, send_otp.blade.php, signup.blade.php, snp_approval_mail.blade.php, snp_registration_mail.blade.php, snp_revert_reject_mail.blade.php, user_creation_mail.blade.php
+
+resources/views/emails_bkup (93):
+  application_assign_email.blade.php, application_modication_permission.blade.php, approve_mail_to_applicant_by_MHA.blade.php, approve_mail_to_applicant_by_legal.blade.php, approve_reject_mail_by_MIB.blade.php, approve_reject_mail_by_MIB_for_FFO.blade.php, asi_application.blade.php, asi_approve_reject_tmpl.blade.php, asi_document_requisition_tmpl.blade.php, change-password.blade.php, curl-error-mail.blade.php, disbursal_application_submission_template.blade.php, disbursal_application_submission_template_ffo.blade.php, disbursal_approve_reject_mail.blade.php, disbursal_approve_reject_mail_for_FFO.blade.php, disbursal_forward_mail_applicant.blade.php, disbursal_forward_mail_to_md.blade.php, disbursal_raise_query.blade.php, disbursal_reply_against_raise_query.blade.php, disbursal_revert_mail_to_FFO.blade.php, disbursal_revert_mail_to_applicant.blade.php, documentary_approve_reject_mail.blade.php, documentary_approve_reject_mail_ffo.blade.php, documentary_forward_mail_mib.blade.php, documentary_forward_mail_to_applicant.blade.php, documentary_revert_mail_to_FFO.blade.php, documentary_submission_email.blade.php, documentary_submission_email_ffo.blade.php, emailVerify.blade.php, error-mail.blade.php, forgetPassword.blade.php, forward_legal_officer.blade.php, forward_legal_officer_new.blade.php, forward_mail_to_MIB.blade.php, forward_mail_to_MIB_applicant.blade.php, grievance_raised_applicant_message.blade.php, grievance_raised_ffo_message.blade.php, grievance_send_reminder.blade.php, grievance_ticket_closed.blade.php, grievance_ticket_reopened.blade.php, hold-resume-mail.blade.php, interim_application_submission_template.blade.php, interim_application_submission_template_ffo.blade.php, interim_approve_reject_mail.blade.php, interim_approve_reject_mail_for_FFO.blade.php, interim_final_application_submission_template_ffo.blade.php, interim_forward_mail_applicant.blade.php, interim_forward_mail_to_md.blade.php, interim_raise_query.blade.php, interim_reply_against_raise_query.blade.php, interim_revert_mail_to_FFO.blade.php, interim_revert_mail_to_applicant.blade.php, lettertomib.blade.php, lettertose.blade.php, new_custom_user_emailer.blade.php, railway_approvereject_mail_by_department.blade.php, railway_department_user_mail.blade.php, railway_document_requisition_tmpl.blade.php, railway_raise_query_mail.blade.php, railway_reply_against_raise_query.blade.php, railway_reply_mail.blade.php, railway_revert_mail.blade.php, raise_asi_query.blade.php, raise_query.blade.php, reply_against_raise_query.blade.php, reply_asi_query.blade.php, revert_mail_to_FFO.blade.php, revert_mail_to_applicant.blade.php, send_application_submission_email.blade.php, send_application_submission_email_animation.blade.php, send_application_submission_email_ffo.blade.php, send_application_submission_email_ffo_animation.blade.php, send_approval_department_email.blade.php, send_approval_railwayapplication_email.blade.php, send_approval_railwayapplication_email_ffo.blade.php, send_forward_railwayapplication_email.blade.php, send_forward_railwayapplication_email_ffo.blade.php, send_mail_to_liaison.blade.php, send_otp.blade.php, send_railway_reject_email.blade.php, send_railway_reject_email_ffo.blade.php, send_railwayapplication_submission_email.blade.php, send_railwayapplication_submission_email_ffo.blade.php, send_railwayapplication_submission_email_zonal.blade.php, send_registration_email.blade.php, signup.blade.php, snp_registration_mail.blade.php, state_application_submission_email.blade.php, state_application_submission_email_ffo.blade.php, state_application_submission_email_nodal.blade.php, state_approve_reject_mail.blade.php, state_approve_reject_mail_ffo.blade.php, user_creation_mail.blade.php
+
+resources/views/errors (2):
+  404.blade.php, error.blade.php
+
+resources/views/event-logs (1):
+  index.blade.php
+
+resources/views/files (2):
+  form.blade.php, index.blade.php
+
+resources/views/flow-management (4):
+  form.blade.php, index.blade.php, user-lists.blade.php, user-permissions.blade.php
+
+resources/views/ia (1):
+  registered-msme.blade.php
+
+resources/views/ia-registration (6):
+  detail.blade.php, index.blade.php, profile.blade.php, registration.blade.php, registration_backup-25-03.blade.php, verified-ia-list.blade.php
+
+resources/views/language (2):
+  form.blade.php, index.blade.php
+
+resources/views/logistic-claim (1):
+  index.blade.php
+
+resources/views/majorcomponents (2):
+  form.blade.php, index.blade.php
+
+resources/views/masters/attribute_values (2):
+  form.blade.php, index.blade.php
+
+resources/views/masters/attributes (2):
+  form.blade.php, index.blade.php
+
+resources/views/masters/claim_types (2):
+  form.blade.php, index.blade.php
+
+resources/views/menu (2):
+  form.blade.php, index.blade.php
+
+resources/views/mis (7):
+  common-css.blade.php, product-category-mis-report.blade.php, product-category-mse-linkage-report.blade.php, snp-wise-mis-report.blade.php, snp-wise-msme-mis-report.blade.php, state-wise-mis-report.blade.php, tier-wise-mis-report.blade.php
+
+resources/views/mis_report (20):
+  association_list.blade.php, bnplist.blade.php, catalogueready.blade.php, details.blade.php, fund_allocation_report.blade.php, ia_detail.blade.php, incentive_report.blade.php, index.blade.php, mis_loader_css.blade.php, mis_reports_demand_generation.blade.php, mse_bulk_report.blade.php, np-details.blade.php, np-list.blade.php, onboardedmse.blade.php, packaging_report.blade.php, snp_wise_msme_report.blade.php, snplist.blade.php, transactedlivemse.blade.php, verified-bnp-list.blade.php, verified-snp-list.blade.php
+
+resources/views/modules (3):
+  childrens.blade.php, form.blade.php, index.blade.php
+
+resources/views/msme (13):
+  details.blade.php, import.blade.php, import_draft_udyam.blade.php, import_udyam.blade.php, import_udyam.blade.php_old, index.blade.php, msme_draft_list.blade.php, msme_draft_list.blade.php-old, my_profile.blade.php, relevant-snp-view.blade.php, relevant-snp.blade.php, snp_details-bkp-20-01.blade.php, snp_details.blade.php
+
+resources/views/msme/FailedMsmeList (1):
+  index.blade.php
+
+resources/views/msme_all_list (4):
+  index.blade.php, loader_css.blade.php, pdf_export.blade.php, summary_cards.blade.php
+
+resources/views/msme_all_list/categoryWiseCount (2):
+  index.blade.php, loader_css.blade.php
+
+resources/views/msme_all_list/snpCategorylist (3):
+  index.blade.php, loader_css.blade.php, pdf_export.blade.php
+
+resources/views/notification_template (2):
+  form.blade.php, index.blade.php
+
+resources/views/np_registration (6):
+  form.blade.php, form_script.blade.php, profile.blade.php, registration.blade.php, registration_dynamic.blade.php, registration_old.blade.php
+
+resources/views/page (2):
+  form.blade.php, index.blade.php
+
+resources/views/pdf (3):
+  claim_error_report.blade.php, snp_empanelment_letter.blade.php, snp_empanelment_letter_download.blade.php
+
+resources/views/permissions (3):
+  childrens.blade.php, form.blade.php, index.blade.php
+
+resources/views/pm_registration (4):
+  detail.blade.php, index.blade.php, profile.blade.php, signup.blade.php
+
+resources/views/pmv_bulk_registration (3):
+  pmv_bulk_registration.blade.php, pmv_bulk_registration_list.blade.php, pmv_bulk_registration_list.blade.php-old
+
+resources/views/pmv_product_category (2):
+  form.blade.php, index.blade.php
+
+resources/views/profile (1):
+  history.blade.php
+
+resources/views/qms (3):
+  create.blade.php, index.blade.php, show.blade.php
+
+resources/views/role-types (5):
+  childrens.blade.php, form.blade.php, index.blade.php, permission-tree.blade.php, view.blade.php
+
+resources/views/roles (6):
+  childrens.blade.php, form.blade.php, index.blade.php, permission-tree.blade.php, role_permission.blade.php, view.blade.php
+
+resources/views/root-manager/common (11):
+  category_wise_list.blade.php, city_msme_list.blade.php, datatables-css.blade.php, datatables-js.blade.php, libraries.blade.php, msme_snp_list.blade.php, snp_msme_wise_list.blade.php, state_count_list.balde.php, state_count_list.blade.php, state_wise_list.blade.php, user_by_pass.blade.php
+
+resources/views/root-manager/data-cleanup (1):
+  index.blade.php
+
+resources/views/root-manager/secret (2):
+  secret-dashboard.blade.php, secret_page.blade.php
+
+resources/views/scripts (6):
+  attribute_dependency_dropdown.blade.php, datatable_ajax_loader.blade.php, district_to_subdistrict_dropdown.blade.php, read_more_toggle.blade.php, state_district_dropdown.blade.php, upload_file.blade.php
+
+resources/views/slider (2):
+  form.blade.php, index.blade.php
+
+resources/views/snp (18):
+  bppid_update.blade.php, details.blade.php, migrated_snp_details.blade.php, migrated_snp_list.blade.php, mse_seeks_helpdesk_support.blade.php, mse_self_registration_on_udyam.blade.php, mse_to_be_validated.blade.php, msme-inprogress-backup.blade.php, msme-inprogress.blade.php, msmechoosenme.blade.php, mymsme.blade.php, onboardedmsme.blade.php, onboardmsme.blade.php, secondstep.blade.php, udyam-details.blade.php, unverified-snp-list.blade.php, validated_mse.blade.php, verified-snp-list.blade.php
+
+resources/views/snp_registration-backup (2):
+  registration-05-12-bckp.blade.php, registration.blade.php
+
+resources/views/state (4):
+  form.blade.php, form1.blade.php, index.blade.php, index1.blade.php
+
+resources/views/sub_components (2):
+  form.blade.php, index.blade.php
+
+resources/views/subdomains (2):
+  form.blade.php, index.blade.php
+
+resources/views/tracking (2):
+  msme_status.blade.php, np_status.blade.php
+
+resources/views/ubp (2):
+  msme_registration.blade.php, ubp-user-list.blade.php
+
+resources/views/udyam (1):
+  check.blade.php
+
+resources/views/user-logs (2):
+  details.blade.php, index.blade.php
+
+resources/views/users (9):
+  bnpProfile.blade.php, childrens.blade.php, details.blade.php, form.blade.php, index.blade.php, index.blade.php-old, profile.blade.php, snpProfile.blade.php, user_permission.blade.php
+
+resources/views/web/allocation (4):
+  create.blade.php, edit.blade.php, index.blade.php, view.blade.php
+
+resources/views/web/allocation/components (4):
+  filters.blade.php, form.blade.php, header.blade.php, table.blade.php
+
+resources/views/web/allocation/css (1):
+  allocation.css
+
+resources/views/web/allocation/js (3):
+  allocation.js, api.js, distribution.js
+
+resources/views/web/allocation/partials (1):
+  allocation-row.blade.php
+
+resources/views/web/allocation_old (4):
+  create.blade.php, edit.blade.php, index.blade.php, view.blade.php
+
+resources/views/web/allocation_old/components (4):
+  filters.blade.php, form.blade.php, header.blade.php, table.blade.php
+
+resources/views/web/allocation_old/css (1):
+  allocation.css
+
+resources/views/web/allocation_old/js (3):
+  allocation.js, api.js, distribution.js
+
+resources/views/web/allocation_old/partials (1):
+  allocation-row.blade.php
+
+resources/views/web/distribution (5):
+  create.blade.php, edit.blade.php, index.blade.php, show.blade.php, view.blade.php
+
+resources/views/web/distribution/partials (1):
+  form.blade.php
+
+resources/views/web/distribution_old (5):
+  create.blade.php, edit.blade.php, index.blade.php, show.blade.php, view.blade.php
+
+resources/views/web/distribution_old/partials (1):
+  form.blade.php
+
+resources/views/workflow_states (2):
+  form.blade.php, index.blade.php
+
+resources/views/workflow_transitions (2):
+  form.blade.php, index.blade.php
+
+resources/views/workflow_types (2):
+  form.blade.php, index.blade.php
+
+routes (5):
+  api.php, channels.php, console.php, web.php, web.php-old
+
+routes/api (1):
+  udyam_bharat_portal.php
+
+routes/web (76):
+  ai-cataloguing-claim.php, allocation.php, aov-categories.php, application_tracking_admin.php, application_tracking_public.php, attribute.php, attribute_values.php, audit_trail.php, auth.php, batch.php, bnp.php, bnp_registration.php, bonus_query.php, ca.php, categories.php, category-wise-count.php, change_password.php, claim_form.php, claim_types.php, claims.php, components.php, country.php, custom-export.php, dashboard.php, demand-generation.php, department.php, designation.php, district.php, email_template.php, event_logs.php, flow_management.php, forgot_password.php, forgot_password_otp.php, forgot_udyam.php, ia-registration.php, ia.php, language.php, logistic_claims.php, major-components.php, mis-report.php, mis.php, module.php, msme-all-list.php, msme.php, notification.php, notification_template.php, np_registration.php, permission.php, pm_registration.php, pmv_bulk_registration.php, pmv_product_category.php, product_domain_mapping.php, profile.php, qms.php, registration.php, role.php, role_type.php, root_manager.php, route-list.php, signup.php, snp-category-list.php, snp.php, snp_registration-backup29-12.php, state.php, sub-components.php, sub-domains.php, sub_district.php, test_communication.php, timeline.php, udyam_bharat_portal.php, user.php, user_logs.php, website_management.php, workflow-state.php, workflow-transition.php, workflow-type.php
+
+routes/web-old (70):
+  ai-cataloguing-claim.php, allocation.php, aov-categories.php, application_tracking_admin.php, application_tracking_public.php, attribute.php, attribute_values.php, audit_trail.php, auth.php, batch.php, bnp.php, bnp_registration.php, bonus_query.php, ca.php, categories.php, change_password.php, claim_form.php, claim_types.php, claims.php, components.php, country.php, custom-export.php, dashboard.php, demand-generation.php, department.php, designation.php, district.php, email_template.php, event_logs.php, flow_management.php, forgot_password.php, forgot_password_otp.php, forgot_udyam.php, ia-registration.php, ia.php, language.php, logistic_claims.php, major-components.php, mis-report.php, mis.php, module.php, msme.php, notification.php, notification_template.php, np_registration.php, permission.php, pm_registration.php, pmv_bulk_registration.php, pmv_product_category.php, product_domain_mapping.php, profile.php, qms.php, registration.php, role.php, root_manager.php, signup.php, snp.php, snp_registration-backup29-12.php, state.php, sub-components.php, sub-domains.php, sub_district.php, test_communication.php, timeline.php, udyam_bharat_portal.php, user.php, website_management.php, workflow-state.php, workflow-transition.php, workflow-type.php
+
+tests/Feature/Concerns (1):
+  ActsWithPermissions.php
+
+tests/Feature/UserLog (2):
+  UserLogControllerTest.php, UserLogServiceTest.php

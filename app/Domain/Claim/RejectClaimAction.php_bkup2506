@@ -1,0 +1,79 @@
+<?php
+
+declare(strict_types=1);
+
+namespace App\Domain\Claim;
+
+use App\Domain\Batch\BatchStatus;
+use App\Domain\Batch\EntityType;
+use App\Domain\Workflow\WorkflowService;
+use App\Web\BatchWorkflow\HasTimeline;
+use Illuminate\Support\Facades\DB;
+
+class RejectClaimAction
+{
+    use HasTimeline;
+
+    public function execute(array $data)
+    {
+        DB::transaction(function () use ($data) {
+
+            $claimIds = is_array($data['claim_id']) ? $data['claim_id'] : [$data['claim_id']];
+            $batchId = $data['batch_id'];
+
+            $workflowService = app(WorkflowService::class);
+
+            $workflowTypeId = $workflowService->getWorkflowTypeIdBySlug($data['claim_type']);
+
+            foreach ($claimIds as $claimId) {
+                $workflowService->transition(
+                    workflowTypeId: $workflowTypeId,
+                    entityType: EntityType::CLAIM->value,
+                    entityId: $claimId,
+                    action: 'reject',
+                    userRole: authRoleName()
+                );
+
+                $workflowService->autoTransition(
+                    workflowTypeId: $workflowTypeId,
+                    entityType: EntityType::CLAIM->value,
+                    entityId: $claimId,
+                    userRole: authRoleName()
+                );
+
+                $currentInstance = $workflowService->getWorkflowInstance(
+                    workflowTypeId: $workflowTypeId,
+                    entityType: EntityType::CLAIM->value,
+                    entityId: $claimId,
+                );
+
+                $workflowState = $workflowService->getWorkflowStateById($currentInstance->current_state_id);
+                //dd($workflowState);
+                DB::table('claims')
+                    ->where('id', $claimId)
+                    ->update([
+                        'claim_status' => BatchStatus::getStatusByKey($workflowState->state_key),
+                    ]);
+            }
+
+            if (hasRole('nsic-finance')) {
+                $totalClaims = DB::table('dy_batch_claims')
+                    ->where('batch_id', $batchId)
+                    ->count();
+                    
+                if ($totalClaims > 1) {
+                    DB::table('dy_batches')->where('id', $batchId)->update([
+                        'is_invoice_uploaded' => false,
+                    ]);
+                }
+            }
+
+            $this->createBatchClaimWorkflowTimeline(
+                batchId: $batchId,
+                claims: $claimIds,
+                status: BatchStatus::from(18),
+                comments: request('comments') ?? null
+            );
+        });
+    }
+}
